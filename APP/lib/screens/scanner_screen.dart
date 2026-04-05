@@ -18,6 +18,7 @@ class ScannerScreen extends StatefulWidget {
 class _ScannerScreenState extends State<ScannerScreen> {
   MobileScannerController? _controller;
   bool _scanned = false;
+  final ValueNotifier<TorchState> _torchState = ValueNotifier(TorchState.off);
 
   @override
   void initState() {
@@ -158,10 +159,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       ),
                       const SizedBox(width: 12),
                       ValueListenableBuilder(
-                        valueListenable: _controller!.torchState,
+                        valueListenable: _torchState,
                         builder: (context, state, child) {
                           return GestureDetector(
-                            onTap: () => _controller?.toggleTorch(),
+                            onTap: () {
+                              _controller?.toggleTorch();
+                              _torchState.value = _torchState.value == TorchState.on ? TorchState.off : TorchState.on;
+                            },
                             child: Container(
                               width: 44,
                               height: 44,

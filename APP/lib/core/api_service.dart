@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
 
-  static const String baseUrl = 'https://cea2-2409-40c0-5f-8698-2817-fcf4-c8d3-7181.ngrok-free.app/api';
+  static const String baseUrl = 'https://eco-wallet.onrender.com/api';
 
   static String? _accessToken;
   static String? _refreshToken;
