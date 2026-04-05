@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(11, 19, 38, 0.6);
+            backdrop-filter: blur(20px);
+        }
+        body {
+            background-color: #0b1326;
+            color: #dae2fd;
+            overflow-x: hidden;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-on-surface": "#283044",
+                      "tertiary": "#f6faff",
+                      "surface-tint": "#00dce5",
+                      "on-surface": "#dae2fd",
+                      "primary-container": "#00f5ff",
+                      "on-secondary-container": "#aeb9d0",
+                      "on-tertiary-fixed": "#001e2c",
+                      "on-primary": "#003739",
+                      "primary": "#e9feff",
+                      "on-tertiary-container": "#00688e",
+                      "error": "#ffb4ab",
+                      "on-error-container": "#ffdad6",
+                      "on-tertiary": "#00354a",
+                      "surface-container-highest": "#2d3449",
+                      "surface": "#0b1326",
+                      "secondary-fixed-dim": "#bcc7de",
+                      "error-container": "#93000a",
+                      "tertiary-container": "#b8e3ff",
+                      "on-primary-fixed-variant": "#004f53",
+                      "primary-fixed": "#63f7ff",
+                      "surface-container-lowest": "#060e20",
+                      "surface-variant": "#2d3449",
+                      "on-error": "#690005",
+                      "surface-dim": "#0b1326",
+                      "secondary-fixed": "#d8e3fb",
+                      "on-background": "#dae2fd",
+                      "surface-container-high": "#222a3d",
+                      "secondary-container": "#3e495d",
+                      "on-secondary": "#263143",
+                      "inverse-surface": "#dae2fd",
+                      "primary-fixed-dim": "#00dce5",
+                      "tertiary-fixed-dim": "#7bd0ff",
+                      "outline": "#849495",
+                      "on-tertiary-fixed-variant": "#004c69",
+                      "surface-bright": "#31394d",
+                      "inverse-primary": "#00696e",
+                      "background": "#0b1326",
+                      "on-secondary-fixed-variant": "#3c475a",
+                      "on-primary-container": "#006c71",
+                      "outline-variant": "#3a494a",
+                      "surface-container-low": "#131b2e",
+                      "on-secondary-fixed": "#111c2d",
+                      "on-primary-fixed": "#002021",
+                      "surface-container": "#171f33",
+                      "secondary": "#bcc7de",
+                      "on-surface-variant": "#b9caca",
+                      "tertiary-fixed": "#c4e7ff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "1rem",
+                      "lg": "2rem",
+                      "xl": "3rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": ["Space Grotesk"],
+                      "body": ["Inter"],
+                      "label": ["Inter"]
+              }
+            },
+          }
+        }
+      </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-[#0b1326] backdrop-blur-xl bg-opacity-60 flex items-center justify-between px-6 h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="font-['Space_Grotesk'] text-xl font-bold tracking-widest text-[#00f5ff]">ECO Wallet</h1>
+</div>
+<div class="flex items-center">
+<span class="material-symbols-outlined text-[#00f5ff]">notifications</span>
+</div>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-lg mx-auto min-h-screen">
+<!-- Recipient Input Section -->
+<section class="mb-10">
+<div class="flex justify-between items-end mb-4 px-2">
+<label class="font-label text-label-sm uppercase tracking-[2px] text-on-surface-variant">Recipient</label>
+<div class="flex items-center gap-1 text-primary-fixed-dim">
+<span class="material-symbols-outlined text-[16px]">qr_code_scanner</span>
+<span class="font-label text-[10px] font-bold uppercase tracking-widest">Scan QR</span>
+</div>
+</div>
+<div class="relative">
+<input class="w-full h-16 px-6 bg-surface-container-lowest border-none rounded-lg text-on-surface placeholder:text-outline-variant focus:ring-1 focus:ring-primary-container/30 transition-all font-body text-lg" placeholder="User ID / Username" type="text"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant/20">
+<img class="w-full h-full object-cover" data-alt="minimalist user avatar illustration with a soft blue background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7D4gK-3jW2dVejdWeXVbOS2_aispVubbH7Nv86Hlg4e40HBHePToiWZnKQD-JGjkQ1Wmec_r9kyfa9Q64Pj_ZeXUgyJWtveCH6W3K1H7NI2lmODHUtNdTq4nYWCRk_atxQtr9HF9PntvX5EkCzeHQ3Cb3ogGHI8-G7UgORXM01YhsiahSq0a9_9NtmxhfQynqazDv5WOI4Ux0hxC0CHFU-1dv0XyNeBbpqjOnBl9088dQiJ3R0WjzDdYJqToTusMwUmNFbq7KpRkO"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Amount Entry Section -->
+<section class="text-center mb-12">
+<div class="inline-flex items-center justify-center mb-2 px-4 py-1 rounded-full bg-surface-container-low text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px] mr-2">account_balance_wallet</span>
+<span class="text-[11px] font-bold uppercase tracking-wider">Balance: $12,450.00</span>
+</div>
+<div class="flex flex-col items-center justify-center mt-6">
+<div class="flex items-baseline gap-1">
+<span class="font-headline text-3xl font-medium text-primary-container opacity-50">$</span>
+<span class="font-headline text-6xl md:text-7xl font-bold tracking-tight text-primary leading-none">2,450.00</span>
+</div>
+<div class="mt-4 flex items-center gap-2 text-on-surface-variant opacity-60">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">lock</span>
+<span class="text-[10px] font-bold uppercase tracking-[2px]">Secured by ECO-Vault</span>
+</div>
+</div>
+</section>
+<!-- Custom Numeric Keypad -->
+<section class="grid grid-cols-3 gap-y-4 gap-x-8 mb-12 max-w-[320px] mx-auto">
+<button class="h-16 flex items-center justify-center font-headline text-2xl text-on-surface hover:text-primary-container transition-colors active:scale-90">1</button>
+<button class="h-16 flex items-center justify-center font-headline text-2xl text-on-surface hover:text-primary-container transition-colors active:scale-90">2</button>
+<button class="h-16 flex items-center justify-center font-headline text-2xl text-on-surface hover:text-primary-container transition-colors active:scale-90">3</button>
+<button class="h-16 flex items-center justify-center font-headline text-2xl text-on-surface hover:text-primary-container transition-colors active:scale-90">4</button>
+<button class="h-16 flex items-center justify-center font-headline text-2xl text-on-surface hover:text-primary-container transition-colors active:scale-90">5</button>
+<button class="h-16 flex items-center justify-center font-headline text-2xl text-on-surface hover:text-primary-container transition-colors active:scale-90">6</button>
+<button class="h-16 flex items-center justify-center font-headline text-2xl text-on-surface hover:text-primary-container transition-colors active:scale-90">7</button>
+<button class="h-16 flex items-center justify-center font-headline text-2xl text-on-surface hover:text-primary-container transition-colors active:scale-90">8</button>
+<button class="h-16 flex items-center justify-center font-headline text-2xl text-on-surface hover:text-primary-container transition-colors active:scale-90">9</button>
+<button class="h-16 flex items-center justify-center font-headline text-2xl text-on-surface hover:text-primary-container transition-colors active:scale-90">.</button>
+<button class="h-16 flex items-center justify-center font-headline text-2xl text-on-surface hover:text-primary-container transition-colors active:scale-90">0</button>
+<button class="h-16 flex items-center justify-center font-headline text-2xl text-on-surface hover:text-primary-container transition-colors active:scale-90">
+<span class="material-symbols-outlined">backspace</span>
+</button>
+</section>
+<!-- Main Action -->
+<div class="px-2">
+<button class="w-full h-16 rounded-xl bg-gradient-to-br from-[#00f5ff] to-[#006c71] text-[#0b1326] font-headline font-bold text-lg tracking-widest uppercase flex items-center justify-center gap-3 shadow-[0_20px_40px_rgba(0,245,255,0.15)] active:scale-[0.98] transition-transform">
+<span>Send Money</span>
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-[32px] bg-[#0b1326] backdrop-blur-xl bg-opacity-60 flex justify-around items-center px-4 pb-6 pt-2 w-full shadow-[0_-20px_40px_rgba(0,220,225,0.06)]">
+<a class="flex flex-col items-center justify-center text-[#b9caca] p-3 hover:text-[#00f5ff] transition-colors scale-95 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">home_app_logo</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-[2px] mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#b9caca] p-3 hover:text-[#00f5ff] transition-colors scale-95 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-[2px] mt-1">History</span>
+</a>
+<!-- Active Tab for transactional intent usually defaults to an action, but if we map to "Home" contextually or keep neutral -->
+<a class="flex flex-col items-center justify-center text-[#b9caca] p-3 hover:text-[#00f5ff] transition-colors scale-95 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">workspace_premium</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-[2px] mt-1">Rewards</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#b9caca] p-3 hover:text-[#00f5ff] transition-colors scale-95 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-[2px] mt-1">Profile</span>
+</a>
+</nav>
+<!-- Decorative Ether Background Elements -->
+<div class="fixed top-[-10%] right-[-10%] w-[60%] h-[60%] bg-primary-container/5 blur-[120px] rounded-full -z-10 pointer-events-none"></div>
+<div class="fixed bottom-[-5%] left-[-5%] w-[40%] h-[40%] bg-on-tertiary-container/5 blur-[100px] rounded-full -z-10 pointer-events-none"></div>
+</body></html>

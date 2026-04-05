@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ECO Wallet - Home Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-on-surface": "#283044",
+                        "tertiary": "#f6faff",
+                        "surface-tint": "#00dce5",
+                        "on-surface": "#dae2fd",
+                        "primary-container": "#00f5ff",
+                        "on-secondary-container": "#aeb9d0",
+                        "on-tertiary-fixed": "#001e2c",
+                        "on-primary": "#003739",
+                        "primary": "#e9feff",
+                        "on-tertiary-container": "#00688e",
+                        "error": "#ffb4ab",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary": "#00354a",
+                        "surface-container-highest": "#2d3449",
+                        "surface": "#0b1326",
+                        "secondary-fixed-dim": "#bcc7de",
+                        "error-container": "#93000a",
+                        "tertiary-container": "#b8e3ff",
+                        "on-primary-fixed-variant": "#004f53",
+                        "primary-fixed": "#63f7ff",
+                        "surface-container-lowest": "#060e20",
+                        "surface-variant": "#2d3449",
+                        "on-error": "#690005",
+                        "surface-dim": "#0b1326",
+                        "secondary-fixed": "#d8e3fb",
+                        "on-background": "#dae2fd",
+                        "surface-container-high": "#222a3d",
+                        "secondary-container": "#3e495d",
+                        "on-secondary": "#263143",
+                        "inverse-surface": "#dae2fd",
+                        "primary-fixed-dim": "#00dce5",
+                        "tertiary-fixed-dim": "#7bd0ff",
+                        "outline": "#849495",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "surface-bright": "#31394d",
+                        "inverse-primary": "#00696e",
+                        "background": "#0b1326",
+                        "on-secondary-fixed-variant": "#3c475a",
+                        "on-primary-container": "#006c71",
+                        "outline-variant": "#3a494a",
+                        "surface-container-low": "#131b2e",
+                        "on-secondary-fixed": "#111c2d",
+                        "on-primary-fixed": "#002021",
+                        "surface-container": "#171f33",
+                        "secondary": "#bcc7de",
+                        "on-surface-variant": "#b9caca",
+                        "tertiary-fixed": "#c4e7ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #0b1326;
+            font-family: 'Inter', sans-serif;
+            color: #dae2fd;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#0b1326] backdrop-blur-xl bg-opacity-60 flex items-center justify-between px-6 h-16 w-full">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-primary-container/20">
+<img class="w-full h-full object-cover" data-alt="Close up portrait of a professional man with a neutral expression in a high-tech studio environment with soft blue lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTMD8M4QlPaPjc_FILON6gW4DtK6eBG0RhmVEm0rx93_yxZwGhGUQq2NfSd6mjNbU_gWQ8JAIVd-eXCWEy6qSls70XqucCsYBITmlHF_mDVveASHJXCSmmwfwBZQmtHDye2-nQcJFjbPtZ8cVL76q0f270KeKP4GDfne0YweZniP1mDfS-ZpEvoiWUyEbj0tpREPx8K1bOzQkUCPYo_oV2WCjHlADRIO_3c7mha5gWnj4Vh-_nApFXeVterA9gT_adPB9VOt7T3gKA"/>
+</div>
+<span class="font-['Space_Grotesk'] text-xl font-bold tracking-widest text-[#00f5ff]">ECO Wallet</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-[#00f5ff] hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<main class="mt-20 px-6 max-w-2xl mx-auto">
+<!-- Hero Balance Section -->
+<section class="relative mb-10">
+<div class="bg-gradient-to-br from-[#00f5ff] to-[#006c71] rounded-lg p-8 shadow-[0_20px_40px_rgba(0,220,225,0.15)] relative overflow-hidden group">
+<!-- Subtle Texture Layer -->
+<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 24px 24px;">
+</div>
+<div class="relative z-10">
+<div class="flex items-center justify-between mb-4">
+<span class="font-label text-[10px] font-bold uppercase tracking-[2px] text-[#0b1326]/80">Total Balance</span>
+<button class="text-[#0b1326] hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+</div>
+<div class="flex items-baseline gap-2">
+<h1 class="font-headline text-[3.5rem] font-bold leading-none tracking-tighter text-[#0b1326]">2,450</h1>
+<span class="font-headline text-xl font-medium text-[#0b1326]/70">ECO Coins</span>
+</div>
+<div class="mt-6 flex items-center gap-2 bg-[#0b1326]/10 w-fit px-3 py-1 rounded-full">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+<span class="font-label text-[10px] font-bold">+12.4% this month</span>
+</div>
+</div>
+<!-- Decorative Glow -->
+<div class="absolute -right-10 -bottom-10 w-40 h-40 bg-[#e9feff] opacity-20 blur-[60px] rounded-full"></div>
+</div>
+</section>
+<!-- Quick Actions -->
+<section class="grid grid-cols-4 gap-4 mb-12">
+<div class="flex flex-col items-center gap-2 group">
+<div class="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center text-primary-container transition-all group-hover:bg-primary-container group-hover:text-surface shadow-[0_0_20px_rgba(0,245,255,0.05)]">
+<span class="material-symbols-outlined" data-icon="send">send</span>
+</div>
+<span class="font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Send</span>
+</div>
+<div class="flex flex-col items-center gap-2 group">
+<div class="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center text-primary-container transition-all group-hover:bg-primary-container group-hover:text-surface shadow-[0_0_20px_rgba(0,245,255,0.05)]">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+</div>
+<span class="font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Receive</span>
+</div>
+<div class="flex flex-col items-center gap-2 group">
+<div class="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center text-primary-container transition-all group-hover:bg-primary-container group-hover:text-surface shadow-[0_0_20px_rgba(0,245,255,0.05)]">
+<span class="material-symbols-outlined" data-icon="qr_code_scanner">qr_code_scanner</span>
+</div>
+<span class="font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Scan QR</span>
+</div>
+<div class="flex flex-col items-center gap-2 group">
+<div class="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center text-primary-container transition-all group-hover:bg-primary-container group-hover:text-surface shadow-[0_0_20px_rgba(0,245,255,0.05)]">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+</div>
+<span class="font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">History</span>
+</div>
+</section>
+<!-- Alerts Banner -->
+<section class="mb-10">
+<div class="bg-surface-container-low rounded-xl p-4 flex items-center justify-between border-l-4 border-primary-container overflow-hidden relative">
+<div class="flex items-center gap-4 relative z-10">
+<div class="w-10 h-10 rounded-full bg-primary-container/10 flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined" data-icon="workspace_premium" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<div>
+<p class="font-headline text-sm font-medium text-primary">New rewards available</p>
+<p class="font-body text-xs text-on-surface-variant">You've earned 50 bonus ECO coins.</p>
+</div>
+</div>
+<button class="font-label text-[10px] font-bold uppercase tracking-wider text-primary-container hover:underline relative z-10">Claim</button>
+<!-- Decorative blur -->
+<div class="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-primary-container/5 to-transparent"></div>
+</div>
+</section>
+<!-- Recent Transactions -->
+<section>
+<div class="flex items-center justify-between mb-6">
+<h2 class="font-headline text-lg font-medium tracking-tight text-primary">Recent Activity</h2>
+<button class="font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">View All</button>
+</div>
+<div class="space-y-3">
+<!-- Transaction Item -->
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-lg group hover:bg-surface-bright transition-colors cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-error">
+<span class="material-symbols-outlined" data-icon="arrow_outward">arrow_outward</span>
+</div>
+<div>
+<p class="font-headline text-sm font-medium text-primary">Sent to Alex Riviera</p>
+<p class="font-body text-xs text-on-surface-variant">Today, 2:45 PM</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline text-sm font-bold text-error">- 150 ECO</p>
+<p class="font-label text-[10px] text-on-surface-variant uppercase">$12.40 USD</p>
+</div>
+</div>
+<!-- Transaction Item -->
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-lg group hover:bg-surface-bright transition-colors cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined" data-icon="call_received">call_received</span>
+</div>
+<div>
+<p class="font-headline text-sm font-medium text-primary">Received from Global Staking</p>
+<p class="font-body text-xs text-on-surface-variant">Yesterday, 10:20 AM</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline text-sm font-bold text-primary-container">+ 42.5 ECO</p>
+<p class="font-label text-[10px] text-on-surface-variant uppercase">$3.51 USD</p>
+</div>
+</div>
+<!-- Transaction Item -->
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-lg group hover:bg-surface-bright transition-colors cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-error">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+</div>
+<div>
+<p class="font-headline text-sm font-medium text-primary">Tesla Supercharger</p>
+<p class="font-body text-xs text-on-surface-variant">May 12, 6:15 PM</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline text-sm font-bold text-error">- 24.0 ECO</p>
+<p class="font-label text-[10px] text-on-surface-variant uppercase">$1.98 USD</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-[32px] bg-[#0b1326] backdrop-blur-xl bg-opacity-60 shadow-[0_-20px_40px_rgba(0,220,225,0.06)]">
+<div class="flex justify-around items-center px-4 pb-6 pt-2 w-full">
+<!-- Home (Active) -->
+<a class="flex flex-col items-center justify-center bg-gradient-to-br from-[#00f5ff] to-[#006c71] text-[#0b1326] rounded-full p-3 scale-95 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home_app_logo" style="font-variation-settings: 'FILL' 1;">home_app_logo</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-[2px] mt-0.5">Home</span>
+</a>
+<!-- History -->
+<a class="flex flex-col items-center justify-center text-[#b9caca] p-3 hover:text-[#00f5ff] transition-colors scale-95 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-[2px] mt-0.5">History</span>
+</a>
+<!-- Rewards -->
+<a class="flex flex-col items-center justify-center text-[#b9caca] p-3 hover:text-[#00f5ff] transition-colors scale-95 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="workspace_premium">workspace_premium</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-[2px] mt-0.5">Rewards</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center text-[#b9caca] p-3 hover:text-[#00f5ff] transition-colors scale-95 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-[2px] mt-0.5">Profile</span>
+</a>
+</div>
+</nav>
+</body></html>

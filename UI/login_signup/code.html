@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-on-surface": "#283044",
+                        "tertiary": "#f6faff",
+                        "surface-tint": "#00dce5",
+                        "on-surface": "#dae2fd",
+                        "primary-container": "#00f5ff",
+                        "on-secondary-container": "#aeb9d0",
+                        "on-tertiary-fixed": "#001e2c",
+                        "on-primary": "#003739",
+                        "primary": "#e9feff",
+                        "on-tertiary-container": "#00688e",
+                        "error": "#ffb4ab",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary": "#00354a",
+                        "surface-container-highest": "#2d3449",
+                        "surface": "#0b1326",
+                        "secondary-fixed-dim": "#bcc7de",
+                        "error-container": "#93000a",
+                        "tertiary-container": "#b8e3ff",
+                        "on-primary-fixed-variant": "#004f53",
+                        "primary-fixed": "#63f7ff",
+                        "surface-container-lowest": "#060e20",
+                        "surface-variant": "#2d3449",
+                        "on-error": "#690005",
+                        "surface-dim": "#0b1326",
+                        "secondary-fixed": "#d8e3fb",
+                        "on-background": "#dae2fd",
+                        "surface-container-high": "#222a3d",
+                        "secondary-container": "#3e495d",
+                        "on-secondary": "#263143",
+                        "inverse-surface": "#dae2fd",
+                        "primary-fixed-dim": "#00dce5",
+                        "tertiary-fixed-dim": "#7bd0ff",
+                        "outline": "#849495",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "surface-bright": "#31394d",
+                        "inverse-primary": "#00696e",
+                        "background": "#0b1326",
+                        "on-secondary-fixed-variant": "#3c475a",
+                        "on-primary-container": "#006c71",
+                        "outline-variant": "#3a494a",
+                        "surface-container-low": "#131b2e",
+                        "on-secondary-fixed": "#111c2d",
+                        "on-primary-fixed": "#002021",
+                        "surface-container": "#171f33",
+                        "secondary": "#bcc7de",
+                        "on-surface-variant": "#b9caca",
+                        "tertiary-fixed": "#c4e7ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #0b1326;
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(23, 31, 51, 0.6);
+            backdrop-filter: blur(20px);
+        }
+        .neon-glow {
+            box-shadow: 0 0 20px rgba(0, 245, 255, 0.15);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface overflow-hidden">
+<!-- Hero Background Element -->
+<div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+<div class="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-primary-container opacity-5 blur-[120px]"></div>
+<div class="absolute bottom-[-5%] left-[-5%] w-[400px] h-[400px] rounded-full bg-on-tertiary-container opacity-10 blur-[100px]"></div>
+</div>
+<!-- Main Content Wrapper -->
+<main class="relative z-10 flex min-h-screen items-center justify-center p-6 md:p-12">
+<div class="w-full max-w-lg">
+<!-- Branding Header -->
+<div class="mb-12 text-center">
+<div class="inline-flex items-center justify-center w-20 h-20 mb-6 rounded-lg bg-surface-container-high neon-glow">
+<span class="material-symbols-outlined text-primary-container text-4xl" data-icon="eco">eco</span>
+</div>
+<h1 class="font-headline text-4xl font-bold tracking-tight text-primary mb-2">ECO Wallet</h1>
+<p class="font-body text-on-surface-variant tracking-wide">Enter the Digital Ether of Finance</p>
+</div>
+<!-- Login Card -->
+<div class="surface-container-low rounded-lg p-8 md:p-10 shadow-2xl relative overflow-hidden group">
+<!-- Subtle internal accent -->
+<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary-container to-transparent opacity-30"></div>
+<div class="mb-8">
+<h2 class="font-headline text-2xl font-medium text-on-surface mb-2">Welcome back</h2>
+<p class="text-on-surface-variant text-sm">Please enter your details to access your vault.</p>
+</div>
+<form class="space-y-6">
+<!-- Input Group -->
+<div class="space-y-2">
+<label class="font-label text-[10px] font-bold uppercase tracking-[2px] text-on-surface-variant ml-1">Mobile Number / Email</label>
+<div class="relative group">
+<div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline text-lg group-focus-within:text-primary-container transition-colors" data-icon="alternate_email">alternate_email</span>
+</div>
+<input class="w-full h-14 bg-surface-container-lowest border-none rounded-DEFAULT pl-12 pr-4 text-on-surface placeholder:text-outline/40 focus:ring-1 focus:ring-primary-container/30 transition-all font-body" placeholder="e.g. +1 555 0000 or name@email.com" type="text"/>
+</div>
+</div>
+<!-- Action Button -->
+<button class="w-full h-14 bg-gradient-to-br from-primary-container to-on-primary-container text-surface font-headline font-bold text-lg rounded-xl flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all duration-200" type="submit">
+<span>Get OTP</span>
+<span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</form>
+<!-- Footer Links -->
+<div class="mt-10 flex flex-col items-center gap-4">
+<p class="text-on-surface-variant text-xs">New to ECO Wallet?</p>
+<button class="font-label text-[11px] font-bold uppercase tracking-[2px] text-primary-container hover:text-primary transition-colors">
+                        Create an Account
+                    </button>
+</div>
+</div>
+<!-- Trust Badges -->
+<div class="mt-12 grid grid-cols-3 gap-4 opacity-40">
+<div class="flex flex-col items-center gap-2">
+<span class="material-symbols-outlined text-xl" data-icon="security">security</span>
+<span class="text-[10px] uppercase font-bold tracking-widest">AES-256</span>
+</div>
+<div class="flex flex-col items-center gap-2 border-x border-outline-variant/20">
+<span class="material-symbols-outlined text-xl" data-icon="encrypted">encrypted</span>
+<span class="text-[10px] uppercase font-bold tracking-widest">Zero-Knowledge</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<span class="material-symbols-outlined text-xl" data-icon="fingerprint">fingerprint</span>
+<span class="text-[10px] uppercase font-bold tracking-widest">Biometric</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Side Visual Decor (Desktop Only) -->
+<div class="hidden lg:block fixed right-12 top-1/2 -translate-y-1/2 w-64 space-y-6">
+<div class="surface-container-high p-6 rounded-lg border border-outline-variant/10 shadow-lg">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-container text-sm" data-icon="show_chart">show_chart</span>
+</div>
+<span class="font-headline text-xs font-bold tracking-widest">REAL-TIME DATA</span>
+</div>
+<div class="space-y-3">
+<div class="h-2 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full w-[70%] bg-primary-container shadow-[0_0_10px_#00f5ff]"></div>
+</div>
+<div class="h-2 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full w-[45%] bg-primary-container shadow-[0_0_10px_#00f5ff]"></div>
+</div>
+</div>
+</div>
+<div class="p-6 rounded-lg flex flex-col gap-2">
+<div class="text-[64px] font-headline font-bold text-primary-container/10 leading-none select-none italic">
+                FUTURE
+             </div>
+<div class="text-[64px] font-headline font-bold text-primary-container/5 leading-none select-none pl-8 italic">
+                FLUID
+             </div>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Transaction History - ECO Wallet</title>
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-on-surface": "#283044",
+                        "tertiary": "#f6faff",
+                        "surface-tint": "#00dce5",
+                        "on-surface": "#dae2fd",
+                        "primary-container": "#00f5ff",
+                        "on-secondary-container": "#aeb9d0",
+                        "on-tertiary-fixed": "#001e2c",
+                        "on-primary": "#003739",
+                        "primary": "#e9feff",
+                        "on-tertiary-container": "#00688e",
+                        "error": "#ffb4ab",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary": "#00354a",
+                        "surface-container-highest": "#2d3449",
+                        "surface": "#0b1326",
+                        "secondary-fixed-dim": "#bcc7de",
+                        "error-container": "#93000a",
+                        "tertiary-container": "#b8e3ff",
+                        "on-primary-fixed-variant": "#004f53",
+                        "primary-fixed": "#63f7ff",
+                        "surface-container-lowest": "#060e20",
+                        "surface-variant": "#2d3449",
+                        "on-error": "#690005",
+                        "surface-dim": "#0b1326",
+                        "secondary-fixed": "#d8e3fb",
+                        "on-background": "#dae2fd",
+                        "surface-container-high": "#222a3d",
+                        "secondary-container": "#3e495d",
+                        "on-secondary": "#263143",
+                        "inverse-surface": "#dae2fd",
+                        "primary-fixed-dim": "#00dce5",
+                        "tertiary-fixed-dim": "#7bd0ff",
+                        "outline": "#849495",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "surface-bright": "#31394d",
+                        "inverse-primary": "#00696e",
+                        "background": "#0b1326",
+                        "on-secondary-fixed-variant": "#3c475a",
+                        "on-primary-container": "#006c71",
+                        "outline-variant": "#3a494a",
+                        "surface-container-low": "#131b2e",
+                        "on-secondary-fixed": "#111c2d",
+                        "on-primary-fixed": "#002021",
+                        "surface-container": "#171f33",
+                        "secondary": "#bcc7de",
+                        "on-surface-variant": "#b9caca",
+                        "tertiary-fixed": "#c4e7ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b1326;
+        }
+        .headline-text {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#0b1326] backdrop-blur-xl bg-opacity-60 flex items-center justify-between px-6 h-16 w-full no-line-rule tonal-transition-bg-shift">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="Close up of a modern professional user profile avatar in a digital interface style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCg9vNtwWPYC436VWMQTCxSeF3QM49VXl2Uv5hLyxCa1yZIejFoXaGCUOo3EnduJXePNKQZnObPUy69Y9IZGN-YyTOI-QYw8lmHVYOlIYmabu5ioHsznbPJhsCh5dPamcQ5mw3xT04Dg7sfufGXhSNb52Dh5qgZdOqGQcb4Q97NwdKSYUGUMCPR_jbRRey4TytQxhC21jmthyfUJCV8M9UcQBhXLCOVj2k3cJUmQid8FV-Ikg49H4leIPgqKTazaBy2tXDmnNys43P9"/>
+</div>
+<h1 class="font-['Space_Grotesk'] text-xl font-bold tracking-widest text-[#00f5ff]">ECO Wallet</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-[#00f5ff] hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<main class="pt-24 px-6 max-w-2xl mx-auto">
+<!-- Page Title & Stats -->
+<section class="mb-8">
+<h2 class="headline-text text-[1.75rem] font-medium text-primary mb-2">History</h2>
+<p class="text-on-surface-variant text-sm font-body">Activity within the digital ether.</p>
+</section>
+<!-- Filters (Pill Style) -->
+<nav class="flex gap-3 mb-10 overflow-x-auto pb-2 scrollbar-hide">
+<button class="px-6 py-2 rounded-xl bg-gradient-to-br from-[#00f5ff] to-[#006c71] text-[#0b1326] font-bold text-[10px] uppercase tracking-[2px]">All</button>
+<button class="px-6 py-2 rounded-xl bg-surface-container-high text-on-surface-variant hover:text-primary transition-colors font-bold text-[10px] uppercase tracking-[2px]">Sent</button>
+<button class="px-6 py-2 rounded-xl bg-surface-container-high text-on-surface-variant hover:text-primary transition-colors font-bold text-[10px] uppercase tracking-[2px]">Received</button>
+</nav>
+<!-- Transaction List (Anti-List Pattern) -->
+<div class="flex flex-col gap-3">
+<!-- Transaction Item 1 -->
+<div class="group p-5 bg-surface-container-low hover:bg-surface-bright transition-all duration-300 rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary-container shadow-[0_0_15px_rgba(0,245,255,0.1)]">
+<span class="material-symbols-outlined text-2xl" data-icon="arrow_outward">arrow_outward</span>
+</div>
+<div>
+<h3 class="font-semibold text-primary">Alex Volkov</h3>
+<p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mt-0.5">Oct 24, 2023 • 14:20:05</p>
+</div>
+</div>
+<div class="text-right">
+<div class="headline-text text-lg font-bold text-primary-container">- 1,240.00 ECO</div>
+<div class="flex items-center justify-end gap-1 text-[10px] text-primary uppercase font-bold tracking-tighter mt-1">
+<span class="material-symbols-outlined text-[12px]" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        Success
+                    </div>
+</div>
+</div>
+<!-- Transaction Item 2 -->
+<div class="group p-5 bg-surface-container-low hover:bg-surface-bright transition-all duration-300 rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-2xl" data-icon="call_received">call_received</span>
+</div>
+<div>
+<h3 class="font-semibold text-primary">Mining Rewards</h3>
+<p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mt-0.5">Oct 23, 2023 • 09:12:44</p>
+</div>
+</div>
+<div class="text-right">
+<div class="headline-text text-lg font-bold text-primary-container">+ 45.30 ECO</div>
+<div class="flex items-center justify-end gap-1 text-[10px] text-primary uppercase font-bold tracking-tighter mt-1">
+<span class="material-symbols-outlined text-[12px]" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        Success
+                    </div>
+</div>
+</div>
+<!-- Transaction Item 3 (Failed) -->
+<div class="group p-5 bg-surface-container-low hover:bg-surface-bright transition-all duration-300 rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-2xl" data-icon="close">close</span>
+</div>
+<div>
+<h3 class="font-semibold text-primary">Unknown Entity</h3>
+<p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mt-0.5">Oct 22, 2023 • 23:59:59</p>
+</div>
+</div>
+<div class="text-right">
+<div class="headline-text text-lg font-bold text-error opacity-80">- 500.00 ECO</div>
+<div class="flex items-center justify-end gap-1 text-[10px] text-error uppercase font-bold tracking-tighter mt-1">
+<span class="material-symbols-outlined text-[12px]" data-icon="error" style="font-variation-settings: 'FILL' 1;">error</span>
+                        Failed
+                    </div>
+</div>
+</div>
+<!-- Transaction Item 4 -->
+<div class="group p-5 bg-surface-container-low hover:bg-surface-bright transition-all duration-300 rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-2xl" data-icon="call_received">call_received</span>
+</div>
+<div>
+<h3 class="font-semibold text-primary">Sarah Chen</h3>
+<p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mt-0.5">Oct 21, 2023 • 18:05:12</p>
+</div>
+</div>
+<div class="text-right">
+<div class="headline-text text-lg font-bold text-primary-container">+ 8,000.00 ECO</div>
+<div class="flex items-center justify-end gap-1 text-[10px] text-primary uppercase font-bold tracking-tighter mt-1">
+<span class="material-symbols-outlined text-[12px]" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        Success
+                    </div>
+</div>
+</div>
+<!-- Transaction Item 5 -->
+<div class="group p-5 bg-surface-container-low hover:bg-surface-bright transition-all duration-300 rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary-container shadow-[0_0_15px_rgba(0,245,255,0.1)]">
+<span class="material-symbols-outlined text-2xl" data-icon="arrow_outward">arrow_outward</span>
+</div>
+<div>
+<h3 class="font-semibold text-primary">Eco Store</h3>
+<p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mt-0.5">Oct 20, 2023 • 12:45:00</p>
+</div>
+</div>
+<div class="text-right">
+<div class="headline-text text-lg font-bold text-primary-container">- 12.99 ECO</div>
+<div class="flex items-center justify-end gap-1 text-[10px] text-primary uppercase font-bold tracking-tighter mt-1">
+<span class="material-symbols-outlined text-[12px]" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        Success
+                    </div>
+</div>
+</div>
+</div>
+<!-- Pagination/Load More (Asymmetric Editorial Style) -->
+<div class="mt-12 flex justify-center">
+<button class="group flex items-center gap-4 text-on-surface-variant hover:text-primary transition-colors">
+<span class="h-[1px] w-12 bg-outline-variant group-hover:bg-primary transition-all"></span>
+<span class="text-[10px] uppercase font-bold tracking-[4px]">Load More Activity</span>
+<span class="h-[1px] w-4 bg-outline-variant group-hover:bg-primary transition-all"></span>
+</button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-[32px] bg-[#0b1326] backdrop-blur-xl bg-opacity-60 flex justify-around items-center px-4 pb-6 pt-2 w-full shadow-[0_-20px_40px_rgba(0,220,225,0.06)] no-line-rule bg-surface-container-low">
+<a class="flex flex-col items-center justify-center text-[#b9caca] p-3 hover:text-[#00f5ff] transition-colors scale-95 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home_app_logo">home_app_logo</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-[2px] mt-1">Home</span>
+</a>
+<!-- Active Navigation Item: History -->
+<a class="flex flex-col items-center justify-center bg-gradient-to-br from-[#00f5ff] to-[#006c71] text-[#0b1326] rounded-full p-3 scale-95 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="history" style="font-variation-settings: 'FILL' 1;">history</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-[2px] mt-1">History</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#b9caca] p-3 hover:text-[#00f5ff] transition-colors scale-95 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="workspace_premium">workspace_premium</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-[2px] mt-1">Rewards</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#b9caca] p-3 hover:text-[#00f5ff] transition-colors scale-95 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-[2px] mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

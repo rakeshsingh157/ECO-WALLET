@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ECO Wallet - Splash</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-on-surface": "#283044",
+                    "tertiary": "#f6faff",
+                    "surface-tint": "#00dce5",
+                    "on-surface": "#dae2fd",
+                    "primary-container": "#00f5ff",
+                    "on-secondary-container": "#aeb9d0",
+                    "on-tertiary-fixed": "#001e2c",
+                    "on-primary": "#003739",
+                    "primary": "#e9feff",
+                    "on-tertiary-container": "#00688e",
+                    "error": "#ffb4ab",
+                    "on-error-container": "#ffdad6",
+                    "on-tertiary": "#00354a",
+                    "surface-container-highest": "#2d3449",
+                    "surface": "#0b1326",
+                    "secondary-fixed-dim": "#bcc7de",
+                    "error-container": "#93000a",
+                    "tertiary-container": "#b8e3ff",
+                    "on-primary-fixed-variant": "#004f53",
+                    "primary-fixed": "#63f7ff",
+                    "surface-container-lowest": "#060e20",
+                    "surface-variant": "#2d3449",
+                    "on-error": "#690005",
+                    "surface-dim": "#0b1326",
+                    "secondary-fixed": "#d8e3fb",
+                    "on-background": "#dae2fd",
+                    "surface-container-high": "#222a3d",
+                    "secondary-container": "#3e495d",
+                    "on-secondary": "#263143",
+                    "inverse-surface": "#dae2fd",
+                    "primary-fixed-dim": "#00dce5",
+                    "tertiary-fixed-dim": "#7bd0ff",
+                    "outline": "#849495",
+                    "on-tertiary-fixed-variant": "#004c69",
+                    "surface-bright": "#31394d",
+                    "inverse-primary": "#00696e",
+                    "background": "#0b1326",
+                    "on-secondary-fixed-variant": "#3c475a",
+                    "on-primary-container": "#006c71",
+                    "outline-variant": "#3a494a",
+                    "surface-container-low": "#131b2e",
+                    "on-secondary-fixed": "#111c2d",
+                    "on-primary-fixed": "#002021",
+                    "surface-container": "#171f33",
+                    "secondary": "#bcc7de",
+                    "on-surface-variant": "#b9caca",
+                    "tertiary-fixed": "#c4e7ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Space Grotesk"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .kinetic-glow {
+        background: radial-gradient(circle at center, rgba(0, 245, 255, 0.08) 0%, transparent 70%);
+      }
+      .mesh-bg {
+        background: radial-gradient(at 0% 0%, rgba(0, 108, 113, 0.15) 0%, transparent 50%),
+                    radial-gradient(at 100% 100%, rgba(0, 220, 229, 0.1) 0%, transparent 50%);
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container overflow-hidden">
+<!-- Splash Screen Container -->
+<!-- Suppression Logic: Navigation shells are hidden for transactional/splash journeys -->
+<main class="relative h-screen w-screen flex flex-col items-center justify-center mesh-bg">
+<!-- Background Depth Layer -->
+<div class="absolute inset-0 kinetic-glow pointer-events-none"></div>
+<!-- Central Brand Cluster -->
+<div class="relative flex flex-col items-center z-10">
+<!-- Logo Icon Area -->
+<div class="mb-12 relative group">
+<!-- Ambient Glow for Logo -->
+<div class="absolute inset-0 bg-primary-container/20 blur-3xl rounded-full scale-150 opacity-50"></div>
+<!-- Stylized "E" / Fintech Orbit Icon -->
+<div class="relative w-24 h-24 flex items-center justify-center bg-gradient-to-br from-primary-container to-on-primary-container rounded-xl shadow-[0_20px_40px_rgba(0,220,225,0.15)]">
+<span class="material-symbols-outlined text-surface text-5xl" data-icon="token" style="font-variation-settings: 'FILL' 1;">token</span>
+</div>
+<!-- Orbital Element -->
+<div class="absolute -top-4 -right-4 w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center border border-primary-container/20">
+<span class="material-symbols-outlined text-primary-container text-xs" data-icon="eco">eco</span>
+</div>
+</div>
+<!-- Identity -->
+<div class="text-center">
+<h1 class="font-headline text-5xl md:text-6xl font-bold tracking-[0.2em] text-primary uppercase mb-4">
+                    ECO Wallet
+                </h1>
+<!-- Tagline with technical editorial styling -->
+<div class="flex items-center justify-center gap-4">
+<div class="h-[1px] w-8 bg-outline-variant/30"></div>
+<p class="font-label text-on-surface-variant text-[11px] tracking-[0.4em] uppercase font-bold">
+                        Smart Digital Economy
+                    </p>
+<div class="h-[1px] w-8 bg-outline-variant/30"></div>
+</div>
+</div>
+</div>
+<!-- Bottom Loading / Progress Indicator (Subtle) -->
+<div class="absolute bottom-24 w-48 h-[2px] bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full w-1/3 bg-gradient-to-r from-primary-container/20 via-primary-container to-primary-container/20 rounded-full shadow-[0_0_15px_rgba(0,245,255,0.5)]"></div>
+</div>
+<!-- Footer Branding -->
+<div class="absolute bottom-12 text-center">
+<p class="font-body text-on-surface-variant/40 text-[10px] tracking-widest uppercase">
+                Securely encrypted • Blockchain Native
+            </p>
+</div>
+<!-- Decorative Ether Elements -->
+<div class="absolute top-1/4 -left-20 w-96 h-96 bg-primary-container/5 rounded-full blur-[120px]"></div>
+<div class="absolute bottom-1/4 -right-20 w-80 h-80 bg-on-tertiary-container/5 rounded-full blur-[100px]"></div>
+</main>
+<!-- Content Image Fallback (Decorative Ether) -->
+<div class="hidden">
+<img data-alt="Abstract cinematic visualization of digital data flowing as glowing light particles in deep obsidian space with neon teal accents" src="https://lh3.googleusercontent.com/aida-public/AB6AXuALN8pG-8zTrqz4yonLdJo6dMSzbJgaYiMZ81xvLtefps39_rOClUbvo4MAysMjBQLAJ5Dp3tdEPtzRQBIDTtQULS_N_gC558P0oeMt3ClAkAuUUXY7_EEiJI9CqmhQiRMHz94Rnn0nV7znMCT_NEFYSn2s5wC-sQvkLjejfslB13Up1kDxRDmv07Gd_dpWzLkjSY2bHgC6c0SqTgcM_c2hYKf7vDEtdDQl6-mdnH2MO_ISRIfkntqce8PHCYAP3VLBs4cPhMuCwVcQ"/>
+</div>
+</body></html>
