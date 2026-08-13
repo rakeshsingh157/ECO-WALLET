@@ -1,11 +1,4 @@
-/**
- * ECO Wallet — Auth Routes
- * POST /api/auth/register
- * POST /api/auth/login
- * POST /api/auth/refresh
- * POST /api/auth/set-pin
- * GET  /api/auth/me
- */
+
 const express = require("express");
 const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
@@ -19,10 +12,7 @@ const { notify } = require("../utils/notificationService");
 
 const router = express.Router();
 
-/**
- * @route   POST /api/auth/register
- * @desc    Register a new user
- */
+
 router.post(
   "/register",
   [
@@ -349,7 +339,7 @@ router.get("/profile", protect, async (req, res) => {
           total_earned: {
             $sum: {
               $cond: [
-                { $and: [ { $eq: ["$receiver_id", userId] }, { $eq: ["$type", "reward"] } ] },
+                { $and: [{ $eq: ["$receiver_id", userId] }, { $eq: ["$type", "reward"] }] },
                 "$amount",
                 0
               ]
@@ -358,7 +348,7 @@ router.get("/profile", protect, async (req, res) => {
           total_sent: {
             $sum: {
               $cond: [
-                { $and: [ { $eq: ["$sender_id", userId] }, { $eq: ["$type", "transfer"] } ] },
+                { $and: [{ $eq: ["$sender_id", userId] }, { $eq: ["$type", "transfer"] }] },
                 "$amount",
                 0
               ]
@@ -367,7 +357,7 @@ router.get("/profile", protect, async (req, res) => {
           total_received: {
             $sum: {
               $cond: [
-                { $and: [ { $eq: ["$receiver_id", userId] }, { $eq: ["$type", "transfer"] } ] },
+                { $and: [{ $eq: ["$receiver_id", userId] }, { $eq: ["$type", "transfer"] }] },
                 "$amount",
                 0
               ]

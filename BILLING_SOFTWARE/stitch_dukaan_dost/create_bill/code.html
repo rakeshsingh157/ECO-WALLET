@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vyapaar Helper - Billing</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#ffdbcb",
+                        "on-tertiary-container": "#fff9f7",
+                        "primary-fixed": "#93f2f2",
+                        "on-primary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface": "#f6faf9",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#e3fffe",
+                        "surface-container": "#ebefee",
+                        "surface-container-highest": "#dfe3e2",
+                        "outline": "#6e7979",
+                        "surface-bright": "#f6faf9",
+                        "outline-variant": "#bdc9c8",
+                        "secondary-fixed": "#ffdbcc",
+                        "tertiary-container": "#a96039",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#351000",
+                        "secondary": "#a04100",
+                        "surface-variant": "#dfe3e2",
+                        "on-background": "#181c1c",
+                        "surface-tint": "#006a6a",
+                        "inverse-primary": "#76d6d5",
+                        "primary-container": "#008080",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#733512",
+                        "primary": "#006565",
+                        "tertiary-fixed-dim": "#ffb692",
+                        "inverse-on-surface": "#edf2f1",
+                        "on-secondary-container": "#5e2300",
+                        "surface-container-high": "#e5e9e8",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "tertiary": "#8b4823",
+                        "secondary-fixed-dim": "#ffb693",
+                        "on-primary-fixed": "#002020",
+                        "background": "#f6faf9",
+                        "primary-fixed-dim": "#76d6d5",
+                        "on-secondary-fixed-variant": "#7a3000",
+                        "on-primary-fixed-variant": "#004f4f",
+                        "secondary-container": "#fd7729",
+                        "on-tertiary-fixed": "#341100",
+                        "inverse-surface": "#2c3131",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d7dbda",
+                        "on-surface-variant": "#3e4949",
+                        "on-surface": "#181c1c",
+                        "surface-container-low": "#f0f4f3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "margin-desktop": "48px",
+                        "sm": "8px",
+                        "unit": "4px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "margin-mobile": "16px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "caption": ["Quicksand"],
+                        "display-lg": ["Quicksand"],
+                        "body-md": ["Quicksand"],
+                        "body-lg": ["Quicksand"],
+                        "headline-lg": ["Quicksand"],
+                        "headline-md": ["Quicksand"],
+                        "label-md": ["Quicksand"],
+                        "headline-lg-mobile": ["Quicksand"],
+                        "title-lg": ["Quicksand"]
+                    },
+                    "fontSize": {
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "26px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #FAF9F6; }
+        .press-in:active { transform: translateY(1px); box-shadow: none; transition: all 0.1s; }
+        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border: 1px solid #EAE8E0; }
+        .winking-mascot { animation: wink 4s infinite; }
+        @keyframes wink {
+            0%, 90% { opacity: 1; }
+            95% { opacity: 0.8; transform: scaleY(0.9); }
+            100% { opacity: 1; transform: scaleY(1); }
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-background min-h-screen pb-32">
+<!-- TopAppBar (Hidden on strictly mobile layout as requested by prompt focus, but included per JSON instructions if it's a top-level dest. However, billing is usually a transactional screen, but the prompt implies it's a main screen with BottomNavBar. We'll show both for compliance with the "Destination" rule if we consider Billing a primary tab.) -->
+<header class="hidden md:flex flex-row justify-between items-center px-margin-mobile py-sm w-full top-0 sticky bg-surface border-b border-outline-variant shadow-sm z-40">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary font-bold text-headline-md">storefront</span>
+<span class="font-headline-md text-headline-md text-primary font-bold">Vyapaar Helper</span>
+</div>
+<div class="flex items-center gap-gutter">
+<button class="p-2 hover:bg-surface-variant transition-colors rounded-full text-on-surface-variant"><span class="material-symbols-outlined">notifications</span></button>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold">SM</div>
+</div>
+</header>
+<!-- Main Content Area for Billing -->
+<main class="max-w-3xl mx-auto md:mt-lg px-margin-mobile pt-sm md:pt-0">
+<!-- Search & Scan Section -->
+<div class="flex gap-sm mb-lg">
+<div class="relative flex-1 group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary">search</span>
+<input class="w-full pl-10 pr-4 py-3 bg-[#F3F2EE] focus:bg-surface-container-lowest border-transparent focus:border-primary rounded-lg font-body-md text-on-surface outline-none transition-all shadow-sm" placeholder="Search by name or code..." type="text"/>
+</div>
+<button class="bg-primary text-on-primary rounded-lg p-3 shadow-sm press-in flex items-center justify-center">
+<span class="material-symbols-outlined">barcode_scanner</span>
+</button>
+</div>
+<!-- Fast Moving Products (Bento Grid Style) -->
+<h2 class="font-title-lg text-title-lg mb-sm text-on-surface">Fast Moving Items</h2>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-sm mb-xl">
+<!-- Item 1 -->
+<button class="bg-surface-container-lowest border border-[#EAE8E0] rounded-xl p-md flex flex-col items-center justify-center gap-xs shadow-[0_4px_12px_rgba(0,0,0,0.03)] press-in hover:border-primary-container transition-colors relative overflow-hidden group">
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-active:opacity-100 transition-opacity"></div>
+<div class="w-12 h-12 bg-secondary-container/20 rounded-full flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-secondary-container text-2xl">local_cafe</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface text-center">Chai Pack</span>
+<span class="font-caption text-caption text-primary">₹120.00</span>
+</button>
+<!-- Item 2 -->
+<button class="bg-surface-container-lowest border border-[#EAE8E0] rounded-xl p-md flex flex-col items-center justify-center gap-xs shadow-[0_4px_12px_rgba(0,0,0,0.03)] press-in hover:border-primary-container transition-colors relative overflow-hidden group">
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-active:opacity-100 transition-opacity"></div>
+<div class="w-12 h-12 bg-tertiary-container/20 rounded-full flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-tertiary-container text-2xl">cookie</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface text-center">Biscuits XL</span>
+<span class="font-caption text-caption text-primary">₹80.00</span>
+</button>
+<!-- Item 3 -->
+<button class="bg-surface-container-lowest border border-[#EAE8E0] rounded-xl p-md flex flex-col items-center justify-center gap-xs shadow-[0_4px_12px_rgba(0,0,0,0.03)] press-in hover:border-primary-container transition-colors relative overflow-hidden group">
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-active:opacity-100 transition-opacity"></div>
+<div class="w-12 h-12 bg-primary-container/20 rounded-full flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-primary-container text-2xl">water_drop</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface text-center">Mineral Water</span>
+<span class="font-caption text-caption text-primary">₹20.00</span>
+</button>
+<!-- Item 4 -->
+<button class="bg-surface-container-lowest border border-[#EAE8E0] rounded-xl p-md flex flex-col items-center justify-center gap-xs shadow-[0_4px_12px_rgba(0,0,0,0.03)] press-in hover:border-primary-container transition-colors relative overflow-hidden group">
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-active:opacity-100 transition-opacity"></div>
+<div class="w-12 h-12 bg-[#8b4823]/20 rounded-full flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-[#8b4823] text-2xl">breakfast_dining</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface text-center">Bread Loaf</span>
+<span class="font-caption text-caption text-primary">₹45.00</span>
+</button>
+</div>
+<!-- Current Bill List (Ledger Lines) -->
+<div class="bg-surface-container-lowest border border-[#EAE8E0] rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.03)] overflow-hidden mb-lg">
+<div class="p-md bg-surface-container-low border-b border-[#F3F2EE] flex justify-between items-center">
+<h3 class="font-title-lg text-title-lg">Current Bill</h3>
+<button class="text-error font-label-md text-label-md p-1 hover:bg-error-container/20 rounded">Clear All</button>
+</div>
+<div class="flex flex-col">
+<!-- Line Item 1 -->
+<div class="p-md border-b border-[#F3F2EE] flex justify-between items-center">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-semibold">Chai Pack 250g</span>
+<span class="font-caption text-caption text-outline">₹120.00 × 2</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="font-body-md text-body-md text-[#5f7a60]">+ ₹240.00</span>
+<button class="w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center text-outline hover:bg-surface-variant press-in">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+</div>
+</div>
+<!-- Line Item 2 -->
+<div class="p-md border-b border-[#F3F2EE] flex justify-between items-center bg-surface">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-semibold">Biscuits XL</span>
+<span class="font-caption text-caption text-outline">₹80.00 × 1</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="font-body-md text-body-md text-[#5f7a60]">+ ₹80.00</span>
+<button class="w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center text-outline hover:bg-surface-variant press-in">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+</div>
+</div>
+<!-- Line Item 3 -->
+<div class="p-md flex justify-between items-center">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-semibold">Milk 1L</span>
+<span class="font-caption text-caption text-outline">₹65.00 × 2</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="font-body-md text-body-md text-[#5f7a60]">+ ₹130.00</span>
+<button class="w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center text-outline hover:bg-surface-variant press-in">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Mascot Decoration -->
+<div class="fixed bottom-24 right-4 md:right-12 z-30 pointer-events-none w-24 h-24 winking-mascot drop-shadow-md">
+<img alt="" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvgXHYsoujXENbwEv9zQPAFp79sMEakvbWiDoYKiBR99Tc67Nz3Xr7TqtEArom7bz7IXQKicP77IRACqIkcwvlww1GZ3Syc7Gdnbknd7JGL6_x1g4jhjHj9CPGXh_VXXUcj7Gt4rDhm6OtWssZUmz59X0u4LcLymGmwLermtvmCQ2OEaiRqtWvbPrbxGlpugpnYX-KFlV57L4nb3H9HxId1eJI0a-Vkdozi1C95bePQUqS3XWFGs5now"/>
+</div>
+<!-- Sticky Checkout Bar (Mobile optimized, sits above BottomNavBar) -->
+<div class="fixed bottom-[72px] md:bottom-0 left-0 w-full z-40 p-sm md:p-lg md:static md:bg-transparent">
+<div class="glass-card rounded-xl p-md flex justify-between items-center shadow-lg md:max-w-3xl md:mx-auto">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-outline">3 Items</span>
+<span class="font-headline-md text-headline-md font-bold text-primary">₹450.00</span>
+</div>
+<button class="bg-primary text-on-primary font-title-lg text-title-lg px-xl py-sm rounded-lg press-in shadow-sm flex items-center gap-2">
+                Checkout <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-sm pb-2 pt-1 border-t border-outline-variant bg-surface-container-lowest z-50 rounded-t-xl shadow-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-all scale-95 duration-75 ease-out" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-all scale-95 duration-75 ease-out" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-md text-label-md">Inventory</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 hover:bg-surface-container-high transition-all scale-95 duration-75 ease-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+<span class="font-label-md text-label-md font-bold text-primary">Billing</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-all scale-95 duration-75 ease-out" href="#">
+<span class="material-symbols-outlined">bar_chart</span>
+<span class="font-label-md text-label-md">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-all scale-95 duration-75 ease-out" href="#">
+<span class="material-symbols-outlined">menu</span>
+<span class="font-label-md text-label-md">More</span>
+</a>
+</nav>
+</body></html>

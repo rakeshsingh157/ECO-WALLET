@@ -1,0 +1,21 @@
+{
+  "name": "dukaan-dost-billing-backend",
+  "version": "1.0.0",
+  "description": "Dukaan Dost — Retail POS Billing & Khata Backend Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.0",
+    "mongoose": "^8.6.0",
+    "qrcode": "^1.5.4",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

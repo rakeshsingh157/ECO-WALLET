@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vyapaar Helper - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-fixed": "#ffdbcb",
+                        "on-tertiary-container": "#fff9f7",
+                        "primary-fixed": "#93f2f2",
+                        "on-primary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface": "#f6faf9",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#e3fffe",
+                        "surface-container": "#ebefee",
+                        "surface-container-highest": "#dfe3e2",
+                        "outline": "#6e7979",
+                        "surface-bright": "#f6faf9",
+                        "outline-variant": "#bdc9c8",
+                        "secondary-fixed": "#ffdbcc",
+                        "tertiary-container": "#a96039",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#351000",
+                        "secondary": "#a04100",
+                        "surface-variant": "#dfe3e2",
+                        "on-background": "#181c1c",
+                        "surface-tint": "#006a6a",
+                        "inverse-primary": "#76d6d5",
+                        "primary-container": "#008080",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#733512",
+                        "primary": "#006565",
+                        "tertiary-fixed-dim": "#ffb692",
+                        "inverse-on-surface": "#edf2f1",
+                        "on-secondary-container": "#5e2300",
+                        "surface-container-high": "#e5e9e8",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "tertiary": "#8b4823",
+                        "secondary-fixed-dim": "#ffb693",
+                        "on-primary-fixed": "#002020",
+                        "background": "#f0f7f6",
+                        "primary-fixed-dim": "#76d6d5",
+                        "on-secondary-fixed-variant": "#7a3000",
+                        "on-primary-fixed-variant": "#004f4f",
+                        "secondary-container": "#fd7729",
+                        "on-tertiary-fixed": "#341100",
+                        "inverse-surface": "#2c3131",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d7dbda",
+                        "on-surface-variant": "#3e4949",
+                        "on-surface": "#181c1c",
+                        "surface-container-low": "#f0f4f3"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "gutter": "16px",
+                        "margin-desktop": "48px",
+                        "sm": "8px",
+                        "unit": "4px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "margin-mobile": "16px",
+                        "xs": "4px"
+                    },
+                    fontFamily: {
+                        "caption": ["Quicksand"],
+                        "display-lg": ["Quicksand"],
+                        "body-md": ["Quicksand"],
+                        "body-lg": ["Quicksand"],
+                        "headline-lg": ["Quicksand"],
+                        "headline-md": ["Quicksand"],
+                        "label-md": ["Quicksand"],
+                        "headline-lg-mobile": ["Quicksand"],
+                        "title-lg": ["Quicksand"]
+                    },
+                    fontSize: {
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "display-lg": ["44px", { "lineHeight": "52px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "26px", "fontWeight": "500" }],
+                        "headline-lg": ["36px", { "lineHeight": "44px", "fontWeight": "800" }],
+                        "headline-md": ["28px", { "lineHeight": "36px", "fontWeight": "700" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "800" }],
+                        "title-lg": ["22px", { "lineHeight": "30px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Quicksand', sans-serif; background-color: #f0f7f6; }
+        .card-shadow { box-shadow: 0px 8px 24px rgba(0, 101, 101, 0.08); }
+        .teal-shadow { box-shadow: 0px 6px 16px rgba(0, 128, 128, 0.25); }
+        .orange-shadow { box-shadow: 0px 6px 16px rgba(253, 119, 41, 0.25); }
+        .press-in:active { transform: translateY(2px); box-shadow: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-[90px]">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-primary-container text-on-primary-container shadow-md z-40 hidden md:flex justify-between items-center px-margin-desktop py-md rounded-b-3xl">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-3xl text-on-primary" style="font-variation-settings: 'FILL' 1;">storefront</span>
+<h1 class="font-headline-md text-headline-md tracking-tight font-extrabold text-on-primary">Vyapaar Helper</h1>
+</div>
+<nav class="flex gap-lg font-title-lg text-title-lg">
+<a class="text-on-primary font-bold bg-primary bg-opacity-20 transition-colors px-md py-sm rounded-2xl flex items-center gap-sm" href="#"><span class="material-symbols-outlined">home</span>Home</a>
+<a class="text-on-primary-container hover:bg-primary hover:bg-opacity-10 transition-colors px-md py-sm rounded-2xl flex items-center gap-sm" href="#"><span class="material-symbols-outlined">inventory_2</span>Inventory</a>
+<a class="text-on-primary-container hover:bg-primary hover:bg-opacity-10 transition-colors px-md py-sm rounded-2xl flex items-center gap-sm" href="#"><span class="material-symbols-outlined">receipt_long</span>Billing</a>
+<a class="text-on-primary-container hover:bg-primary hover:bg-opacity-10 transition-colors px-md py-sm rounded-2xl flex items-center gap-sm" href="#"><span class="material-symbols-outlined">bar_chart</span>Reports</a>
+<a class="text-on-primary-container hover:bg-primary hover:bg-opacity-10 transition-colors px-md py-sm rounded-2xl flex items-center gap-sm" href="#"><span class="material-symbols-outlined">menu</span>More</a>
+</nav>
+<div class="flex items-center gap-md">
+<button class="p-sm rounded-full hover:bg-primary hover:bg-opacity-10 transition-colors press-in duration-100 text-on-primary">
+<span class="material-symbols-outlined text-2xl">notifications</span>
+</button>
+<div class="w-12 h-12 rounded-full bg-surface-container-lowest text-primary flex items-center justify-center font-bold text-lg shadow-sm">
+                SS
+            </div>
+</div>
+</header>
+<!-- Mobile Top Header (Semantic) -->
+<header class="md:hidden w-full top-0 sticky bg-primary-container text-on-primary-container shadow-md z-40 flex justify-between items-center px-margin-mobile py-sm rounded-b-3xl">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container-lowest text-primary flex items-center justify-center font-bold text-md shadow-sm">
+                SS
+            </div>
+<h1 class="font-title-lg text-title-lg tracking-tight font-bold text-on-primary">Vyapaar Helper</h1>
+</div>
+<button class="p-xs rounded-full hover:bg-primary hover:bg-opacity-10 transition-colors press-in duration-100 text-on-primary">
+<span class="material-symbols-outlined text-xl">notifications</span>
+</button>
+</header>
+<main class="max-w-[1200px] mx-auto p-margin-mobile md:p-margin-desktop space-y-lg mt-md">
+<!-- Greeting with Mascot -->
+<section class="flex flex-col-reverse md:flex-row justify-between items-start md:items-end gap-md bg-white rounded-3xl p-md md:p-lg card-shadow">
+<div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary">Namaste, Mr. Sharma! 👋</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-xs font-semibold">Here is your shop's summary for today.</p>
+</div>
+<div class="flex items-center gap-md w-full md:w-auto justify-between md:justify-end">
+<div class="w-16 h-16 md:w-20 md:h-20 flex-shrink-0 bg-primary-container rounded-full p-2">
+<img alt="Waving Mascot" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmZW6HMXmG7O8Xxy6qt7y9_Jas3QrOW5fZkWE3tWd-R9ONGMpGjfuKYgspT6mFOHc_C9oHCs3C6bPUPQZIfXJOha2tspVqwHHniNFAs8J--gr_IiKLXM9pcRp8rlbQXfLwzx9w5fUne2BRnjXP674pnInE-OyKlru0SbBs81sAhvZFrq2v66jWSzA47Gr3tILsUAznRulk-JU0WOS7GV5dL_vXX-LpX99moZ33vUeFiic1yg0MTw3KVw"/>
+</div>
+<div class="text-right">
+<p class="font-label-md text-label-md text-primary font-bold bg-primary-fixed-dim bg-opacity-20 px-sm py-xs rounded-lg inline-block">Sharma Kirana Store</p>
+<p class="font-caption text-caption text-outline mt-unit">Oct 24, 2023</p>
+</div>
+</div>
+</section>
+<!-- Main Dashboard Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter md:gap-lg">
+<!-- Left Column: Sales & Khata -->
+<div class="md:col-span-8 space-y-lg">
+<!-- Today's Sales Card -->
+<div class="bg-surface-container-lowest border-0 rounded-3xl p-md md:p-lg card-shadow relative overflow-hidden flex flex-col md:flex-row items-center justify-between">
+<div class="z-10 w-full md:w-auto">
+<h3 class="font-title-lg text-title-lg text-on-surface-variant mb-unit font-bold">Today's Sales</h3>
+<div class="flex items-baseline gap-sm mb-md mt-sm">
+<span class="font-display-lg text-display-lg text-primary">₹ 12,450</span>
+</div>
+<div class="flex flex-wrap gap-md font-label-md text-label-md text-on-surface-variant">
+<span class="flex items-center gap-sm bg-[#E3FFFE] text-primary py-sm px-md rounded-2xl font-bold"><span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">receipt</span> 42 Bills</span>
+<span class="flex items-center gap-sm bg-[#E8F5E9] text-[#2E7D32] py-sm px-md rounded-2xl font-bold"><span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">trending_up</span> +15% vs Yesterday</span>
+</div>
+</div>
+<!-- Integrated Mascot Image -->
+<div class="w-32 h-32 md:w-48 md:h-48 mt-lg md:mt-0 z-10 flex-shrink-0">
+<img alt="Coin Mascot" class="w-full h-full object-contain drop-shadow-lg" data-alt="A cute, friendly, flat-vector illustration of a green coin mascot character with small leaves sprouting from its head, smiling happily and waving one hand. The mascot has small stick arms and legs and is designed in a modern, approachable style suitable for a financial or retail app. Light mode aesthetic, warm colors." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmZW6HMXmG7O8Xxy6qt7y9_Jas3QrOW5fZkWE3tWd-R9ONGMpGjfuKYgspT6mFOHc_C9oHCs3C6bPUPQZIfXJOha2tspVqwHHniNFAs8J--gr_IiKLXM9pcRp8rlbQXfLwzx9w5fUne2BRnjXP674pnInE-OyKlru0SbBs81sAhvZFrq2v66jWSzA47Gr3tILsUAznRulk-JU0WOS7GV5dL_vXX-LpX99moZ33vUeFiic1yg0MTw3KVw"/>
+</div>
+<!-- Decorative Background Element -->
+<div class="absolute -right-10 -bottom-10 w-80 h-80 bg-primary opacity-[0.03] rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute -left-10 -top-10 w-40 h-40 bg-secondary opacity-[0.03] rounded-full blur-2xl pointer-events-none"></div>
+</div>
+<!-- Alerts Row -->
+<div class="bg-[#FFF3E0] border-0 rounded-2xl p-md flex items-center justify-between orange-shadow">
+<div class="flex items-center gap-md text-[#E65100]">
+<div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<span class="font-title-lg text-title-lg font-bold">3 Items Low Stock</span>
+</div>
+<button class="font-label-md text-label-md text-white bg-[#E65100] px-md py-sm rounded-xl hover:bg-[#F57C00] transition-colors press-in font-bold">View</button>
+</div>
+<!-- Recent Transactions -->
+<div class="bg-surface-container-lowest border-0 rounded-3xl p-md md:p-lg card-shadow">
+<div class="flex justify-between items-center mb-md pb-sm">
+<h3 class="font-title-lg text-title-lg text-on-background font-bold">Recent Transactions</h3>
+<button class="font-label-md text-label-md text-primary bg-primary-fixed bg-opacity-20 px-sm py-xs rounded-lg hover:bg-opacity-40 transition-colors font-bold">See All</button>
+</div>
+<div class="space-y-sm">
+<!-- Transaction Item 1 -->
+<div class="flex justify-between items-center p-sm bg-[#F6FAF9] rounded-2xl hover:bg-[#E3FFFE] transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">shopping_bag</span>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-background font-bold">Rice 25kg Bag, Dal...</p>
+<p class="font-caption text-caption text-outline font-semibold">Bill #1042 • 10:45 AM</p>
+</div>
+</div>
+<div class="text-right bg-white p-xs rounded-xl shadow-sm border border-gray-100">
+<p class="font-label-md text-label-md text-[#2E7D32] font-bold">+ ₹ 1,250</p>
+<p class="font-caption text-caption text-outline">Cash</p>
+</div>
+</div>
+<!-- Transaction Item 2 -->
+<div class="flex justify-between items-center p-sm bg-[#FFF3E0] rounded-2xl hover:bg-[#FFE0B2] transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-2xl bg-secondary-container text-on-secondary-container flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-background font-bold">Ramesh (Khata)</p>
+<p class="font-caption text-caption text-outline font-semibold">Bill #1041 • 09:30 AM</p>
+</div>
+</div>
+<div class="text-right bg-white p-xs rounded-xl shadow-sm border border-gray-100">
+<p class="font-label-md text-label-md text-[#E65100] font-bold">Pending</p>
+<p class="font-caption text-caption text-outline font-bold text-gray-700">₹ 450</p>
+</div>
+</div>
+<!-- Transaction Item 3 -->
+<div class="flex justify-between items-center p-sm bg-[#F6FAF9] rounded-2xl hover:bg-[#E3FFFE] transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">shopping_bag</span>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-background font-bold">Biscuits, Soap, Oil</p>
+<p class="font-caption text-caption text-outline font-semibold">Bill #1040 • 09:15 AM</p>
+</div>
+</div>
+<div class="text-right bg-white p-xs rounded-xl shadow-sm border border-gray-100">
+<p class="font-label-md text-label-md text-[#2E7D32] font-bold">+ ₹ 320</p>
+<p class="font-caption text-caption text-outline">UPI</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Quick Actions & Khata Summary -->
+<div class="md:col-span-4 space-y-md md:space-y-lg flex flex-col">
+<!-- Quick Actions Grid -->
+<div class="grid grid-cols-2 gap-md h-auto">
+<!-- Primary Action -->
+<button class="bg-primary text-on-primary rounded-3xl p-md flex flex-col items-center justify-center gap-sm press-in teal-shadow hover:bg-primary-fixed-variant transition-colors h-32 relative overflow-hidden group">
+<div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">point_of_sale</span>
+<span class="font-label-md text-label-md font-extrabold text-base">Add Sale</span>
+</button>
+<!-- Secondary Actions -->
+<button class="bg-white text-primary rounded-3xl p-md flex flex-col items-center justify-center gap-sm press-in card-shadow hover:bg-[#E3FFFE] transition-colors h-32 border-2 border-transparent hover:border-primary">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">add_shopping_cart</span>
+</div>
+<span class="font-label-md text-label-md font-extrabold">Add Product</span>
+</button>
+<button class="bg-white text-primary rounded-3xl p-md flex flex-col items-center justify-center gap-sm press-in card-shadow hover:bg-[#E3FFFE] transition-colors h-32 border-2 border-transparent hover:border-primary">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">receipt</span>
+</div>
+<span class="font-label-md text-label-md font-extrabold">Create Bill</span>
+</button>
+<button class="bg-white text-[#E65100] rounded-3xl p-md flex flex-col items-center justify-center gap-sm press-in card-shadow hover:bg-[#FFE0B2] transition-colors h-32 border-2 border-transparent hover:border-[#E65100]">
+<div class="w-10 h-10 rounded-full bg-[#FFE0B2] text-[#E65100] flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+</div>
+<span class="font-label-md text-label-md font-extrabold">Add Expense</span>
+</button>
+</div>
+<!-- Pending Khata Summary -->
+<div class="bg-surface-container-lowest border-0 rounded-3xl p-md md:p-lg card-shadow flex-grow flex flex-col">
+<h3 class="font-title-lg text-title-lg text-on-background mb-unit flex items-center gap-sm font-bold">
+<div class="w-8 h-8 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+</div>
+                        Pending Khata
+                    </h3>
+<p class="font-caption text-caption text-outline mb-md font-semibold">Total amount to be collected</p>
+<div class="bg-gradient-to-br from-[#FFF3E0] to-[#FFE0B2] rounded-3xl p-lg text-center flex-grow flex flex-col justify-center shadow-inner">
+<p class="font-display-lg text-display-lg text-[#E65100] font-extrabold">₹ 8,750</p>
+<p class="font-label-md text-label-md text-[#E65100] bg-white bg-opacity-50 px-sm py-xs rounded-xl inline-block mx-auto mt-sm font-bold">From 12 Customers</p>
+</div>
+<button class="w-full mt-md bg-secondary text-on-secondary font-label-md text-label-md py-md rounded-2xl hover:bg-[#bf4e00] transition-colors press-in font-extrabold orange-shadow text-base">
+                        View Khata Book
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 bg-surface-container-lowest border-t-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] rounded-t-3xl px-sm pb-4 pt-2 flex justify-around items-center">
+<!-- Active: Home -->
+<a class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-2xl px-5 py-2 scale-100 teal-shadow" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-md text-label-md text-xs mt-1 font-bold">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-md text-label-md text-xs mt-1 font-bold">Inventory</span>
+</a>
+<a class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-label-md text-label-md text-xs mt-1 font-bold">Billing</span>
+</a>
+<a class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">bar_chart</span>
+<span class="font-label-md text-label-md text-xs mt-1 font-bold">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">menu</span>
+<span class="font-label-md text-label-md text-xs mt-1 font-bold">More</span>
+</a>
+</nav>
+</body></html>

@@ -37,4 +37,23 @@ const generateTaskId = () => {
   return `TASK${rand}`;
 };
 
-module.exports = { generateUserId, generateTransactionId, generateTaskId };
+/**
+ * Generate a unique merchant ID
+ * Format: MRC + 8 random hex chars
+ */
+const generateMerchantId = () => {
+  const rand = crypto.randomBytes(4).toString("hex").toUpperCase();
+  return `MRC${rand}`;
+};
+
+/**
+ * Generate a unique merchant payment ID
+ * Format: PAY + timestamp hex + random bytes
+ */
+const generatePaymentId = () => {
+  const ts = Date.now().toString(16).toUpperCase();
+  const rand = crypto.randomBytes(4).toString("hex").toUpperCase();
+  return `PAY${ts}${rand}`;
+};
+
+module.exports = { generateUserId, generateTransactionId, generateTaskId, generateMerchantId, generatePaymentId };

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vyapaar Helper - Billing</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "merchant-bg": "#f4f1ea",
+                        "merchant-teal": "#006666",
+                        "merchant-black": "#111111",
+                        "merchant-border": "#dcd8ce",
+                        "tertiary-fixed": "#ffdbcb",
+                        "on-tertiary-container": "#fff9f7",
+                        "primary-fixed": "#93f2f2",
+                        "on-primary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#e3fffe",
+                        "surface-container": "#fdfcfa",
+                        "surface-container-highest": "#f4f1ea",
+                        "outline": "#6e7979",
+                        "surface-bright": "#ffffff",
+                        "outline-variant": "#dcd8ce",
+                        "secondary-fixed": "#ffdbcc",
+                        "tertiary-container": "#a96039",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#351000",
+                        "secondary": "#a04100",
+                        "surface-variant": "#f4f1ea",
+                        "on-background": "#111111",
+                        "surface-tint": "#006666",
+                        "inverse-primary": "#76d6d5",
+                        "primary-container": "#004d4d",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#733512",
+                        "primary": "#006666",
+                        "tertiary-fixed-dim": "#ffb692",
+                        "inverse-on-surface": "#edf2f1",
+                        "on-secondary-container": "#5e2300",
+                        "surface-container-high": "#e5e9e8",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "tertiary": "#8b4823",
+                        "secondary-fixed-dim": "#ffb693",
+                        "on-primary-fixed": "#002020",
+                        "background": "#f4f1ea",
+                        "primary-fixed-dim": "#76d6d5",
+                        "on-secondary-fixed-variant": "#7a3000",
+                        "on-primary-fixed-variant": "#004f4f",
+                        "secondary-container": "#fd7729",
+                        "on-tertiary-fixed": "#341100",
+                        "inverse-surface": "#2c3131",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d7dbda",
+                        "on-surface-variant": "#3e4949",
+                        "on-surface": "#111111",
+                        "surface-container-low": "#f9f8f4"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0px",
+                        "lg": "4px",
+                        "xl": "6px",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "gutter": "16px",
+                        "margin-desktop": "48px",
+                        "sm": "8px",
+                        "unit": "4px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "margin-mobile": "16px",
+                        "xs": "4px"
+                    },
+                    fontFamily: {
+                        "sans": ["Quicksand", "sans-serif"],
+                        "caption": ["Quicksand"],
+                        "display-lg": ["Quicksand"],
+                        "body-md": ["Quicksand"],
+                        "body-lg": ["Quicksand"],
+                        "headline-lg": ["Quicksand"],
+                        "headline-md": ["Quicksand"],
+                        "label-md": ["Quicksand"],
+                        "headline-lg-mobile": ["Quicksand"],
+                        "title-lg": ["Quicksand"]
+                    },
+                    letterSpacing: {
+                        "tighter": "-0.04em",
+                        "tight": "-0.02em",
+                        "normal": "0",
+                        "wide": "0.02em"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Quicksand', sans-serif; background-color: #f4f1ea; }
+        .ledger-border { border: 1px solid #dcd8ce; }
+        .ledger-border-b { border-bottom: 1px solid #dcd8ce; }
+        .press-in:active { transform: translateY(1px); box-shadow: none; transition: all 0.1s; }
+        .winking-mascot { animation: wink 4s infinite; }
+        @keyframes wink {
+            0%, 90% { opacity: 1; }
+            95% { opacity: 0.8; transform: scaleY(0.9); }
+            100% { opacity: 1; transform: scaleY(1); }
+        }
+    </style>
+</head>
+<body class="bg-merchant-bg text-merchant-black min-h-screen pb-32">
+<!-- TopAppBar (Hidden on strictly mobile layout as requested by prompt focus, but included per JSON instructions if it's a top-level dest. However, billing is usually a transactional screen, but the prompt implies it's a main screen with BottomNavBar. We'll show both for compliance with the "Destination" rule if we consider Billing a primary tab.) -->
+<header class="w-full top-0 sticky bg-merchant-bg border-b ledger-border z-40 hidden md:flex justify-between items-center px-margin-desktop py-md">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-merchant-teal text-3xl" style="font-variation-settings: 'FILL' 1;">storefront</span>
+<h1 class="text-xl text-merchant-teal tracking-tighter font-bold uppercase">Vyapaar Helper</h1>
+</div>
+<nav class="flex gap-lg text-sm font-semibold tracking-tight uppercase">
+<a class="text-on-surface-variant hover:text-merchant-teal transition-colors flex items-center gap-sm" href="#"><span class="material-symbols-outlined text-lg">home</span>Home</a>
+<a class="text-on-surface-variant hover:text-merchant-teal transition-colors flex items-center gap-sm" href="#"><span class="material-symbols-outlined text-lg">inventory_2</span>Inventory</a>
+<a class="text-merchant-teal flex items-center gap-sm" href="#"><span class="material-symbols-outlined text-lg">receipt_long</span>Billing</a>
+<a class="text-on-surface-variant hover:text-merchant-teal transition-colors flex items-center gap-sm" href="#"><span class="material-symbols-outlined text-lg">bar_chart</span>Reports</a>
+<a class="text-on-surface-variant hover:text-merchant-teal transition-colors flex items-center gap-sm" href="#"><span class="material-symbols-outlined text-lg">menu</span>More</a>
+</nav>
+<div class="flex items-center gap-md">
+<button class="p-sm hover:text-merchant-teal transition-colors press-in duration-100">
+<span class="material-symbols-outlined text-xl">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full border border-merchant-teal text-merchant-teal flex items-center justify-center font-bold text-sm">
+                SS
+            </div>
+</div>
+</header>
+<!-- Mobile Top Header (Semantic) -->
+<header class="md:hidden w-full top-0 sticky bg-merchant-bg border-b ledger-border z-40 flex justify-between items-center px-margin-mobile py-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full border border-merchant-teal text-merchant-teal flex items-center justify-center font-bold text-sm">
+                SS
+            </div>
+<h1 class="text-lg text-merchant-teal tracking-tighter font-bold uppercase">Vyapaar Helper</h1>
+</div>
+<button class="p-xs hover:text-merchant-teal transition-colors press-in duration-100">
+<span class="material-symbols-outlined text-xl">notifications</span>
+</button>
+</header>
+<!-- Main Content Area for Billing -->
+<main class="max-w-3xl mx-auto md:mt-lg px-margin-mobile pt-sm md:pt-0">
+<!-- Search & Scan Section -->
+<div class="flex gap-sm mb-lg">
+<div class="relative flex-1 group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-merchant-teal">search</span>
+<input class="w-full pl-10 pr-4 py-3 bg-surface border ledger-border focus:border-merchant-teal rounded-lg text-sm font-medium text-merchant-black outline-none transition-all shadow-sm" placeholder="Search by name or code..." type="text"/>
+</div>
+<button class="bg-merchant-teal text-white rounded-lg p-3 shadow-sm press-in flex items-center justify-center border border-merchant-teal">
+<span class="material-symbols-outlined">barcode_scanner</span>
+</button>
+</div>
+<!-- Fast Moving Products (Bento Grid Style) -->
+<h2 class="text-sm font-bold text-merchant-black uppercase tracking-wide mb-sm">Fast Moving Items</h2>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-sm mb-xl">
+<!-- Item 1 -->
+<button class="bg-surface border ledger-border rounded-xl p-md flex flex-col items-center justify-center gap-xs press-in hover:border-merchant-teal transition-colors relative overflow-hidden group">
+<div class="absolute inset-0 bg-merchant-teal/5 opacity-0 group-active:opacity-100 transition-opacity"></div>
+<div class="w-10 h-10 border border-merchant-border rounded-full flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-secondary-container text-xl">local_cafe</span>
+</div>
+<span class="text-sm font-bold text-merchant-black text-center tracking-tight">Chai Pack</span>
+<span class="text-xs font-medium text-merchant-teal">₹120.00</span>
+</button>
+<!-- Item 2 -->
+<button class="bg-surface border ledger-border rounded-xl p-md flex flex-col items-center justify-center gap-xs press-in hover:border-merchant-teal transition-colors relative overflow-hidden group">
+<div class="absolute inset-0 bg-merchant-teal/5 opacity-0 group-active:opacity-100 transition-opacity"></div>
+<div class="w-10 h-10 border border-merchant-border rounded-full flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-tertiary-container text-xl">cookie</span>
+</div>
+<span class="text-sm font-bold text-merchant-black text-center tracking-tight">Biscuits XL</span>
+<span class="text-xs font-medium text-merchant-teal">₹80.00</span>
+</button>
+<!-- Item 3 -->
+<button class="bg-surface border ledger-border rounded-xl p-md flex flex-col items-center justify-center gap-xs press-in hover:border-merchant-teal transition-colors relative overflow-hidden group">
+<div class="absolute inset-0 bg-merchant-teal/5 opacity-0 group-active:opacity-100 transition-opacity"></div>
+<div class="w-10 h-10 border border-merchant-border rounded-full flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-primary-container text-xl">water_drop</span>
+</div>
+<span class="text-sm font-bold text-merchant-black text-center tracking-tight">Mineral Water</span>
+<span class="text-xs font-medium text-merchant-teal">₹20.00</span>
+</button>
+<!-- Item 4 -->
+<button class="bg-surface border ledger-border rounded-xl p-md flex flex-col items-center justify-center gap-xs press-in hover:border-merchant-teal transition-colors relative overflow-hidden group">
+<div class="absolute inset-0 bg-merchant-teal/5 opacity-0 group-active:opacity-100 transition-opacity"></div>
+<div class="w-10 h-10 border border-merchant-border rounded-full flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-[#8b4823] text-xl">breakfast_dining</span>
+</div>
+<span class="text-sm font-bold text-merchant-black text-center tracking-tight">Bread Loaf</span>
+<span class="text-xs font-medium text-merchant-teal">₹45.00</span>
+</button>
+</div>
+<!-- Current Bill List (Ledger Lines) -->
+<div class="bg-surface border ledger-border rounded-xl mb-lg">
+<div class="p-md bg-surface-container-low border-b ledger-border flex justify-between items-center rounded-t-xl">
+<h3 class="text-sm font-bold text-merchant-black uppercase tracking-wide">Current Bill</h3>
+<button class="text-error text-xs font-bold uppercase tracking-tight p-1 hover:bg-error-container/20 rounded">Clear All</button>
+</div>
+<div class="flex flex-col">
+<!-- Line Item 1 -->
+<div class="p-md border-b ledger-border flex justify-between items-center">
+<div class="flex flex-col">
+<span class="text-sm text-merchant-black font-bold tracking-tight">Chai Pack 250g</span>
+<span class="text-xs text-outline font-medium">₹120.00 × 2</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="text-sm text-[#388E3C] font-bold tracking-tight">+ ₹240.00</span>
+<button class="w-6 h-6 rounded-full border ledger-border flex items-center justify-center text-outline hover:bg-surface-variant press-in">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+</button>
+</div>
+</div>
+<!-- Line Item 2 -->
+<div class="p-md border-b ledger-border flex justify-between items-center bg-surface">
+<div class="flex flex-col">
+<span class="text-sm text-merchant-black font-bold tracking-tight">Biscuits XL</span>
+<span class="text-xs text-outline font-medium">₹80.00 × 1</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="text-sm text-[#388E3C] font-bold tracking-tight">+ ₹80.00</span>
+<button class="w-6 h-6 rounded-full border ledger-border flex items-center justify-center text-outline hover:bg-surface-variant press-in">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+</button>
+</div>
+</div>
+<!-- Line Item 3 -->
+<div class="p-md flex justify-between items-center rounded-b-xl">
+<div class="flex flex-col">
+<span class="text-sm text-merchant-black font-bold tracking-tight">Milk 1L</span>
+<span class="text-xs text-outline font-medium">₹65.00 × 2</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="text-sm text-[#388E3C] font-bold tracking-tight">+ ₹130.00</span>
+<button class="w-6 h-6 rounded-full border ledger-border flex items-center justify-center text-outline hover:bg-surface-variant press-in">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Sticky Checkout Bar (Mobile optimized, sits above BottomNavBar) -->
+<div class="fixed bottom-[56px] md:bottom-0 left-0 w-full z-40 bg-surface border-t border-merchant-teal p-sm md:p-md flex justify-between items-center md:static md:bg-transparent md:border-t-0">
+<div class="w-full bg-merchant-bg md:bg-surface border-t-2 md:border-2 border-merchant-teal md:rounded-xl p-md flex justify-between items-center md:max-w-3xl md:mx-auto relative">
+<div class="flex flex-col relative z-10">
+<span class="text-xs font-bold text-outline uppercase tracking-tight">3 Items</span>
+<span class="text-3xl font-bold text-merchant-teal tracking-tighter">₹450.00</span>
+</div>
+<!-- Mascot Badge -->
+<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full border-2 border-merchant-teal p-0.5 overflow-hidden flex-shrink-0 z-0 bg-surface">
+<div class="absolute inset-0 bg-merchant-teal opacity-10 rounded-full"></div>
+<img alt="Calculator Mascot" class="w-full h-full object-contain mix-blend-multiply winking-mascot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvgXHYsoujXENbwEv9zQPAFp79sMEakvbWiDoYKiBR99Tc67Nz3Xr7TqtEArom7bz7IXQKicP77IRACqIkcwvlww1GZ3Syc7Gdnbknd7JGL6_x1g4jhjHj9CPGXh_VXXUcj7Gt4rDhm6OtWssZUmz59X0u4LcLymGmwLermtvmCQ2OEaiRqtWvbPrbxGlpugpnYX-KFlV57L4nb3H9HxId1eJI0a-Vkdozi1C95bePQUqS3XWFGs5now"/>
+</div>
+<button class="bg-merchant-teal text-white text-sm font-bold uppercase tracking-tight px-xl py-sm rounded-lg press-in flex items-center gap-2 relative z-10">
+                Checkout <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 bg-merchant-bg border-t border-merchant-teal px-sm pb-2 pt-1 flex justify-around items-center">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-merchant-teal transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">home</span>
+<span class="text-[10px] font-bold uppercase tracking-tight mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-merchant-teal transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">inventory_2</span>
+<span class="text-[10px] font-bold uppercase tracking-tight mt-1">Inventory</span>
+</a>
+<a class="flex flex-col items-center justify-center text-merchant-teal p-2" href="#">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+<span class="text-[10px] font-bold uppercase tracking-tight mt-1">Billing</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-merchant-teal transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">bar_chart</span>
+<span class="text-[10px] font-bold uppercase tracking-tight mt-1">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-merchant-teal transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">menu</span>
+<span class="text-[10px] font-bold uppercase tracking-tight mt-1">More</span>
+</a>
+</nav>
+</body></html>

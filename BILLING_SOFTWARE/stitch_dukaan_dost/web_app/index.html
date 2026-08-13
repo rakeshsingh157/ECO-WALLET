@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dukaan Dost — Smart Billing System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --warm-peach: #FFAD85;
+      --warm-coral: #FF6B6B;
+      --warm-sunset: #E8446D;
+      --dark-navy: #1A1A2E;
+      --dark-card: #16213E;
+      --dark-card-light: #1F2B47;
+      --dark-surface: #0F0F23;
+      --text-primary: #FFFFFF;
+      --text-secondary: #B0B8C8;
+      --text-muted: #6B7280;
+      --success: #4ADE80;
+      --warning: #FFB347;
+      --glass-bg: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+
+    body {
+      background: var(--dark-surface);
+      color: var(--text-primary);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* Mobile Frame */
+    .app-frame {
+      width: 390px;
+      height: 820px;
+      background: var(--dark-navy);
+      border-radius: 40px;
+      border: 8px solid #2D3748;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Header Gradient */
+    .header-bg {
+      background: linear-gradient(135deg, var(--warm-peach), var(--warm-coral), var(--warm-sunset));
+      padding: 40px 20px 25px 20px;
+      color: #1A1A2E;
+      border-bottom-left-radius: 24px;
+      border-bottom-right-radius: 24px;
+    }
+
+    .greeting { font-size: 22px; font-weight: 800; line-height: 1.2; }
+    .shop-title { font-size: 13px; font-weight: 600; opacity: 0.85; font-family: 'Inter'; }
+
+    /* Content Area */
+    .content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    /* Glass Card */
+    .glass-card {
+      background: rgba(22, 33, 62, 0.95);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(12px);
+      border-radius: 20px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .sales-val { font-size: 34px; font-weight: 800; color: var(--warm-peach); margin: 6px 0; }
+
+    /* Quick Action Buttons */
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .action-btn {
+      background: var(--dark-card);
+      border: 1px solid var(--glass-border);
+      padding: 14px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .action-btn:hover { transform: translateY(-2px); }
+    .action-btn.primary {
+      background: linear-gradient(135deg, var(--warm-peach), var(--warm-sunset));
+      border: none;
+      color: white;
+    }
+
+    .icon-box {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      height: 70px;
+      background: rgba(15, 15, 35, 0.95);
+      border-top: 1px solid var(--glass-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .nav-item.active { color: var(--warm-coral); font-weight: 700; }
+    .nav-icon { font-size: 20px; margin-bottom: 2px; }
+
+    /* Product Grid */
+    .product-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .product-card {
+      background: var(--dark-card);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .prod-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .prod-price { font-size: 15px; font-weight: 700; color: var(--warm-peach); }
+    .add-btn {
+      background: linear-gradient(135deg, var(--warm-peach), var(--warm-sunset));
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-frame">
+    <!-- Header -->
+    <div class="header-bg">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div class="greeting">Namaste, Mr. Sharma! 🙏</div>
+          <div class="shop-title">Sharma Kirana Store</div>
+        </div>
+        <div style="background: rgba(0,0,0,0.2); padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">
+          13 Aug 2026
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+      <!-- Sales Summary Card -->
+      <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); font-weight: 700;">
+          <span>TODAY'S SALES</span>
+          <span style="color: var(--success); background: rgba(74, 222, 128, 0.15); padding: 2px 8px; border-radius: 8px;">+15% vs Yesterday</span>
+        </div>
+        <div class="sales-val">₹12,450</div>
+        <div style="font-size: 12px; color: var(--text-secondary); font-family: 'Inter';">
+          🧾 42 Bills Generated Today
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="action-grid">
+        <div class="action-btn primary" onclick="alert('Creating new bill...')">
+          <div class="icon-box">🛒</div>
+          <div style="font-size: 13px; font-weight: 700;">Create Bill</div>
+        </div>
+        <div class="action-btn">
+          <div class="icon-box" style="color: var(--warm-coral);">📦</div>
+          <div style="font-size: 13px; font-weight: 600;">Add Item</div>
+        </div>
+        <div class="action-btn">
+          <div class="icon-box" style="color: var(--warm-peach);">🪙</div>
+          <div style="font-size: 13px; font-weight: 600;">ECO Pay</div>
+        </div>
+        <div class="action-btn">
+          <div class="icon-box" style="color: var(--warning);">📖</div>
+          <div style="font-size: 13px; font-weight: 600;">Khata</div>
+        </div>
+      </div>
+
+      <!-- Fast Moving Items -->
+      <div style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">Fast Moving Items</div>
+      <div class="product-grid">
+        <div class="product-card">
+          <div>
+            <div style="font-size: 24px; margin-bottom: 4px;">☕</div>
+            <div class="prod-name">Chai Pack 250g</div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+            <div class="prod-price">₹120</div>
+            <button class="add-btn">+</button>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <div>
+            <div style="font-size: 24px; margin-bottom: 4px;">🍪</div>
+            <div class="prod-name">Biscuits XL</div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+            <div class="prod-price">₹80</div>
+            <button class="add-btn">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="bottom-nav">
+      <div class="nav-item active">
+        <span class="nav-icon">🏠</span>
+        <span>Home</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">🧾</span>
+        <span>Billing</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">📦</span>
+        <span>Inventory</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">⚙️</span>
+        <span>Settings</span>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

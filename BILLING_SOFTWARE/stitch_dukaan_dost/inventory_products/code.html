@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vyapaar Helper - Inventory</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#ffdbcb",
+                        "on-tertiary-container": "#fff9f7",
+                        "primary-fixed": "#93f2f2",
+                        "on-primary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface": "#f6faf9",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#e3fffe",
+                        "surface-container": "#ebefee",
+                        "surface-container-highest": "#dfe3e2",
+                        "outline": "#6e7979",
+                        "surface-bright": "#f6faf9",
+                        "outline-variant": "#bdc9c8",
+                        "secondary-fixed": "#ffdbcc",
+                        "tertiary-container": "#a96039",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#351000",
+                        "secondary": "#a04100",
+                        "surface-variant": "#dfe3e2",
+                        "on-background": "#181c1c",
+                        "surface-tint": "#006a6a",
+                        "inverse-primary": "#76d6d5",
+                        "primary-container": "#008080",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#733512",
+                        "primary": "#006565",
+                        "tertiary-fixed-dim": "#ffb692",
+                        "inverse-on-surface": "#edf2f1",
+                        "on-secondary-container": "#5e2300",
+                        "surface-container-high": "#e5e9e8",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "tertiary": "#8b4823",
+                        "secondary-fixed-dim": "#ffb693",
+                        "on-primary-fixed": "#002020",
+                        "background": "#f6faf9",
+                        "primary-fixed-dim": "#76d6d5",
+                        "on-secondary-fixed-variant": "#7a3000",
+                        "on-primary-fixed-variant": "#004f4f",
+                        "secondary-container": "#fd7729",
+                        "on-tertiary-fixed": "#341100",
+                        "inverse-surface": "#2c3131",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d7dbda",
+                        "on-surface-variant": "#3e4949",
+                        "on-surface": "#181c1c",
+                        "surface-container-low": "#f0f4f3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "margin-desktop": "48px",
+                        "sm": "8px",
+                        "unit": "4px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "margin-mobile": "16px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "caption": ["Quicksand"],
+                        "display-lg": ["Quicksand"],
+                        "body-md": ["Quicksand"],
+                        "body-lg": ["Quicksand"],
+                        "headline-lg": ["Quicksand"],
+                        "headline-md": ["Quicksand"],
+                        "label-md": ["Quicksand"],
+                        "headline-lg-mobile": ["Quicksand"],
+                        "title-lg": ["Quicksand"]
+                    },
+                    "fontSize": {
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "26px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #FAF9F6; }
+        .press-in:active { transform: translateY(1px); box-shadow: none; }
+    </style>
+</head>
+<body class="font-body-md text-on-background min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline shadow-sm w-full top-0 sticky z-40">
+<div class="flex justify-between items-center px-margin-mobile py-sm w-full">
+<div class="flex items-center gap-sm">
+<img class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A friendly, stylized illustration of a shopkeeper mascot character in a clean, modern vector art style, wearing an apron. High quality, light mode aesthetic with warm off-white and teal colors." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7CiURUp_Y--ACe6XdGolmrklerfpvIpbT0bYfk9iZAitmRw0QiJCzs2tacxLBV2SMgSD1c4jgKM8BraF3Jt6en3zcLwBBDFJpiYbI3Q5Pc4lZHbYyrX7J85iiIb-ghaXZElygbdEsHQ8S96AIF1fh012PNl_C0hCU_iVpFQU15CIkG7WfgyJJyrhJfA95NpjYRatIfetoSKBLhS62H-g8Wh0DJ9GtjxQKh0ZIT-6dG8lWjlkqPk-ioQ"/>
+<h1 class="font-headline-md text-headline-md text-primary dark:text-primary-fixed-dim font-bold tracking-tight">Vyapaar Helper</h1>
+</div>
+<button class="hover:bg-surface-variant transition-colors press-in active:translate-y-px duration-100 p-2 rounded-full text-primary dark:text-primary-fixed-dim">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<main class="max-w-[1200px] mx-auto pt-md px-margin-mobile grid grid-cols-4 md:grid-cols-12 gap-md">
+<div class="col-span-4 md:col-span-12 space-y-md">
+<!-- Search & Filter -->
+<div class="bg-surface-container-lowest border border-[#EAE8E0] rounded-[16px] shadow-[0px_4px_12px_rgba(0,0,0,0.03)] p-md flex flex-col gap-sm">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full bg-[#F3F2EE] focus:bg-surface-container-lowest focus:border-primary border-transparent rounded-[8px] py-2 pl-10 pr-4 font-body-md text-on-surface focus:ring-0 transition-colors" placeholder="Search inventory..." type="text"/>
+</div>
+<div class="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+<button class="bg-primary text-on-primary font-label-md px-4 py-1.5 rounded-full whitespace-nowrap press-in">All Items</button>
+<button class="bg-transparent border-[1.5px] border-primary text-primary font-label-md px-4 py-1.5 rounded-full whitespace-nowrap press-in">Low Stock</button>
+<button class="bg-transparent border-[1.5px] border-primary text-primary font-label-md px-4 py-1.5 rounded-full whitespace-nowrap press-in">Grains</button>
+<button class="bg-transparent border-[1.5px] border-primary text-primary font-label-md px-4 py-1.5 rounded-full whitespace-nowrap press-in">Spices</button>
+</div>
+</div>
+<!-- Product Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest border border-[#EAE8E0] rounded-[16px] shadow-[0px_4px_12px_rgba(0,0,0,0.03)] p-md flex gap-md items-center press-in">
+<img class="w-20 h-20 rounded-[8px] object-cover bg-surface-container-low" data-alt="A clean, minimalist 3D render of a sack of premium basmati rice sitting on a pristine white surface, studio lighting, warm soft shadows, highly detailed texture, high key light mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuACMuB-mppifkioXPCmxKBdkN3A1u1hGR-I9LqSr5Yj92hD29mtffEMKVy0dQjCbiwuBDxthwx37_SuA69HrPCRBgO1BOiG9mDzVLeR85Oehie4j3pyx9oodZjfMsIhTeGRaSmuAIXGAIhya9WGzH1WOKkU1oeHftTYzbHK73F5ykkcO4aEOOpeS8kFdyvDocUR9Q5zhMVN96-JzFGQ7tWcOMJzupnO1aX9Si8qPittgatK3THAVudb3g"/>
+<div class="flex-1">
+<h3 class="font-title-lg text-title-lg text-on-surface">Basmati Rice Premium</h3>
+<p class="font-body-md text-outline">Stock: 24 kg</p>
+<p class="font-headline-md text-primary mt-1">₹120 <span class="text-caption text-outline">/ kg</span></p>
+</div>
+</div>
+<!-- Card 2 (Low Stock) -->
+<div class="bg-surface-container-lowest border border-[#EAE8E0] rounded-[16px] shadow-[0px_4px_12px_rgba(0,0,0,0.03)] p-md flex gap-md items-center relative overflow-hidden press-in">
+<div class="absolute top-0 right-0 bg-tertiary text-on-tertiary px-2 py-1 rounded-bl-[8px] font-caption text-caption flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">warning</span> Low Stock
+                    </div>
+<img class="w-20 h-20 rounded-[8px] object-cover bg-surface-container-low" data-alt="A clean, minimalist 3D render of a glass jar filled with yellow turmeric powder, sitting on a clean surface, studio lighting, soft shadows, warm natural tones, high key light mode design aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAW3RrmMVn_Q1kVWLz9nQZPcPiKvQjR8mJi9mz8jJ-PUkGZw_2CqDYMVIxyc0QqFixnCiFD5pWQxtU7V9230kfOQ2MFU82imyND3nyHf_IMRqoOohOrwkydSKRaK_vWVE8_aJ3QTrQR0p_xc97_-QvddgKJAsHExIZa-A2xtkUpnEGwdFA77sAD9hHqudAKwOVPXZCh0MPkC2xIV3C2w2igvif-ieCXUpWN8qrIcWlMykD2wsDNAhrizw"/>
+<div class="flex-1 mt-4 md:mt-0">
+<h3 class="font-title-lg text-title-lg text-on-surface">Turmeric Powder</h3>
+<p class="font-body-md text-tertiary">Stock: 2 kg</p>
+<p class="font-headline-md text-primary mt-1">₹40 <span class="text-caption text-outline">/ 100g</span></p>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest border border-[#EAE8E0] rounded-[16px] shadow-[0px_4px_12px_rgba(0,0,0,0.03)] p-md flex gap-md items-center press-in">
+<img class="w-20 h-20 rounded-[8px] object-cover bg-surface-container-low" data-alt="A clean, high quality photograph of a bottle of sunflower cooking oil, minimalist white background, soft natural daylight, bright and airy light mode aesthetic, crisp details." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLzqTD7MwPmkhxbz5Tzzk2YRkfHtpGafG9lbWOVd8qOmTtY2nXRUtyzd2lGLM7s9v7GutWTlcWL_OTouY0KemRa9_SDlsSNrJEfn6Pl-3xuTfC9t7TtgdhsryIJPCOOQ4BfX7UTZMQNMItsgZaMJ4uxrVmPWT2n-momKAmQP8m7Ba5ovysQNKzMus8OGzHaV1Gzapg4DAdfnaVUihX6H1X4DPJhvnaHSwRzvnFjfh7zVangRA4fVkomA"/>
+<div class="flex-1">
+<h3 class="font-title-lg text-title-lg text-on-surface">Sunflower Oil 1L</h3>
+<p class="font-body-md text-outline">Stock: 15 bottles</p>
+<p class="font-headline-md text-primary mt-1">₹145 <span class="text-caption text-outline">/ btl</span></p>
+</div>
+</div>
+<!-- Empty State Example (Hidden by default, shown to satisfy prompt requirements) -->
+<div class="hidden col-span-1 md:col-span-2 lg:col-span-3 bg-surface-container-lowest border border-[#EAE8E0] rounded-[16px] shadow-[0px_4px_12px_rgba(0,0,0,0.03)] p-xl flex flex-col items-center justify-center text-center gap-md">
+<img alt="Empty Box Mascot" class="w-32 h-32 object-contain opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDOm8wJYP-dCfdeAgHHVzUF5KCvk69VJGeYBkQmr-MtZhs5pT7n-DHSOWveOuq06Y9s4GEaDIAoYuWbU9H4gEv6XRJwwVKSft4qIiueOTaQGDjeXOGR9O9in9eGvRzSf7GOtxeQ8WATok9njH6NIaFL96oySECoaYo3_ZT_G7iKoCZC0v3UNFeww4i_o70bwALDL_lE4l4Or598eYBoKSs3Ldo3_mi3I092-Rsq7ngvFOlW6BP2NiLaA"/>
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Inventory is Empty</h3>
+<p class="font-body-md text-outline max-w-md mx-auto mt-2">Looks like you haven't added any products yet. Tap the '+' button below to start building your catalog.</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-[88px] right-margin-mobile md:right-margin-desktop w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center hover:bg-primary-container hover:text-on-primary-container transition-all press-in z-40">
+<span class="material-symbols-outlined text-[32px]">add</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 rounded-t-[16px] bg-surface-container-lowest dark:bg-surface-container border-t border-outline-variant dark:border-outline shadow-lg flex justify-around items-center px-sm pb-2 pt-1 md:hidden">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-container-high transition-all scale-95 duration-75 ease-out rounded-xl" href="#">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-md text-label-md mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-xl px-4 py-1 hover:bg-surface-container-high transition-all scale-95 duration-75 ease-out" href="#">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-label-md text-label-md mt-1 font-bold">Inventory</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-container-high transition-all scale-95 duration-75 ease-out rounded-xl" href="#">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+<span class="font-label-md text-label-md mt-1">Billing</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-container-high transition-all scale-95 duration-75 ease-out rounded-xl" href="#">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">bar_chart</span>
+<span class="font-label-md text-label-md mt-1">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-container-high transition-all scale-95 duration-75 ease-out rounded-xl" href="#">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">menu</span>
+<span class="font-label-md text-label-md mt-1">More</span>
+</a>
+</nav>
+<style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>

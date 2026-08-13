@@ -16,6 +16,7 @@ const transactionRoutes = require("./routes/transactionRoutes");
 const rewardRoutes = require("./routes/rewardRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const merchantRoutes = require("./routes/merchantRoutes");
 
 const Bank = require("./models/Bank");
 const User = require("./models/User");
@@ -82,6 +83,12 @@ const taskLimiter = rateLimit({
   message: { success: false, message: "Too many task actions. Please try again later." },
 });
 
+const merchantLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30,
+  message: { success: false, message: "Too many merchant API requests. Please try again later." },
+});
+
 // ─── API Routes ─────────────────────────────────────────
 app.use("/api/auth", authRoutes);
 app.use("/api/wallet", walletRoutes);
@@ -90,6 +97,7 @@ app.use("/api/transactions", transactionRoutes);
 app.use("/api/rewards", taskLimiter, rewardRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/merchant", merchantLimiter, merchantRoutes);
 
 // ─── Health Check ───────────────────────────────────────
 app.get("/api/health", (req, res) => {

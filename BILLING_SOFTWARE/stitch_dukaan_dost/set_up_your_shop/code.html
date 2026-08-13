@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Shop Setup</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#ffdbcb",
+                        "on-tertiary-container": "#fff9f7",
+                        "primary-fixed": "#93f2f2",
+                        "on-primary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface": "#f6faf9",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#e3fffe",
+                        "surface-container": "#ebefee",
+                        "surface-container-highest": "#dfe3e2",
+                        "outline": "#6e7979",
+                        "surface-bright": "#f6faf9",
+                        "outline-variant": "#bdc9c8",
+                        "secondary-fixed": "#ffdbcc",
+                        "tertiary-container": "#a96039",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#351000",
+                        "secondary": "#a04100",
+                        "surface-variant": "#dfe3e2",
+                        "on-background": "#181c1c",
+                        "surface-tint": "#006a6a",
+                        "inverse-primary": "#76d6d5",
+                        "primary-container": "#008080",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#733512",
+                        "primary": "#006565",
+                        "tertiary-fixed-dim": "#ffb692",
+                        "inverse-on-surface": "#edf2f1",
+                        "on-secondary-container": "#5e2300",
+                        "surface-container-high": "#e5e9e8",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "tertiary": "#8b4823",
+                        "secondary-fixed-dim": "#ffb693",
+                        "on-primary-fixed": "#002020",
+                        "background": "#f6faf9",
+                        "primary-fixed-dim": "#76d6d5",
+                        "on-secondary-fixed-variant": "#7a3000",
+                        "on-primary-fixed-variant": "#004f4f",
+                        "secondary-container": "#fd7729",
+                        "on-tertiary-fixed": "#341100",
+                        "inverse-surface": "#2c3131",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d7dbda",
+                        "on-surface-variant": "#3e4949",
+                        "on-surface": "#181c1c",
+                        "surface-container-low": "#f0f4f3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "margin-desktop": "48px",
+                        "sm": "8px",
+                        "unit": "4px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "margin-mobile": "16px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "caption": ["Quicksand"],
+                        "display-lg": ["Quicksand"],
+                        "body-md": ["Quicksand"],
+                        "body-lg": ["Quicksand"],
+                        "headline-lg": ["Quicksand"],
+                        "headline-md": ["Quicksand"],
+                        "label-md": ["Quicksand"],
+                        "headline-lg-mobile": ["Quicksand"],
+                        "title-lg": ["Quicksand"]
+                    },
+                    "fontSize": {
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "26px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #FAF9F6;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .floating-input:focus-within label {
+            transform: translateY(-50%) scale(0.85);
+            color: #006565;
+            top: 0;
+            background-color: #ffffff;
+            padding: 0 4px;
+        }
+        .floating-input input:not(:placeholder-shown) + label,
+        .floating-input select:not([value=""]) + label {
+            transform: translateY(-50%) scale(0.85);
+            top: 0;
+            background-color: #ffffff;
+            padding: 0 4px;
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-surface antialiased min-h-screen flex flex-col md:items-center md:justify-center md:py-12">
+<!-- Suppressed Shells: Intent is Linear/Onboarding, Navigation is explicitly hidden. -->
+<main class="w-full max-w-[600px] flex-grow flex flex-col px-margin-mobile pt-lg pb-[100px] md:pb-lg md:bg-surface-container-lowest md:rounded-[24px] md:shadow-[0_4px_12px_rgba(0,0,0,0.03)] md:border md:border-[#EAE8E0] relative overflow-hidden">
+<!-- Header & Progress -->
+<header class="mb-xl flex flex-col gap-sm">
+<div class="flex items-center justify-between">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div class="font-label-md text-on-surface-variant">Step 1 of 2</div>
+<div class="w-10"></div> <!-- Spacer for balance -->
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1 mt-2">
+<div class="bg-primary h-1 rounded-full w-1/2 transition-all duration-500"></div>
+</div>
+<div class="mt-md flex items-end justify-between">
+<div>
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-on-surface mb-xs">Shop Details</h1>
+<p class="font-body-md text-on-surface-variant">Let's set up your business profile.</p>
+</div>
+</div>
+</header>
+<!-- Mascot Guidance -->
+<div class="flex items-center gap-md bg-[#F3F2EE] p-md rounded-xl mb-xl border border-[#EAE8E0]">
+<div class="w-16 h-16 flex-shrink-0 relative">
+<img alt="Boxie Mascot" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9LwQ50V7XbKkXS9xQXwgiVT-M4H2_v76Un-dVXP6OcaXIMAD1rYU36y5OmGVITpQLIqqXMFfB4rULEeg-DyNX6ynM7eCqrTKgz-Yzyv51y9n8tKhOhl3iWY46Ux6Fuj3EwI_qYV54hFAjVNncDI5dbj64_dejtufS4pGAHNw-ycp9zQ1m3ONiktF87C6Ef8gpcquNHI2ZEGom_eOZ-rPlzAbZOqbehxN3zHHJV_jwjCaKs9wx7rC_xg"/>
+</div>
+<div class="relative bg-surface-container-lowest p-sm rounded-lg border border-[#EAE8E0] shadow-sm flex-grow">
+<div class="absolute -left-2 top-1/2 -translate-y-1/2 w-3 h-3 bg-surface-container-lowest border-l border-b border-[#EAE8E0] rotate-45"></div>
+<p class="font-body-md text-on-surface relative z-10">I'm Boxie! I'll help you pack these settings safely.</p>
+</div>
+</div>
+<!-- Form Elements -->
+<form class="flex flex-col gap-lg flex-grow">
+<!-- Category Dropdown -->
+<div class="relative floating-input bg-[#F3F2EE] rounded-lg focus-within:bg-surface-container-lowest focus-within:border-primary border border-transparent transition-colors">
+<select class="block w-full px-md py-sm h-14 bg-transparent border-none focus:ring-0 appearance-none font-body-md text-on-surface z-10 relative cursor-pointer" id="category" required="">
+<option disabled="" selected="" value=""></option>
+<option value="grocery">Grocery &amp; Essentials</option>
+<option value="electronics">Electronics &amp; Gadgets</option>
+<option value="clothing">Clothing &amp; Apparel</option>
+<option value="hardware">Hardware &amp; Tools</option>
+<option value="other">Other</option>
+</select>
+<label class="absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant font-body-md transition-all duration-200 pointer-events-none z-0" for="category">Shop Category</label>
+<span class="material-symbols-outlined absolute right-md top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none z-10">arrow_drop_down</span>
+</div>
+<!-- GSTIN (Optional) -->
+<div class="relative floating-input bg-[#F3F2EE] rounded-lg focus-within:bg-surface-container-lowest focus-within:border-primary border border-transparent transition-colors">
+<input class="block w-full px-md py-sm h-14 bg-transparent border-none focus:ring-0 font-body-md text-on-surface z-10 relative uppercase" id="gstin" placeholder=" " type="text"/>
+<label class="absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant font-body-md transition-all duration-200 pointer-events-none z-0" for="gstin">GSTIN (Optional)</label>
+</div>
+<!-- Currency Selection -->
+<div class="relative floating-input bg-[#F3F2EE] rounded-lg focus-within:bg-surface-container-lowest focus-within:border-primary border border-transparent transition-colors">
+<select class="block w-full px-md py-sm h-14 bg-transparent border-none focus:ring-0 appearance-none font-body-md text-on-surface z-10 relative cursor-pointer" id="currency" required="">
+<option disabled="" selected="" value=""></option>
+<option value="inr">₹ Indian Rupee (INR)</option>
+<option value="usd">$ US Dollar (USD)</option>
+</select>
+<label class="absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant font-body-md transition-all duration-200 pointer-events-none z-0" for="currency">Primary Currency</label>
+<span class="material-symbols-outlined absolute right-md top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none z-10">arrow_drop_down</span>
+</div>
+</form>
+<!-- Bottom Action Area -->
+<div class="fixed bottom-0 left-0 w-full p-margin-mobile bg-surface-container-lowest border-t border-[#EAE8E0] shadow-[0_-4px_12px_rgba(0,0,0,0.03)] md:static md:bg-transparent md:border-none md:shadow-none md:p-0 md:mt-xl">
+<button class="w-full bg-primary text-on-primary font-label-md py-sm h-12 rounded-lg flex items-center justify-center gap-sm active:translate-y-px active:shadow-none shadow-sm transition-all duration-100">
+                Next
+                <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</div>
+</main>
+<script>
+        // Simple script to handle floating label state on init if inputs have values
+        document.querySelectorAll('input, select').forEach(element => {
+            if (element.value) {
+                element.classList.add('has-value');
+            }
+            element.addEventListener('input', () => {
+                if (element.value) {
+                    element.classList.add('has-value');
+                } else {
+                    element.classList.remove('has-value');
+                }
+            });
+        });
+    </script>
+</body></html>
