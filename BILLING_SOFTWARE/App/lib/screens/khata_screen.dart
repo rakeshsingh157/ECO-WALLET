@@ -155,12 +155,7 @@ class _KhataScreenState extends State<KhataScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            Image.asset(
-              'assets/images/calculator.png',
-              width: 30,
-              height: 30,
-              errorBuilder: (c, e, s) => const Icon(Icons.menu_book_rounded, color: AppColors.warmCoral),
-            ),
+            const Icon(Icons.menu_book_rounded, color: AppColors.warmCoral, size: 24),
             const SizedBox(width: 10),
             Text(
               'Khata Book',

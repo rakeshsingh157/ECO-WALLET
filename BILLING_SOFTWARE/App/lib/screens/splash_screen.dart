@@ -69,11 +69,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Cute Shopkeeper Mascot Avatar
+                  // Cute Storefront Icon Avatar
                   Container(
-                    width: 120,
-                    height: 120,
-                    padding: const EdgeInsets.all(4),
+                    width: 110,
+                    height: 110,
                     decoration: BoxDecoration(
                       color: AppColors.darkNavy,
                       shape: BoxShape.circle,
@@ -84,16 +83,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           offset: const Offset(0, 8),
                         ),
                       ],
+                      border: Border.all(color: AppColors.warmPeach, width: 2),
                     ),
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/images/shopkeeper.png',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const Icon(
-                          Icons.storefront_rounded,
-                          size: 64,
-                          color: AppColors.warmCoral,
-                        ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.storefront_rounded,
+                        size: 60,
+                        color: AppColors.warmCoral,
                       ),
                     ),
                   ),

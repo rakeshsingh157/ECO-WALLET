@@ -125,12 +125,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            Image.asset(
-              'assets/images/shopkeeper.png',
-              width: 30,
-              height: 30,
-              errorBuilder: (c, e, s) => const Icon(Icons.group_rounded, color: AppColors.warmCoral),
-            ),
+            const Icon(Icons.badge_rounded, color: AppColors.warmCoral, size: 24),
             const SizedBox(width: 10),
             Text(
               'Shop Members & Staff',

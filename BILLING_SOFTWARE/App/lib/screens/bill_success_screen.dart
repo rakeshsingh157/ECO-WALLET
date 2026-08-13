@@ -48,15 +48,11 @@ class BillSuccessScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      'assets/images/receipt.png',
-                      fit: BoxFit.cover,
-                      errorBuilder: (c, e, s) => const Icon(
-                        Icons.check_circle_rounded,
-                        size: 64,
-                        color: AppColors.success,
-                      ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.check_circle_rounded,
+                      size: 60,
+                      color: AppColors.success,
                     ),
                   ),
                 ),

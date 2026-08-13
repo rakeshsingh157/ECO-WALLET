@@ -60,12 +60,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            Image.asset(
-              'assets/images/boxie.png',
-              width: 30,
-              height: 30,
-              errorBuilder: (c, e, s) => const Icon(Icons.add_box_rounded, color: AppColors.warmCoral),
-            ),
+            const Icon(Icons.add_box_rounded, color: AppColors.warmCoral, size: 24),
             const SizedBox(width: 10),
             Text(
               'Add New Product',

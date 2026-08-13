@@ -149,13 +149,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: AppColors.warmPeach, width: 2),
                         ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: Image.asset(
-                            'assets/images/shopkeeper.png',
-                            fit: BoxFit.cover,
-                            errorBuilder: (c, e, s) => const Icon(Icons.storefront_rounded, color: AppColors.warmCoral),
-                          ),
+                        child: const Center(
+                          child: Icon(Icons.storefront_rounded, color: AppColors.warmCoral, size: 28),
                         ),
                       ),
                       const SizedBox(width: 14),

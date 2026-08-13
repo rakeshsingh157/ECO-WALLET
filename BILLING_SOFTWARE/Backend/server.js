@@ -35,7 +35,16 @@ app.use("/api/staff", require("./routes/staffRoutes"));
 app.post("/api/merchant/create-payment", (req, res) => {
   const { order_id, amount, description } = req.body;
   const paymentId = `pay_${Date.now()}`;
-  const qrData = `ecowallet://pay?merchant=mch_sharma_kirana&amount=${amount || 100}&payment_id=${paymentId}`;
+  const merchantId = req.body.merchant_id || "mch_sharma_kirana";
+
+  // Double format: JSON object string for instant ECO Wallet app parsing
+  const qrData = JSON.stringify({
+    user_id: merchantId,
+    merchant_id: merchantId,
+    payment_id: paymentId,
+    amount: amount || 100,
+    order_id: order_id || `BILL_${Date.now()}`,
+  });
 
   res.status(201).json({
     success: true,

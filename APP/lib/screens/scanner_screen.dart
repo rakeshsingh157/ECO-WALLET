@@ -1,12 +1,12 @@
 /// ECO Wallet — QR Scanner Screen
 /// Camera-based QR code scanner for payments.
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:image_picker/image_picker.dart';
 import '../core/theme.dart';
 import 'send_screen.dart';
-import 'dart:convert';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -40,32 +40,57 @@ class _ScannerScreenState extends State<ScannerScreen> {
     final barcode = capture.barcodes.firstOrNull;
     if (barcode?.rawValue == null) return;
 
+    final rawValue = barcode!.rawValue!.trim();
+    if (rawValue.isEmpty) return;
+
     setState(() => _scanned = true);
     _controller?.stop();
 
-    final rawValue = barcode!.rawValue!;
+    String? targetUserId;
+    String? amountStr;
 
-    // Try to parse the QR payload
+    // 1. Try JSON parsing
     try {
       final payload = jsonDecode(rawValue);
-      final userId = payload['user_id'] as String?;
-      final amountInfo = payload['amount']; // Can be double, int
-      
-      if (userId != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => SendScreen(
-              prefillReceiverId: userId,
-              prefillAmount: amountInfo?.toString()
-            ),
-          ),
-        );
-        return;
+      if (payload is Map<String, dynamic>) {
+        targetUserId = payload['user_id']?.toString() ?? payload['merchant_id']?.toString() ?? payload['merchant']?.toString();
+        amountStr = payload['amount']?.toString();
       }
     } catch (_) {}
 
-    // If not a valid ECO QR, show error
+    // 2. Try URI parsing (eco://pay... or ecowallet://pay... or upi://pay...)
+    if (targetUserId == null && (rawValue.contains('://') || rawValue.contains('pay?'))) {
+      try {
+        final uri = Uri.parse(rawValue);
+        targetUserId = uri.queryParameters['merchant'] ?? uri.queryParameters['user_id'] ?? uri.queryParameters['pa'];
+        amountStr = uri.queryParameters['amount'] ?? uri.queryParameters['am'];
+        
+        if (targetUserId == null && uri.pathSegments.isNotEmpty) {
+          final lastSeg = uri.pathSegments.last;
+          if (lastSeg.isNotEmpty && lastSeg != 'pay') {
+            targetUserId = lastSeg;
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 3. Fallback to rawValue directly
+    targetUserId ??= rawValue;
+
+    if (targetUserId.isNotEmpty) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SendScreen(
+            prefillReceiverId: targetUserId,
+            prefillAmount: amountStr,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // If invalid
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Invalid QR code')),
     );
@@ -82,7 +107,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         _onDetect(capture);
       } else {
         if (mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No valid QR code found in the image.')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No valid QR code found in the image.')));
         }
       }
     }
@@ -119,7 +144,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
               ),
               child: Stack(
                 children: [
-                  // Corner brackets
                   ..._buildCorners(),
                 ],
               ),
@@ -150,7 +174,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         child: Container(
                           width: 44,
                           height: 44,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             shape: BoxShape.circle,
                             color: EcoColors.surfaceContainerHighest,
                           ),
@@ -169,7 +193,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                             child: Container(
                               width: 44,
                               height: 44,
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: EcoColors.surfaceContainerHighest,
                               ),
@@ -242,7 +266,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
     const width = 3.0;
 
     return [
-      // Top-left
       Positioned(
         top: 0,
         left: 0,
@@ -258,7 +281,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
           ),
         ),
       ),
-      // Top-right
       Positioned(
         top: 0,
         right: 0,
@@ -274,7 +296,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
           ),
         ),
       ),
-      // Bottom-left
       Positioned(
         bottom: 0,
         left: 0,
@@ -290,7 +311,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
           ),
         ),
       ),
-      // Bottom-right
       Positioned(
         bottom: 0,
         right: 0,

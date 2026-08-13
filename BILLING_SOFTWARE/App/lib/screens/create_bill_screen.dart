@@ -32,12 +32,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            Image.asset(
-              'assets/images/calculator.png',
-              width: 32,
-              height: 32,
-              errorBuilder: (c, e, s) => const SizedBox(),
-            ),
+            const Icon(Icons.point_of_sale_rounded, color: AppColors.warmCoral, size: 24),
             const SizedBox(width: 10),
             Text(
               'Create Bill',

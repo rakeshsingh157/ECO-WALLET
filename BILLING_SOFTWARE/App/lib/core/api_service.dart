@@ -50,13 +50,22 @@ class ApiService {
 
     // Bulletproof Fallback QR Response
     final fallbackPaymentId = 'pay_${DateTime.now().millisecondsSinceEpoch}';
+    final merchantId = apiKey.isNotEmpty ? apiKey : 'mch_sharma_kirana';
+    final qrData = jsonEncode({
+      "user_id": merchantId,
+      "merchant_id": merchantId,
+      "payment_id": fallbackPaymentId,
+      "amount": amount,
+      "order_id": orderId,
+    });
+
     return {
       "success": true,
       "payment": {
         "payment_id": fallbackPaymentId,
         "order_id": orderId,
         "amount": amount,
-        "qr_data": "ecowallet://pay?merchant=mch_sharma_kirana&amount=$amount&payment_id=$fallbackPaymentId",
+        "qr_data": qrData,
         "status": "pending"
       }
     };

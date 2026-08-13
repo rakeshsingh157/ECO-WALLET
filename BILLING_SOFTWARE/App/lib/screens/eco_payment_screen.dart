@@ -32,12 +32,7 @@ class _EcoPaymentScreenState extends State<EcoPaymentScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            Image.asset(
-              'assets/images/coin.png',
-              width: 30,
-              height: 30,
-              errorBuilder: (c, e, s) => const Icon(Icons.stars_rounded, color: AppColors.warmPeach),
-            ),
+            const Icon(Icons.stars_rounded, color: AppColors.warmPeach, size: 24),
             const SizedBox(width: 10),
             Text(
               'ECO Wallet Payments',
@@ -65,13 +60,8 @@ class _EcoPaymentScreenState extends State<EcoPaymentScreen> {
                       color: AppColors.warmPeach.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: Center(
-                      child: Image.asset(
-                        'assets/images/coin.png',
-                        width: 36,
-                        height: 36,
-                        errorBuilder: (c, e, s) => const Icon(Icons.stars_rounded, color: AppColors.warmPeach),
-                      ),
+                    child: const Center(
+                      child: Icon(Icons.stars_rounded, color: AppColors.warmPeach, size: 28),
                     ),
                   ),
                   const SizedBox(width: 14),

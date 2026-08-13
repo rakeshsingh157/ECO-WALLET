@@ -55,12 +55,8 @@ class DashboardScreen extends StatelessWidget {
                         shape: BoxShape.circle,
                         border: Border.all(color: AppColors.warmPeach, width: 2),
                       ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/images/shopkeeper.png',
-                          fit: BoxFit.cover,
-                          errorBuilder: (c, e, s) => const Icon(Icons.person_rounded, color: AppColors.warmCoral),
-                        ),
+                      child: const Center(
+                        child: Icon(Icons.storefront_rounded, color: AppColors.warmCoral, size: 26),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -138,13 +134,13 @@ class DashboardScreen extends StatelessWidget {
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.trending_up_rounded, color: AppColors.success, size: 14),
+                                    const Icon(Icons.trending_up_rounded, size: 14, color: AppColors.success),
                                     const SizedBox(width: 4),
                                     Text(
-                                      '+15% vs Yesterday',
+                                      'LIVE',
                                       style: GoogleFonts.inter(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
                                         color: AppColors.success,
                                       ),
                                     ),
@@ -157,16 +153,15 @@ class DashboardScreen extends StatelessWidget {
                           Text(
                             '₹${todaySales.toStringAsFixed(0)}',
                             style: GoogleFonts.poppins(
-                              fontSize: 38,
+                              fontSize: 32,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.warmPeach,
-                              letterSpacing: -0.5,
+                              color: AppColors.textPrimary,
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 8),
                           Row(
                             children: [
-                              const Icon(Icons.receipt_long_rounded, size: 16, color: AppColors.textSecondary),
+                              const Icon(Icons.receipt_long_rounded, size: 16, color: AppColors.warmCoral),
                               const SizedBox(width: 6),
                               Text(
                                 '$todayBills Bills Generated',
@@ -180,18 +175,14 @@ class DashboardScreen extends StatelessWidget {
                         ],
                       ),
 
-                      // Cute Coin Mascot Overlay on Card
+                      // Cute Star/Coin Icon Overlay on Card
                       Positioned(
                         right: 0,
                         bottom: 0,
-                        child: Opacity(
-                          opacity: 0.85,
-                          child: Image.asset(
-                            'assets/images/coin.png',
-                            width: 68,
-                            height: 68,
-                            errorBuilder: (c, e, s) => const SizedBox(),
-                          ),
+                        child: Icon(
+                          Icons.stars_rounded,
+                          size: 58,
+                          color: AppColors.warmPeach.withValues(alpha: 0.25),
                         ),
                       ),
                     ],

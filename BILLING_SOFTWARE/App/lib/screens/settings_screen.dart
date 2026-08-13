@@ -20,12 +20,7 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(
         title: Row(
           children: [
-            Image.asset(
-              'assets/images/delivery.png',
-              width: 32,
-              height: 32,
-              errorBuilder: (c, e, s) => const SizedBox(),
-            ),
+            const Icon(Icons.tune_rounded, color: AppColors.warmPeach, size: 24),
             const SizedBox(width: 10),
             Text(
               'Settings & Profile',
@@ -54,12 +49,8 @@ class SettingsScreen extends StatelessWidget {
                       shape: BoxShape.circle,
                       border: Border.all(color: AppColors.warmPeach, width: 1.5),
                     ),
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/images/shopkeeper.png',
-                        fit: BoxFit.cover,
-                        errorBuilder: (c, e, s) => const Icon(Icons.store_rounded, color: Colors.white, size: 28),
-                      ),
+                    child: const Center(
+                      child: Icon(Icons.storefront_rounded, color: AppColors.warmCoral, size: 28),
                     ),
                   ),
                   const SizedBox(width: 16),
