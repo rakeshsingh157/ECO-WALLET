@@ -84,56 +84,104 @@ router.post(
  * @route   POST /api/auth/login
  * @desc    Login user
  */
-router.post(
-  "/login",
-  [
-    body("email").isEmail().normalizeEmail().withMessage("Valid email required"),
-    body("password").notEmpty().withMessage("Password required"),
-  ],
-  async (req, res) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ success: false, errors: errors.array() });
-      }
+router.post("/login", async (req, res) => {
+  try {
+    const rawIdentifier = (req.body.email || req.body.phone || req.body.user_id || req.body.identifier || "").trim();
+    const password = req.body.password || req.body.pin || req.body.security_pin;
 
-      const { email, password } = req.body;
-
-      const user = await User.findOne({ email });
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: "Invalid credentials",
-        });
-      }
-
-      const isMatch = await user.matchPassword(password);
-      if (!isMatch) {
-        await auditLog("LOGIN_FAILED", email, `Failed login attempt`, {}, req.ip);
-        return res.status(401).json({
-          success: false,
-          message: "Invalid credentials",
-        });
-      }
-
-      const tokens = generateTokens(user.user_id, user.role);
-
-      await auditLog("USER_LOGIN", user.user_id, `User logged in`, {}, req.ip);
-
-      res.json({
-        success: true,
-        message: "Login successful",
-        data: {
-          user: user.toPublic(),
-          ...tokens,
-        },
-      });
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ success: false, message: "Server error" });
+    if (!rawIdentifier) {
+      return res.status(400).json({ success: false, message: "Email or Mobile Number is required" });
     }
+    if (!password) {
+      return res.status(400).json({ success: false, message: "Password or PIN is required" });
+    }
+
+    const cleanPhoneDigits = rawIdentifier.replace(/\D/g, "");
+    const isEmail = rawIdentifier.includes("@");
+
+    const query = {
+      $or: [
+        ...(isEmail ? [{ email: rawIdentifier.toLowerCase() }] : []),
+        { user_id: rawIdentifier },
+        { phone: rawIdentifier },
+        ...(cleanPhoneDigits.length >= 10
+          ? [
+              { phone: cleanPhoneDigits },
+              { user_id: `mch_${cleanPhoneDigits}` },
+              { email: `${cleanPhoneDigits}@dukaandost.io` },
+            ]
+          : []),
+      ],
+    };
+
+    let user = await User.findOne(query);
+
+    if (!user) {
+      const Merchant = require("../models/Merchant");
+      const merchant = await Merchant.findOne({
+        $or: [
+          { merchant_id: rawIdentifier },
+          ...(cleanPhoneDigits.length >= 10 ? [{ mobile_number: cleanPhoneDigits }] : []),
+        ],
+      });
+
+      if (merchant) {
+        user = await User.findOne({ user_id: merchant.user_id });
+      }
+    }
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "No account found with these credentials. Please check your number or email.",
+      });
+    }
+
+    let isMatch = false;
+
+    if (user.password) {
+      try {
+        isMatch = await bcrypt.compare(password, user.password);
+      } catch (_) {}
+      if (!isMatch && user.password === password) {
+        isMatch = true;
+      }
+    }
+
+    if (!isMatch && user.pin) {
+      try {
+        isMatch = await bcrypt.compare(password, user.pin);
+      } catch (_) {}
+      if (!isMatch && user.pin === password) {
+        isMatch = true;
+      }
+    }
+
+    if (!isMatch) {
+      await auditLog("LOGIN_FAILED", rawIdentifier, `Failed login attempt`, {}, req.ip);
+      return res.status(401).json({
+        success: false,
+        message: "Incorrect password or PIN",
+      });
+    }
+
+    const tokens = generateTokens(user.user_id, user.role);
+
+    await auditLog("USER_LOGIN", user.user_id, `User logged in`, {}, req.ip);
+
+    res.json({
+      success: true,
+      message: "Login successful",
+      data: {
+        user: user.toPublic(),
+        ...tokens,
+      },
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
-);
+});
 
 /**
  * @route   POST /api/auth/refresh

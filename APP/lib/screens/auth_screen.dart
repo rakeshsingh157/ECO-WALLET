@@ -182,34 +182,33 @@ class _AuthScreenState extends State<AuthScreen> {
                       const SizedBox(height: 20),
                     ],
 
-                    // Email field
-                    _buildLabel('EMAIL ADDRESS'),
+                    _buildLabel(_isLogin ? 'MOBILE NUMBER OR EMAIL' : 'EMAIL ADDRESS'),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _emailCtrl,
                       keyboardType: TextInputType.emailAddress,
                       style: GoogleFonts.inter(color: EcoColors.onSurface),
                       decoration: InputDecoration(
-                        hintText: 'e.g. name@example.com',
-                        prefixIcon: Icon(Icons.alternate_email, color: EcoColors.onSurfaceVariant.withOpacity(0.5)),
+                        hintText: _isLogin ? 'e.g. 9876543210 or user@example.com' : 'e.g. name@example.com',
+                        prefixIcon: Icon(_isLogin ? Icons.person_outline : Icons.alternate_email, color: EcoColors.onSurfaceVariant.withOpacity(0.5)),
                       ),
                       validator: (v) {
-                        if (v == null || !v.contains('@')) return 'Valid email required';
+                        if (v == null || v.trim().isEmpty) return 'Enter mobile number or email';
+                        if (!_isLogin && !v.contains('@')) return 'Valid email required';
                         return null;
                       },
                     ),
 
                     const SizedBox(height: 20),
 
-                    // Password field
-                    _buildLabel('PASSWORD'),
+                    _buildLabel(_isLogin ? 'PASSWORD OR SECURITY PIN' : 'PASSWORD'),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _passwordCtrl,
                       obscureText: _obscure,
                       style: GoogleFonts.inter(color: EcoColors.onSurface),
                       decoration: InputDecoration(
-                        hintText: '••••••••',
+                        hintText: _isLogin ? 'Enter password or PIN' : '••••••••',
                         prefixIcon: Icon(Icons.lock_outline, color: EcoColors.onSurfaceVariant.withOpacity(0.5)),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -220,7 +219,8 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                       ),
                       validator: (v) {
-                        if (v == null || v.length < 8) return 'Min 8 characters';
+                        if (v == null || v.isEmpty) return 'Enter password or PIN';
+                        if (!_isLogin && v.length < 8) return 'Minimum 8 characters';
                         return null;
                       },
                     ),
