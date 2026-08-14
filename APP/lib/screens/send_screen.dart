@@ -27,6 +27,7 @@ class _SendScreenState extends State<SendScreen> {
   final _recipientCtrl = TextEditingController();
   String _amount = '0';
   bool _sending = false;
+  bool _recipientNotFound = false;
   Map<String, dynamic>? _recipientInfo;
 
   @override
@@ -57,14 +58,28 @@ class _SendScreenState extends State<SendScreen> {
   bool get _isAmountLocked => widget.prefillAmount != null && widget.prefillAmount!.isNotEmpty;
 
   Future<void> _lookupRecipient() async {
-    if (_recipientCtrl.text.trim().length < 5) {
-      if (mounted && widget.prefillReceiverName == null) setState(() => _recipientInfo = null);
+    final query = _recipientCtrl.text.trim();
+    if (query.length < 3) {
+      if (mounted && widget.prefillReceiverName == null) {
+        setState(() {
+          _recipientInfo = null;
+          _recipientNotFound = false;
+        });
+      }
       return;
     }
     final wallet = context.read<WalletProvider>();
-    final info = await wallet.lookupUser(_recipientCtrl.text.trim());
-    if (mounted && info != null) {
-      setState(() => _recipientInfo = info);
+    final info = await wallet.lookupUser(query);
+    if (mounted) {
+      setState(() {
+        if (info != null && info['user_id'] != null) {
+          _recipientInfo = info;
+          _recipientNotFound = false;
+        } else {
+          _recipientInfo = null;
+          _recipientNotFound = true;
+        }
+      });
     }
   }
 
@@ -113,6 +128,16 @@ class _SendScreenState extends State<SendScreen> {
     if (_recipientCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Enter recipient ID')),
+      );
+      return;
+    }
+
+    if (_recipientNotFound) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Recipient not found. Please enter a valid registered user ID or mobile number.'),
+          backgroundColor: EcoColors.errorContainer,
+        ),
       );
       return;
     }
@@ -358,10 +383,10 @@ class _SendScreenState extends State<SendScreen> {
                       _lookupRecipient();
                     },
                     decoration: InputDecoration(
-                      hintText: 'User ID / Username',
+                      hintText: 'Recipient Unique ID or Mobile Number',
                       suffixIcon: Icon(
                         _isReceiverLocked ? Icons.lock : Icons.person, 
-                        color: EcoColors.onSurfaceVariant.withOpacity(0.3)
+                        color: EcoColors.onSurfaceVariant.withValues(alpha: 0.3)
                       ),
                     ),
                     onChanged: (_) => _lookupRecipient(),
@@ -371,9 +396,9 @@ class _SendScreenState extends State<SendScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
-                        color: EcoColors.primaryContainer.withOpacity(0.12),
+                        color: EcoColors.primaryContainer.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: EcoColors.primaryContainer.withOpacity(0.35)),
+                        border: Border.all(color: EcoColors.primaryContainer.withValues(alpha: 0.35)),
                       ),
                       child: Row(
                         children: [
@@ -381,10 +406,10 @@ class _SendScreenState extends State<SendScreen> {
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: EcoColors.primaryContainer.withOpacity(0.2),
+                              color: EcoColors.primaryContainer.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.storefront_rounded, size: 20, color: EcoColors.primaryContainer),
+                            child: const Icon(Icons.verified_user_rounded, size: 20, color: EcoColors.primaryContainer),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -392,19 +417,48 @@ class _SendScreenState extends State<SendScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'PAYING TO',
+                                  'VERIFIED RECIPIENT',
                                   style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: EcoColors.onSurfaceVariant),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   _recipientInfo?['name'] ?? widget.prefillReceiverName ?? _recipientCtrl.text,
-                                  style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: EcoColors.primaryContainer),
+                                  style: GoogleFonts.spaceGrotesk(fontSize: 15, fontWeight: FontWeight.w700, color: EcoColors.primaryContainer),
                                   overflow: TextOverflow.ellipsis,
                                 ),
+                                if (_recipientInfo?['user_id'] != null) ...[
+                                  Text(
+                                    'ID: ${_recipientInfo!['user_id']}',
+                                    style: GoogleFonts.inter(fontSize: 11, color: EcoColors.onSurfaceVariant.withValues(alpha: 0.8)),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ],
                             ),
                           ),
-                          const Icon(Icons.verified_rounded, size: 18, color: EcoColors.primaryContainer),
+                          const Icon(Icons.check_circle_rounded, size: 18, color: EcoColors.primaryContainer),
+                        ],
+                      ),
+                    ),
+                  ] else if (_recipientNotFound) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: EcoColors.errorContainer.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: EcoColors.errorContainer.withValues(alpha: 0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline_rounded, size: 20, color: EcoColors.errorContainer),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'No registered account found with this ID',
+                              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: EcoColors.errorContainer),
+                            ),
+                          ),
                         ],
                       ),
                     ),
