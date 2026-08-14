@@ -1,17 +1,14 @@
-
 const express = require("express");
 const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const Transaction = require("../models/Transaction");
-const { protect } = require("../middleware/auth");
-const { generateTokens } = require("../middleware/auth");
+const { protect, generateTokens } = require("../middleware/auth");
 const { generateUserId } = require("../utils/idGenerator");
 const { auditLog } = require("../utils/logger");
 const { notify } = require("../utils/notificationService");
 
 const router = express.Router();
-
 
 router.post(
   "/register",
@@ -29,7 +26,6 @@ router.post(
 
       const { name, email, password, phone } = req.body;
 
-      // Check if email already exists
       const exists = await User.findOne({ email });
       if (exists) {
         return res.status(400).json({
@@ -38,7 +34,6 @@ router.post(
         });
       }
 
-      // Generate unique user_id
       let user_id;
       let idExists = true;
       while (idExists) {
@@ -46,7 +41,6 @@ router.post(
         idExists = await User.findOne({ user_id });
       }
 
-      // Create user
       const user = await User.create({
         user_id,
         name,
@@ -58,10 +52,8 @@ router.post(
         referred_by: req.body.referral_code || null,
       });
 
-      // Generate tokens
       const tokens = generateTokens(user.user_id, user.role);
 
-      // Log & notify
       await auditLog("USER_REGISTER", user.user_id, `New user registered: ${email}`, {}, req.ip);
       await notify(user.user_id, "system", "Welcome to ECO Wallet", `Your wallet ID is ${user.user_id}. Start earning ECO coins!`);
 
@@ -80,10 +72,6 @@ router.post(
   }
 );
 
-/**
- * @route   POST /api/auth/login
- * @desc    Login user
- */
 router.post("/login", async (req, res) => {
   try {
     const rawIdentifier = (req.body.email || req.body.phone || req.body.user_id || req.body.identifier || "").trim();
@@ -183,21 +171,17 @@ router.post("/login", async (req, res) => {
   }
 });
 
-/**
- * @route   POST /api/auth/refresh
- * @desc    Refresh access token
- */
 router.post("/refresh", async (req, res) => {
   try {
-    const { refreshToken } = req.body;
-    if (!refreshToken) {
+    const tokenToVerify = req.body.refreshToken || req.body.backupRefreshToken || req.body.token;
+    if (!tokenToVerify) {
       return res.status(400).json({ success: false, message: "Refresh token required" });
     }
 
     const jwt = require("jsonwebtoken");
-    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    const decoded = jwt.verify(tokenToVerify, process.env.JWT_SECRET);
 
-    if (decoded.type !== "refresh") {
+    if (decoded.type !== "refresh" && decoded.type !== "backup_refresh") {
       return res.status(401).json({ success: false, message: "Invalid token type" });
     }
 
@@ -213,10 +197,6 @@ router.post("/refresh", async (req, res) => {
   }
 });
 
-/**
- * @route   POST /api/auth/set-pin
- * @desc    Set or Change payment PIN
- */
 router.post(
   "/set-pin",
   protect,
@@ -260,10 +240,6 @@ router.post(
   }
 );
 
-/**
- * @route   GET /api/auth/me
- * @desc    Get current user profile
- */
 router.get("/me", protect, async (req, res) => {
   try {
     const user = await User.findOne({ user_id: req.user.user_id }).select("-password");
@@ -281,10 +257,6 @@ router.get("/me", protect, async (req, res) => {
   }
 });
 
-/**
- * @route   POST /api/auth/remove-pin
- * @desc    Remove payment PIN
- */
 router.post(
   "/remove-pin",
   protect,
@@ -316,10 +288,6 @@ router.post(
   }
 );
 
-/**
- * @route   PUT /api/auth/profile
- * @desc    Update user profile
- */
 router.put(
   "/profile",
   protect,
@@ -356,10 +324,6 @@ router.put(
   }
 );
 
-/**
- * @route   GET /api/auth/profile
- * @desc    Get complete user profile with transaction statistics
- */
 router.get("/profile", protect, async (req, res) => {
   try {
     const user = await User.findOne({ user_id: req.user.user_id }).select("-password");
@@ -371,7 +335,6 @@ router.get("/profile", protect, async (req, res) => {
     const hasPin = !!user.pin;
     const userId = req.user.user_id;
 
-    // Aggregate stats
     const stats = await Transaction.aggregate([
       {
         $match: {

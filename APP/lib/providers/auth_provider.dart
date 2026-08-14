@@ -1,4 +1,3 @@
-/// ECO Wallet — Auth State Provider
 import 'package:flutter/material.dart';
 import '../core/api_service.dart';
 import '../core/firebase_config.dart';
@@ -20,7 +19,6 @@ class AuthProvider extends ChangeNotifier {
   String get role => _user?['role'] ?? 'user';
   bool get isAdmin => role == 'admin';
 
-  /// Check if user is already logged in (from saved token)
   Future<bool> checkAuth() async {
     await ApiService.loadTokens();
     if (!ApiService.hasToken) return false;
@@ -39,7 +37,6 @@ class AuthProvider extends ChangeNotifier {
     return false;
   }
 
-  /// Register a new account
   Future<bool> register(String name, String email, String password, {String? referralCode}) async {
     _isLoading = true;
     _error = null;
@@ -47,12 +44,13 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final res = await ApiService.register(name, email, password, referralCode: referralCode);
-      if (res['success'] == true) {
+      if (res['success'] == true && res['data'] != null) {
         _user = res['data']['user'];
         _isLoggedIn = true;
         await ApiService.setTokens(
-          res['data']['accessToken'],
-          res['data']['refreshToken'],
+          res['data']['accessToken'] ?? '',
+          res['data']['refreshToken'] ?? '',
+          res['data']['backupRefreshToken'],
         );
         await FirebaseConfig.registerToken();
         _isLoading = false;
@@ -70,7 +68,6 @@ class AuthProvider extends ChangeNotifier {
     return false;
   }
 
-  /// Login
   Future<bool> login(String email, String password) async {
     _isLoading = true;
     _error = null;
@@ -78,12 +75,13 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final res = await ApiService.login(email, password);
-      if (res['success'] == true) {
+      if (res['success'] == true && res['data'] != null) {
         _user = res['data']['user'];
         _isLoggedIn = true;
         await ApiService.setTokens(
-          res['data']['accessToken'],
-          res['data']['refreshToken'],
+          res['data']['accessToken'] ?? '',
+          res['data']['refreshToken'] ?? '',
+          res['data']['backupRefreshToken'],
         );
         await FirebaseConfig.registerToken();
         _isLoading = false;
@@ -101,7 +99,6 @@ class AuthProvider extends ChangeNotifier {
     return false;
   }
 
-  /// Refresh user data
   Future<void> refreshUser() async {
     try {
       final res = await ApiService.get('/auth/me');
@@ -112,7 +109,6 @@ class AuthProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
-  /// Fetch complete profile with stats
   Future<void> fetchProfile() async {
     try {
       final res = await ApiService.get('/auth/profile');
@@ -123,7 +119,6 @@ class AuthProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
-  /// Update balance locally (after a transfer)
   void updateBalance(double newBalance) {
     if (_user != null) {
       _user!['balance'] = newBalance;
@@ -131,7 +126,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Logout
   Future<void> logout() async {
     await ApiService.clearTokens();
     _user = null;
@@ -145,3 +139,4 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
+

@@ -1,42 +1,48 @@
-/// ECO Wallet — API Service
-/// Handles all HTTP communication with the Node.js backend.
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-
   static const String baseUrl = 'https://eco-wallet.onrender.com/api';
 
   static String? _accessToken;
   static String? _refreshToken;
+  static String? _backupRefreshToken;
+  static Future<bool>? _activeRefreshFuture;
 
-  // ─── Token Management ─────────────────────────────────
-  static Future<void> setTokens(String access, String refresh) async {
+  static Future<void> setTokens(String access, String refresh, [String? backupRefresh]) async {
     _accessToken = access;
     _refreshToken = refresh;
+    if (backupRefresh != null && backupRefresh.isNotEmpty) {
+      _backupRefreshToken = backupRefresh;
+    }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', access);
     await prefs.setString('refresh_token', refresh);
+    if (_backupRefreshToken != null) {
+      await prefs.setString('backup_refresh_token', _backupRefreshToken!);
+    }
   }
 
   static Future<void> loadTokens() async {
     final prefs = await SharedPreferences.getInstance();
     _accessToken = prefs.getString('access_token');
     _refreshToken = prefs.getString('refresh_token');
+    _backupRefreshToken = prefs.getString('backup_refresh_token');
   }
 
   static Future<void> clearTokens() async {
     _accessToken = null;
     _refreshToken = null;
+    _backupRefreshToken = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
     await prefs.remove('refresh_token');
+    await prefs.remove('backup_refresh_token');
   }
 
   static bool get hasToken => _accessToken != null;
 
-  // ─── HTTP Helpers ─────────────────────────────────────
   static Map<String, String> _headers({bool auth = true}) {
     final headers = {'Content-Type': 'application/json'};
     if (auth && _accessToken != null) {
@@ -46,42 +52,77 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> _handleResponse(http.Response res) async {
-    final data = jsonDecode(res.body);
-
-    // If 401, try refresh
-    if (res.statusCode == 401 && _refreshToken != null) {
-      final refreshed = await _tryRefresh();
-      if (refreshed) {
-        return {'_retry': true};
-      }
-    }
-
-    return data;
-  }
-
-  static Future<bool> _tryRefresh() async {
     try {
-      final res = await http.post(
-        Uri.parse('$baseUrl/auth/refresh'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': _refreshToken}),
-      );
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        if (data['success'] == true) {
-          await setTokens(
-            data['data']['accessToken'],
-            data['data']['refreshToken'],
-          );
-          return true;
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 401 && (_refreshToken != null || _backupRefreshToken != null)) {
+        final refreshed = await tryRefreshTokenLoop();
+        if (refreshed) {
+          return {'_retry': true};
         }
       }
-    } catch (_) {}
+      return data;
+    } catch (_) {
+      if (res.statusCode == 401 && (_refreshToken != null || _backupRefreshToken != null)) {
+        final refreshed = await tryRefreshTokenLoop();
+        if (refreshed) {
+          return {'_retry': true};
+        }
+      }
+      return {'success': false, 'message': 'Unexpected response format'};
+    }
+  }
+
+  static Future<bool> tryRefreshTokenLoop() async {
+    if (_activeRefreshFuture != null) {
+      return await _activeRefreshFuture!;
+    }
+    _activeRefreshFuture = _performTokenRefreshLoop();
+    try {
+      final result = await _activeRefreshFuture!;
+      _activeRefreshFuture = null;
+      return result;
+    } catch (_) {
+      _activeRefreshFuture = null;
+      return false;
+    }
+  }
+
+  static Future<bool> _performTokenRefreshLoop() async {
+    final tokensToTry = <String>[];
+    if (_refreshToken != null && _refreshToken!.isNotEmpty) {
+      tokensToTry.add(_refreshToken!);
+    }
+    if (_backupRefreshToken != null && _backupRefreshToken!.isNotEmpty && _backupRefreshToken != _refreshToken) {
+      tokensToTry.add(_backupRefreshToken!);
+    }
+
+    for (final token in tokensToTry) {
+      try {
+        final res = await http.post(
+          Uri.parse('$baseUrl/auth/refresh'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'refreshToken': token}),
+        ).timeout(const Duration(seconds: 15));
+
+        if (res.statusCode == 200) {
+          final data = jsonDecode(res.body);
+          if (data['success'] == true && data['data'] != null) {
+            final newAccess = data['data']['accessToken'] ?? '';
+            final newRefresh = data['data']['refreshToken'] ?? token;
+            final newBackup = data['data']['backupRefreshToken'] ?? _backupRefreshToken;
+            if (newAccess.isNotEmpty) {
+              await setTokens(newAccess, newRefresh, newBackup);
+              return true;
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
     await clearTokens();
     return false;
   }
 
-  // ─── Generic Request Methods ──────────────────────────
   static Future<Map<String, dynamic>> get(String path) async {
     final res = await http.get(
       Uri.parse('$baseUrl$path'),
@@ -90,7 +131,11 @@ class ApiService {
     final data = await _handleResponse(res);
     if (data.containsKey('_retry')) {
       final retry = await http.get(Uri.parse('$baseUrl$path'), headers: _headers());
-      return jsonDecode(retry.body);
+      try {
+        return jsonDecode(retry.body);
+      } catch (_) {
+        return {'success': false};
+      }
     }
     return data;
   }
@@ -108,7 +153,11 @@ class ApiService {
         headers: _headers(),
         body: jsonEncode(body),
       );
-      return jsonDecode(retry.body);
+      try {
+        return jsonDecode(retry.body);
+      } catch (_) {
+        return {'success': false};
+      }
     }
     return data;
   }
@@ -119,17 +168,49 @@ class ApiService {
       headers: _headers(),
       body: body != null ? jsonEncode(body) : null,
     );
-    return jsonDecode(res.body);
+    final data = await _handleResponse(res);
+    if (data.containsKey('_retry')) {
+      final retry = await http.put(
+        Uri.parse('$baseUrl$path'),
+        headers: _headers(),
+        body: body != null ? jsonEncode(body) : null,
+      );
+      try {
+        return jsonDecode(retry.body);
+      } catch (_) {
+        return {'success': false};
+      }
+    }
+    return data;
   }
 
-  // ─── Auth API ─────────────────────────────────────────
+  static Future<Map<String, dynamic>> delete(String path) async {
+    final res = await http.delete(
+      Uri.parse('$baseUrl$path'),
+      headers: _headers(),
+    );
+    final data = await _handleResponse(res);
+    if (data.containsKey('_retry')) {
+      final retry = await http.delete(
+        Uri.parse('$baseUrl$path'),
+        headers: _headers(),
+      );
+      try {
+        return jsonDecode(retry.body);
+      } catch (_) {
+        return {'success': false};
+      }
+    }
+    return data;
+  }
+
   static Future<Map<String, dynamic>> register(String name, String email, String password, {String? referralCode}) async {
     final res = await http.post(
       Uri.parse('$baseUrl/auth/register'),
       headers: _headers(auth: false),
       body: jsonEncode({
-        'name': name, 
-        'email': email, 
+        'name': name,
+        'email': email,
         'password': password,
         if (referralCode != null && referralCode.isNotEmpty) 'referral_code': referralCode
       }),
@@ -146,7 +227,6 @@ class ApiService {
     return jsonDecode(res.body);
   }
 
-  // ─── Profile & Settings ───────────────────────────────
   static Future<Map<String, dynamic>> updateProfile(String name, String phone) async {
     return await put('/auth/profile', {'name': name, 'phone': phone});
   }
@@ -161,7 +241,6 @@ class ApiService {
     return await post('/auth/remove-pin', {'current_pin': currentPin});
   }
 
-  // ─── Notifications ────────────────────────────────────
   static Future<Map<String, dynamic>> getNotifications({int page = 1, int limit = 20}) async {
     return await get('/notifications?page=$page&limit=$limit');
   }
@@ -179,3 +258,4 @@ class ApiService {
     return await post('/notifications/register-token', {'token': token});
   }
 }
+
