@@ -1,8 +1,8 @@
 /// Dukaan Dost — Constants & Config
 
 class AppConstants {
-  // Dukaan Dost Billing & ECO Wallet Backend URL
-  // Default to 10.0.2.2:5001 for Android emulator & localhost:5001 for Desktop
+  // Dukaan Dost Billing Local Backend Endpoint (Port 5001)
+  // 10.0.2.2 accesses localhost on host machine from Android Emulator
   static const String defaultEcoWalletBaseUrl = "http://10.0.2.2:5001/api";
   
   // Storage keys

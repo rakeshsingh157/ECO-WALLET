@@ -50,12 +50,21 @@ class BillProvider extends ChangeNotifier {
   String? _activePaymentId;
   String? _errorMessage;
   Timer? _pollingTimer;
+  Timer? _countdownTimer;
+  int _remainingSeconds = 300; // 5 minutes
 
   bool get isCreatingPayment => _isCreatingPayment;
   bool get isCheckingStatus => _isCheckingStatus;
   String? get activeQrData => _activeQrData;
   String? get activePaymentId => _activePaymentId;
   String? get errorMessage => _errorMessage;
+  int get remainingSeconds => _remainingSeconds;
+
+  String get formattedCountdown {
+    final minutes = (_remainingSeconds / 60).floor().toString().padLeft(2, '0');
+    final seconds = (_remainingSeconds % 60).toString().padLeft(2, '0');
+    return "$minutes:$seconds";
+  }
 
   // Stats
   double get todaySales => _completedBills
@@ -95,12 +104,13 @@ class BillProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Create ECO Wallet merchant payment and start polling status
+  /// Create ECO Wallet merchant payment and start 5-minute countdown + status polling
   Future<bool> initiateEcoPayment(ApiService apiService) async {
     if (_currentItems.isEmpty) return false;
 
     _isCreatingPayment = true;
     _errorMessage = null;
+    _remainingSeconds = 300; // Reset 5-minute timer
     notifyListeners();
 
     try {
@@ -122,6 +132,9 @@ class BillProvider extends ChangeNotifier {
         _isCreatingPayment = false;
         notifyListeners();
 
+        // Start 5-minute live countdown timer
+        _startCountdownTimer();
+
         // Start polling for payment completion
         startStatusPolling(apiService);
         return true;
@@ -139,9 +152,24 @@ class BillProvider extends ChangeNotifier {
     }
   }
 
+  void _startCountdownTimer() {
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_remainingSeconds > 0) {
+        _remainingSeconds--;
+        notifyListeners();
+      } else {
+        stopPolling();
+        _activeQrData = null;
+        _errorMessage = "QR Session Expired (5 min limit). Please tap to generate a new QR.";
+        notifyListeners();
+      }
+    });
+  }
+
   /// Poll status every 3 seconds
   void startStatusPolling(ApiService apiService, {Function(Bill)? onSuccess}) {
-    stopPolling();
+    _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
       if (_activePaymentId == null) return;
       _isCheckingStatus = true;
@@ -177,12 +205,13 @@ class BillProvider extends ChangeNotifier {
           } else if (status == "expired" || status == "failed") {
             stopPolling();
             _isCheckingStatus = false;
-            _errorMessage = "Payment $status";
+            _activeQrData = null;
+            _errorMessage = "QR Payment expired after 5 minutes.";
             notifyListeners();
           }
         }
       } catch (e) {
-        // Silent error during polling retry
+        // Silent retry
       }
     });
   }
@@ -190,6 +219,8 @@ class BillProvider extends ChangeNotifier {
   void stopPolling() {
     _pollingTimer?.cancel();
     _pollingTimer = null;
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
   }
 
   /// Complete cash/UPI bill directly
@@ -200,7 +231,7 @@ class BillProvider extends ChangeNotifier {
       totalAmount: currentTotal,
       timestamp: DateTime.now(),
       paymentMode: mode,
-      status: BillStatus.completed,
+      status: mode == PaymentMode.pending ? BillStatus.pending : BillStatus.completed,
       customerName: customerName ?? "Counter Customer",
     );
 

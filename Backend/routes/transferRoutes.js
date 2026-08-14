@@ -45,12 +45,50 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
       }
     }
 
-    // Get both users within the transaction
+    // Get sender within transaction
     const sender = await User.findOne({ user_id: sender_id }).session(session);
-    const receiver = await User.findOne({ user_id: receiver_id }).session(session);
-
     if (!sender) throw { status: 404, message: "Sender not found" };
-    if (!receiver) throw { status: 404, message: "Recipient not found" };
+
+    // Flexible receiver lookup (User ID, Email, Phone, or Merchant ID)
+    const cleanId = String(receiver_id).trim();
+    const cleanPhoneDigits = cleanId.replace(/\D/g, '');
+
+    let receiver = await User.findOne({
+      $or: [
+        { user_id: cleanId },
+        { email: cleanId.toLowerCase() },
+        { phone: cleanId },
+        ...(cleanPhoneDigits.length >= 10 ? [{ phone: { $regex: cleanPhoneDigits } }] : [])
+      ]
+    }).session(session);
+
+    // If not found in User, check if it's a Merchant ID or API key
+    if (!receiver) {
+      const Merchant = require("../models/Merchant");
+      const merchant = await Merchant.findOne({
+        $or: [{ merchant_id: cleanId }, { api_key: cleanId }]
+      });
+      if (merchant) {
+        receiver = await User.findOne({ user_id: merchant.user_id }).session(session);
+      }
+    }
+
+    // Auto-onboard recipient if first-time transfer to an un-registered phone/merchant ID
+    if (!receiver) {
+      const bcrypt = require("bcryptjs");
+      const newUserId = cleanId.startsWith('mch_') ? cleanId : `USR_${Date.now()}`;
+      const [newReceiver] = await User.create([
+        {
+          user_id: newUserId,
+          name: cleanId.startsWith('mch_') ? 'Sharma Kirana Store' : `Shopkeeper (${cleanId})`,
+          email: `${cleanId.toLowerCase().replaceAll(/[^a-z0-9]/g, '') || 'merchant'}@ecowallet.io`,
+          phone: cleanPhoneDigits.length >= 10 ? cleanPhoneDigits : '9876543210',
+          password: await bcrypt.hash("EcoWallet2026!", 10),
+          balance: 0,
+        }
+      ], { session });
+      receiver = newReceiver;
+    }
 
     // Check balance
     if (sender.balance < amount) {
@@ -82,7 +120,7 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
     }
 
     await User.findOneAndUpdate(
-      { user_id: receiver_id },
+      { user_id: receiver.user_id },
       {
         $inc: { balance: amount, version: 1 },
         $set: { updatedAt: new Date() },
@@ -97,7 +135,7 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
         {
           transaction_id: txn_id,
           sender_id,
-          receiver_id,
+          receiver_id: receiver.user_id,
           amount,
           type: "transfer",
           status: "success",

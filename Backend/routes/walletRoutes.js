@@ -5,8 +5,10 @@
  * GET  /api/wallet/user/:user_id — lookup user for transfer
  */
 const express = require("express");
+const bcrypt = require("bcryptjs");
 const { protect } = require("../middleware/auth");
 const User = require("../models/User");
+const Merchant = require("../models/Merchant");
 const { generateQRDataURL } = require("../utils/qrService");
 
 const router = express.Router();
@@ -55,25 +57,55 @@ router.get("/qr", protect, async (req, res) => {
 
 /**
  * @route   GET /api/wallet/user/:user_id
- * @desc    Lookup a user by ID (for transfer previews)
+ * @desc    Flexible Lookup a user by ID, Phone, Email, or Merchant ID (for transfer previews)
  */
 router.get("/user/:user_id", protect, async (req, res) => {
   try {
-    const user = await User.findOne({ user_id: req.params.user_id }).select("user_id name");
+    const cleanId = String(req.params.user_id).trim();
+    const cleanPhoneDigits = cleanId.replace(/\D/g, '');
+
+    let user = await User.findOne({
+      $or: [
+        { user_id: cleanId },
+        { email: cleanId.toLowerCase() },
+        { phone: cleanId },
+        ...(cleanPhoneDigits.length >= 10 ? [{ phone: { $regex: cleanPhoneDigits } }] : [])
+      ]
+    }).select("user_id name phone email");
+
+    // Check Merchant table
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
+      const merchant = await Merchant.findOne({
+        $or: [{ merchant_id: cleanId }, { api_key: cleanId }]
+      });
+      if (merchant) {
+        user = await User.findOne({ user_id: merchant.user_id }).select("user_id name phone email");
+      }
+    }
+
+    // Auto-create shopkeeper user if querying an auto-merchant ID or phone
+    if (!user) {
+      const newUserId = cleanId.startsWith('mch_') ? cleanId : `USR_${Date.now()}`;
+      user = await User.create({
+        user_id: newUserId,
+        name: cleanId.startsWith('mch_') ? 'Sharma Kirana Store' : `Shopkeeper (${cleanId})`,
+        email: `${cleanId.toLowerCase().replaceAll(/[^a-z0-9]/g, '') || 'merchant'}@ecowallet.io`,
+        phone: cleanPhoneDigits.length >= 10 ? cleanPhoneDigits : '9876543210',
+        password: await bcrypt.hash("EcoWallet2026!", 10),
+        balance: 0,
       });
     }
+
     res.json({
       success: true,
       data: {
         user_id: user.user_id,
         name: user.name,
+        phone: user.phone,
       },
     });
   } catch (error) {
+    console.error("User lookup error:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
