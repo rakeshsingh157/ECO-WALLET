@@ -68,7 +68,14 @@ class WalletProvider extends ChangeNotifier {
   }
 
   /// Send money by user_id
-  Future<Map<String, dynamic>> sendMoney(String receiverId, double amount, {String? pin, String? description, String? idempotencyKey}) async {
+  Future<Map<String, dynamic>> sendMoney(
+    String receiverId,
+    double amount, {
+    String? pin,
+    String? description,
+    String? idempotencyKey,
+    String? paymentId,
+  }) async {
     try {
       final body = {
         'receiver_id': receiverId,
@@ -76,6 +83,7 @@ class WalletProvider extends ChangeNotifier {
         if (pin != null) 'pin': pin,
         if (description != null) 'description': description,
         if (idempotencyKey != null) 'idempotency_key': idempotencyKey,
+        if (paymentId != null) 'payment_id': paymentId,
       };
       final res = await ApiService.post('/transfer/send', body);
       return res;

@@ -1,5 +1,3 @@
-/// ECO Wallet — Send Money Screen
-/// Matches the send money UI mockup: recipient input, amount numpad, send button.
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,7 +16,8 @@ class SendScreen extends StatefulWidget {
   final String? prefillReceiverId;
   final String? prefillAmount;
   final String? prefillReceiverName;
-  const SendScreen({super.key, this.prefillReceiverId, this.prefillAmount, this.prefillReceiverName});
+  final String? prefillPaymentId;
+  const SendScreen({super.key, this.prefillReceiverId, this.prefillAmount, this.prefillReceiverName, this.prefillPaymentId});
 
   @override
   State<SendScreen> createState() => _SendScreenState();
@@ -131,7 +130,13 @@ class _SendScreenState extends State<SendScreen> {
     // Generate simple idempotency key
     final idempotencyKey = '${DateTime.now().millisecondsSinceEpoch}_${auth.userId}';
 
-    final res = await wallet.sendMoney(_recipientCtrl.text.trim(), amount, idempotencyKey: idempotencyKey, pin: enteredPin);
+    final res = await wallet.sendMoney(
+      _recipientCtrl.text.trim(),
+      amount,
+      idempotencyKey: idempotencyKey,
+      pin: enteredPin,
+      paymentId: widget.prefillPaymentId,
+    );
 
     setState(() => _sending = false);
 

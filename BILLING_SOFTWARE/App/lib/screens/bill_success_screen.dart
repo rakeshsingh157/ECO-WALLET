@@ -3,8 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:provider/provider.dart';
 import '../core/theme.dart';
 import '../models/bill.dart';
+import '../providers/auth_provider.dart';
 import 'main_shell.dart';
 
 class BillSuccessScreen extends StatelessWidget {
@@ -12,13 +14,16 @@ class BillSuccessScreen extends StatelessWidget {
 
   const BillSuccessScreen({super.key, required this.bill});
 
-  String _getInvoiceUrl() {
-    return "http://10.0.2.2:8000/api/merchant/invoice/${bill.billId}";
+  String _getInvoiceUrl(BuildContext context) {
+    final auth = context.read<AuthProvider>();
+    final base = auth.baseUrl.isNotEmpty ? auth.baseUrl : "http://10.0.2.2:5001/api";
+    final cleanBase = base.endsWith('/api') ? base : '$base/api';
+    return "$cleanBase/merchant/invoice/${bill.billId}";
   }
 
   @override
   Widget build(BuildContext context) {
-    final invoiceUrl = _getInvoiceUrl();
+    final invoiceUrl = _getInvoiceUrl(context);
 
     return Scaffold(
       body: Container(
@@ -32,7 +37,6 @@ class BillSuccessScreen extends StatelessWidget {
               children: [
                 const SizedBox(height: 20),
 
-                // Cute Quicksand Receipt Character Badge
                 Container(
                   width: 96,
                   height: 96,
@@ -49,18 +53,14 @@ class BillSuccessScreen extends StatelessWidget {
                     ],
                   ),
                   child: const Center(
-                    child: Icon(
-                      Icons.check_circle_rounded,
-                      size: 60,
-                      color: AppColors.success,
-                    ),
+                    child: Icon(Icons.check_circle_rounded, color: AppColors.warmCoral, size: 54),
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
                 Text(
-                  'Payment Successful',
+                  'Payment Completed',
                   style: GoogleFonts.poppins(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
@@ -69,34 +69,89 @@ class BillSuccessScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Bill #${bill.billId} completed',
+                  'Bill #${bill.billId}',
                   style: GoogleFonts.inter(
                     fontSize: 13,
-                    color: AppColors.textOnWarm.withValues(alpha: 0.85),
+                    color: AppColors.textOnWarm.withValues(alpha: 0.8),
                   ),
                 ),
 
                 const SizedBox(height: 24),
 
-                // Bill Details Card
                 GlassCard(
                   padding: const EdgeInsets.all(20),
                   borderRadius: 22,
                   color: AppColors.darkCard.withValues(alpha: 0.95),
                   child: Column(
                     children: [
-                      _buildDetailRow('Total Amount Paid', '₹${bill.totalAmount.toStringAsFixed(0)}', isHighlight: true),
-                      const Divider(color: AppColors.glassBorder, height: 20),
-                      _buildDetailRow('Payment Mode', _getPaymentModeLabel(bill.paymentMode)),
-                      const SizedBox(height: 10),
-                      _buildDetailRow('Date & Time', DateFormat('dd MMM yyyy, hh:mm a').format(bill.timestamp)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Amount Paid',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          Text(
+                            NumberFormat.currency(locale: 'en_IN', symbol: '₹').format(bill.totalAmount),
+                            style: GoogleFonts.poppins(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.warmCoral,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      const Divider(color: AppColors.darkBorder),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Payment Mode', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textMuted)),
+                          Text(
+                            bill.paymentMode.name.toUpperCase(),
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Items Count', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textMuted)),
+                          Text(
+                            '${bill.items.length} items',
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
                       if (bill.customerName != null) ...[
-                        const SizedBox(height: 10),
-                        _buildDetailRow('Customer', bill.customerName!),
-                      ],
-                      if (bill.ecoTransactionId != null) ...[
-                        const SizedBox(height: 10),
-                        _buildDetailRow('ECO Txn ID', bill.ecoTransactionId!),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Customer', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textMuted)),
+                            Text(
+                              bill.customerName!,
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ],
                   ),
@@ -104,7 +159,6 @@ class BillSuccessScreen extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // Download Invoice QR Section (Scan to Auto-Download Invoice)
                 GlassCard(
                   padding: const EdgeInsets.all(20),
                   borderRadius: 22,
@@ -112,7 +166,7 @@ class BillSuccessScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       Text(
-                        'Scan QR to Download Invoice',
+                        'Tax Invoice Available',
                         style: GoogleFonts.poppins(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -121,7 +175,7 @@ class BillSuccessScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Scan with phone camera for auto-download',
+                        'Scan QR with camera or click share link',
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           color: AppColors.textMuted,
@@ -164,7 +218,6 @@ class BillSuccessScreen extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // Buttons
                 Row(
                   children: [
                     Expanded(
@@ -184,9 +237,11 @@ class BillSuccessScreen extends StatelessWidget {
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.white38),
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: const BorderSide(color: AppColors.textOnWarm, width: 1.5),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
                       ),
                     ),
@@ -194,69 +249,38 @@ class BillSuccessScreen extends StatelessWidget {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          Navigator.of(context).pushAndRemoveUntil(
+                          Navigator.pushAndRemoveUntil(
+                            context,
                             MaterialPageRoute(builder: (_) => const MainShell()),
                             (route) => false,
                           );
                         },
-                        icon: const Icon(Icons.add_rounded, color: AppColors.darkNavy, size: 18),
+                        icon: const Icon(Icons.add_rounded, size: 18),
                         label: Text(
                           'New Bill',
                           style: GoogleFonts.poppins(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.darkNavy,
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
+                          backgroundColor: AppColors.darkNavy,
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
         ),
       ),
     );
-  }
-
-  Widget _buildDetailRow(String label, String value, {bool isHighlight = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: AppColors.textMuted,
-          ),
-        ),
-        Text(
-          value,
-          style: GoogleFonts.poppins(
-            fontSize: isHighlight ? 18 : 13,
-            fontWeight: isHighlight ? FontWeight.w800 : FontWeight.w600,
-            color: isHighlight ? AppColors.warmPeach : AppColors.textPrimary,
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _getPaymentModeLabel(PaymentMode mode) {
-    switch (mode) {
-      case PaymentMode.ecoWallet:
-        return 'ECO Wallet';
-      case PaymentMode.upi:
-        return 'UPI';
-      case PaymentMode.cash:
-      default:
-        return 'Cash';
-    }
   }
 }

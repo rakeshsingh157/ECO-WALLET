@@ -1,5 +1,3 @@
-/// ECO Wallet — QR Scanner Screen
-/// Camera-based QR code scanner for payments.
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -49,6 +47,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     String? targetUserId;
     String? amountStr;
     String? recipientName;
+    String? paymentId;
 
     try {
       final payload = jsonDecode(rawValue);
@@ -56,6 +55,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         targetUserId = payload['user_id']?.toString() ?? payload['merchant_id']?.toString() ?? payload['merchant']?.toString();
         amountStr = payload['amount']?.toString();
         recipientName = payload['name']?.toString() ?? payload['business_name']?.toString() ?? payload['merchant_name']?.toString() ?? payload['shop_name']?.toString();
+        paymentId = payload['payment_id']?.toString() ?? payload['paymentId']?.toString();
       }
     } catch (_) {}
 
@@ -65,6 +65,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         targetUserId = uri.queryParameters['merchant'] ?? uri.queryParameters['user_id'] ?? uri.queryParameters['pa'];
         amountStr = uri.queryParameters['amount'] ?? uri.queryParameters['am'];
         recipientName = uri.queryParameters['name'] ?? uri.queryParameters['pn'] ?? uri.queryParameters['business_name'];
+        paymentId = uri.queryParameters['payment_id'] ?? uri.queryParameters['pid'];
         
         if (targetUserId == null && uri.pathSegments.isNotEmpty) {
           final lastSeg = uri.pathSegments.last;
@@ -85,6 +86,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
             prefillReceiverId: targetUserId,
             prefillAmount: amountStr,
             prefillReceiverName: recipientName,
+            prefillPaymentId: paymentId,
           ),
         ),
       );
