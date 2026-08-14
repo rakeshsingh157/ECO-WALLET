@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../core/theme.dart';
+import '../providers/auth_provider.dart';
 
 class ShopMember {
   final String id;
@@ -26,11 +28,22 @@ class AddMemberScreen extends StatefulWidget {
 }
 
 class _AddMemberScreenState extends State<AddMemberScreen> {
-  final List<ShopMember> _members = [
-    ShopMember(id: '1', name: 'Mr. Sharma', role: 'Owner (Admin)', phone: '+91 98765 00000'),
-    ShopMember(id: '2', name: 'Amit Sharma', role: 'Counter Cashier', phone: '+91 98765 11111'),
-    ShopMember(id: '3', name: 'Priya Verma', role: 'Shop Manager', phone: '+91 98765 22222'),
-  ];
+  late final List<ShopMember> _members;
+
+  @override
+  void initState() {
+    super.initState();
+    final auth = context.read<AuthProvider>();
+    _members = [
+      if (auth.ownerName.isNotEmpty)
+        ShopMember(
+          id: '1',
+          name: auth.ownerName,
+          role: 'Owner (Admin)',
+          phone: auth.mobileNumber.isNotEmpty ? auth.mobileNumber : '',
+        ),
+    ];
+  }
 
   void _showAddMemberModal() {
     final nameCtrl = TextEditingController();

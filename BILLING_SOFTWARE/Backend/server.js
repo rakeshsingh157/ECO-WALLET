@@ -39,7 +39,7 @@ app.use("/api/staff", require("./routes/staffRoutes"));
 app.post("/api/merchant/create-payment", async (req, res) => {
   const { order_id, amount, description } = req.body;
   const paymentId = `pay_${Date.now()}`;
-  const merchantId = req.body.merchant_id || "mch_sharma_kirana";
+  const merchantId = req.body.merchant_id || req.headers["x-merchant-id"] || req.headers["x-api-key"] || "mch_store";
   const now = Date.now();
   const FIVE_MINUTES_MS = 5 * 60 * 1000;
   const expiresAt = new Date(now + FIVE_MINUTES_MS);
@@ -215,17 +215,108 @@ app.post("/api/merchant/pay", async (req, res) => {
   });
 });
 
-// Wallet User Lookup Endpoint (Fixes 'Recipient Not Found')
-app.get("/api/wallet/user/:user_id", (req, res) => {
+// Public Merchant Onboarding Route (App login/signup sync directly to MongoDB Atlas)
+app.post("/api/merchant/onboard", async (req, res) => {
+  try {
+    const User = require("./models/User");
+    const Merchant = require("./models/Merchant");
+    const { mobile_number, shop_name, owner_name, security_pin, api_key, merchant_id } = req.body;
+    const phone = mobile_number || "9876543210";
+    const mchId = merchant_id || `mch_${phone}`;
+    const bName = shop_name || "Dukaan Store";
+    const oName = owner_name || "Shopkeeper";
+
+    // 1. Find or create shop owner user
+    let user = await User.findOne({ $or: [{ phone }, { user_id: mchId }] });
+    if (!user) {
+      user = await User.create({
+        user_id: mchId,
+        name: oName,
+        email: `${phone}@dukaandost.io`,
+        phone: phone,
+        password: security_pin || "123456",
+        balance: 1000,
+        role: "user",
+      });
+    } else {
+      user.name = oName;
+      if (phone) user.phone = phone;
+      await user.save();
+    }
+
+    // 2. Find or create Merchant record
+    let merchant = await Merchant.findOne({ merchant_id: mchId });
+    if (!merchant) {
+      merchant = await Merchant.create({
+        merchant_id: mchId,
+        user_id: user.user_id,
+        business_name: bName,
+        owner_name: oName,
+        mobile_number: phone,
+        webhook_url: "http://localhost:5001/api/webhook",
+        webhook_secret: `whsec_${phone}`,
+        api_key_hash: api_key || `key_${phone}`,
+        is_active: true,
+      });
+    } else {
+      merchant.business_name = bName;
+      merchant.owner_name = oName;
+      merchant.mobile_number = phone;
+      await merchant.save();
+    }
+
+    console.log(`✅ Merchant & User onboarded to MongoDB Atlas: ${mchId} (${bName})`);
+
+    res.json({
+      success: true,
+      message: "Merchant account saved to MongoDB Atlas successfully!",
+      merchant: {
+        merchant_id: merchant.merchant_id,
+        user_id: merchant.user_id,
+        business_name: merchant.business_name,
+        owner_name: merchant.owner_name,
+        mobile_number: merchant.mobile_number,
+      },
+    });
+  } catch (error) {
+    console.error("Merchant onboard error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Wallet User Lookup Endpoint (Dynamic MongoDB Atlas DB Lookup)
+app.get("/api/wallet/user/:user_id", async (req, res) => {
   const cleanId = req.params.user_id;
-  res.json({
-    success: true,
-    data: {
-      user_id: cleanId,
-      name: cleanId.startsWith("mch_") ? "Sharma Kirana Store" : `Shopkeeper (${cleanId})`,
-      phone: "9876543210",
-    },
-  });
+  try {
+    const User = require("./models/User");
+    const Merchant = require("./models/Merchant");
+    let user = await User.findOne({ user_id: cleanId });
+    let merchant = null;
+    if (!user) {
+      merchant = await Merchant.findOne({ merchant_id: cleanId });
+      if (merchant) {
+        user = await User.findOne({ user_id: merchant.user_id });
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        user_id: user ? user.user_id : cleanId,
+        name: merchant ? merchant.business_name : (user ? user.name : `Shopkeeper (${cleanId})`),
+        phone: user ? user.phone : cleanId,
+      },
+    });
+  } catch (err) {
+    res.json({
+      success: true,
+      data: {
+        user_id: cleanId,
+        name: `Shopkeeper (${cleanId})`,
+        phone: cleanId,
+      },
+    });
+  }
 });
 
 // Transfer Send Fallback Endpoint (Auto marks payment as completed)

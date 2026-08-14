@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../core/theme.dart';
 import '../core/constants.dart';
 import '../providers/auth_provider.dart';
@@ -16,16 +18,25 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _mobileCtrl = TextEditingController(text: '9876543210');
+  late TextEditingController _mobileCtrl;
   final _pinCtrl = TextEditingController();
   final _newPinCtrl = TextEditingController();
   final _confirmPinCtrl = TextEditingController();
-  final _shopNameCtrl = TextEditingController(text: 'Sharma Kirana Store');
-  final _ownerNameCtrl = TextEditingController(text: 'Mr. Sharma');
+  late TextEditingController _shopNameCtrl;
+  late TextEditingController _ownerNameCtrl;
 
   bool _wantSetPin = false;
   bool _obscurePin = true;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final auth = context.read<AuthProvider>();
+    _mobileCtrl = TextEditingController(text: auth.mobileNumber);
+    _shopNameCtrl = TextEditingController(text: auth.shopName);
+    _ownerNameCtrl = TextEditingController(text: auth.ownerName);
+  }
 
   @override
   void dispose() {
@@ -86,6 +97,24 @@ class _LoginScreenState extends State<LoginScreen> {
     // Auto-generate Merchant ID and API Key from phone number
     final autoMerchantId = 'mch_$phone';
     final autoApiKey = 'key_mch_${phone}_auto';
+    final targetBase = auth.baseUrl.isNotEmpty ? auth.baseUrl : AppConstants.defaultEcoWalletBaseUrl;
+    final cleanBase = targetBase.endsWith('/api') ? targetBase : '$targetBase/api';
+
+    // Onboard & save merchant directly to MongoDB Atlas
+    try {
+      await http.post(
+        Uri.parse('$cleanBase/merchant/onboard'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'mobile_number': phone,
+          'shop_name': _shopNameCtrl.text.trim(),
+          'owner_name': _ownerNameCtrl.text.trim(),
+          'security_pin': finalPin,
+          'merchant_id': autoMerchantId,
+          'api_key': autoApiKey,
+        }),
+      ).timeout(const Duration(seconds: 10));
+    } catch (_) {}
 
     await auth.saveCredentials(
       apiKey: autoApiKey,
@@ -95,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ownerName: _ownerNameCtrl.text.trim(),
       mobileNumber: phone,
       securityPin: finalPin,
-      baseUrl: auth.baseUrl.isNotEmpty ? auth.baseUrl : AppConstants.defaultEcoWalletBaseUrl,
+      baseUrl: targetBase,
     );
 
     setState(() => _isLoading = false);

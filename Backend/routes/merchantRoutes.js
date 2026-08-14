@@ -27,11 +27,67 @@ const { notify } = require("../utils/notificationService");
 const router = express.Router();
 
 // ─── Default payment expiry (15 minutes) ─────────────────
-const PAYMENT_EXPIRY_MINUTES = parseInt(process.env.MERCHANT_PAYMENT_EXPIRY_MINUTES) || 15;
+// Public Merchant Onboarding Route (App login/signup sync to MongoDB Atlas)
+router.post("/onboard", async (req, res) => {
+  try {
+    const { mobile_number, shop_name, owner_name, security_pin, api_key, merchant_id } = req.body;
+    const phone = mobile_number;
+    const mchId = merchant_id || `mch_${phone}`;
+    const bName = shop_name;
+    const oName = owner_name;
 
-// ═══════════════════════════════════════════════════════════
-// MERCHANT MANAGEMENT (Admin)
-// ═══════════════════════════════════════════════════════════
+    let user = await User.findOne({ phone });
+    if (!user) {
+      user = await User.findOne({ user_id: mchId });
+    }
+
+    if (!user) {
+      const passwordHash = await bcrypt.hash("EcoWallet2026!", 10);
+      user = await User.create({
+        user_id: mchId,
+        name: oName,
+        email: `${phone}@ecowallet.io`,
+        phone: phone,
+        password: passwordHash,
+        balance: 1000,
+        role: "user",
+      });
+    } else {
+      user.name = oName;
+      await user.save();
+    }
+
+    let merchant = await Merchant.findOne({ merchant_id: mchId });
+    if (!merchant) {
+      const apiKeyHash = await bcrypt.hash(api_key || `key_mch_${phone}_auto`, 10);
+      merchant = await Merchant.create({
+        merchant_id: mchId,
+        user_id: user.user_id,
+        business_name: bName,
+        webhook_url: "http://localhost:5001/api/webhook",
+        webhook_secret: `whsec_auto_${phone}`,
+        api_key_hash: apiKeyHash,
+        is_active: true,
+      });
+    } else {
+      merchant.business_name = bName;
+      await merchant.save();
+    }
+
+    res.json({
+      success: true,
+      message: "Merchant account onboarded to MongoDB Atlas successfully!",
+      merchant: {
+        merchant_id: merchant.merchant_id,
+        user_id: merchant.user_id,
+        business_name: merchant.business_name,
+      },
+    });
+  } catch (error) {
+    console.error("Merchant onboard error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 router.post(
   "/register",

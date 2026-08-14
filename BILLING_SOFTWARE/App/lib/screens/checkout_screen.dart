@@ -89,6 +89,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   void _processPayment() async {
     final billProvider = context.read<BillProvider>();
+    final auth = context.read<AuthProvider>();
+    final apiService = ApiService(baseUrl: auth.baseUrl, apiKey: auth.apiKey);
 
     if (_selectedMode == PaymentMode.ecoWallet) {
       // Re-trigger auto start if needed
@@ -106,6 +108,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final bill = billProvider.completeManualBill(
         PaymentMode.pending,
         customerName: '${_selectedKhataCustomer!.name} (Khata)',
+        apiService: apiService,
       );
 
       if (mounted) {
@@ -118,7 +121,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
     } else {
       // Manual Cash or UPI payment
-      final bill = billProvider.completeManualBill(_selectedMode);
+      final bill = billProvider.completeManualBill(
+        _selectedMode,
+        apiService: apiService,
+      );
       if (mounted) {
         Navigator.pushReplacement(
           context,

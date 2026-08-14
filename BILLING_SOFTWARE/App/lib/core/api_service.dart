@@ -15,7 +15,7 @@ class ApiService {
         "X-API-Key": apiKey,
       };
 
-  /// Create payment request on ECO Wallet merchant backend (Render & Local support)
+  /// Create payment request directly on ECO Wallet merchant backend API
   Future<Map<String, dynamic>> createPayment({
     required String orderId,
     required double amount,
@@ -33,45 +33,30 @@ class ApiService {
           "amount": amount,
           "description": description ?? "Dukaan Dost Bill #$orderId",
         }),
-      ).timeout(const Duration(seconds: 15)); // 15s timeout for Render free tier spin-up
+      ).timeout(const Duration(seconds: 15));
 
       final bodyText = response.body.trim();
-
-      // Check if response is valid JSON
       if (bodyText.startsWith('{') || bodyText.startsWith('[')) {
         final data = jsonDecode(bodyText);
         if (response.statusCode == 200 || response.statusCode == 201) {
           return data;
+        } else {
+          return {
+            "success": false,
+            "message": data["message"] ?? "Server error (${response.statusCode})",
+          };
         }
       }
-    } catch (_) {
-      // Fallback below if endpoint returns HTML or timeout
+      return {"success": false, "message": "Invalid response format from server"};
+    } catch (e) {
+      return {
+        "success": false,
+        "message": "Connection error: ${e.toString().replaceAll('Instance of ', '')}",
+      };
     }
-
-    // Bulletproof Fallback QR Response
-    final fallbackPaymentId = 'pay_${DateTime.now().millisecondsSinceEpoch}';
-    final merchantId = apiKey.isNotEmpty ? apiKey : 'mch_sharma_kirana';
-    final qrData = jsonEncode({
-      "user_id": merchantId,
-      "merchant_id": merchantId,
-      "payment_id": fallbackPaymentId,
-      "amount": amount,
-      "order_id": orderId,
-    });
-
-    return {
-      "success": true,
-      "payment": {
-        "payment_id": fallbackPaymentId,
-        "order_id": orderId,
-        "amount": amount,
-        "qr_data": qrData,
-        "status": "pending"
-      }
-    };
   }
 
-  /// Poll status of a merchant payment (Render & Local support)
+  /// Poll status of a merchant payment directly from backend API
   Future<Map<String, dynamic>> checkPaymentStatus(String paymentId) async {
     final cleanBaseUrl = baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
     final url = Uri.parse("$cleanBaseUrl/merchant/payment/$paymentId/status");
@@ -80,7 +65,7 @@ class ApiService {
       final response = await http.get(
         url,
         headers: _headers,
-      ).timeout(const Duration(seconds: 10)); // 10s timeout for Render free tier
+      ).timeout(const Duration(seconds: 10));
 
       final bodyText = response.body.trim();
       if (bodyText.startsWith('{') || bodyText.startsWith('[')) {
@@ -89,14 +74,55 @@ class ApiService {
           return data;
         }
       }
-    } catch (_) {}
+      return {
+        "success": false,
+        "payment": {"payment_id": paymentId, "status": "pending"}
+      };
+    } catch (_) {
+      return {
+        "success": false,
+        "payment": {"payment_id": paymentId, "status": "pending"}
+      };
+    }
+  }
 
-    return {
-      "success": true,
-      "payment": {
-        "payment_id": paymentId,
-        "status": "pending"
-      }
-    };
+  /// Save any bill (Cash, UPI, Khata, ECO Wallet) directly to MongoDB Atlas bills collection
+  Future<bool> saveBill({
+    required String billId,
+    required List<dynamic> items,
+    required double totalAmount,
+    required String paymentMode,
+    String? customerName,
+    String? customerPhone,
+    String? khataCustomerId,
+  }) async {
+    final cleanBaseUrl = baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
+    final url = Uri.parse("$cleanBaseUrl/bills");
+
+    try {
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          "bill_id": billId,
+          "items": items.map((item) => {
+            "product_id": item.product.id,
+            "name": item.product.name,
+            "price": item.product.price,
+            "quantity": item.quantity,
+          }).toList(),
+          "total_amount": totalAmount,
+          "payment_mode": paymentMode,
+          "customer_name": customerName ?? "Counter Customer",
+          "customer_phone": customerPhone,
+          "khata_customer_id": khataCustomerId,
+          "status": paymentMode == "pending" ? "pending" : "completed",
+        }),
+      ).timeout(const Duration(seconds: 10));
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (_) {
+      return false;
+    }
   }
 }

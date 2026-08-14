@@ -128,7 +128,7 @@ class BillProvider extends ChangeNotifier {
 
       if (response["success"] == true && data != null) {
         _activePaymentId = data["payment_id"];
-        _activeQrData = data["qr_data"] ?? "ecowallet://pay?merchant=mch_sharma_kirana&amount=$amount&payment_id=$_activePaymentId";
+        _activeQrData = data["qr_data"] ?? "ecowallet://pay?merchant=${apiService.apiKey.isNotEmpty ? apiService.apiKey : 'mch_store'}&amount=$amount&payment_id=$_activePaymentId";
         _isCreatingPayment = false;
         notifyListeners();
 
@@ -205,6 +205,16 @@ class BillProvider extends ChangeNotifier {
             );
 
             _completedBills.insert(0, newBill);
+
+            // Sync to MongoDB Atlas bills collection
+            apiService.saveBill(
+              billId: newBill.billId,
+              items: newBill.items,
+              totalAmount: newBill.totalAmount,
+              paymentMode: "ecoWallet",
+              customerName: newBill.customerName,
+            );
+
             clearCart();
             if (onSuccess != null) onSuccess(newBill);
           } else if (status == "expired" || status == "failed") {
@@ -232,8 +242,8 @@ class BillProvider extends ChangeNotifier {
     _isCheckingStatus = false;
   }
 
-  /// Complete cash/UPI bill directly
-  Bill completeManualBill(PaymentMode mode, {String? customerName}) {
+  /// Complete cash/UPI/Khata bill directly and save to MongoDB Atlas bills collection
+  Bill completeManualBill(PaymentMode mode, {String? customerName, ApiService? apiService}) {
     final newBill = Bill(
       billId: "BILL-${DateTime.now().millisecondsSinceEpoch}",
       items: List.from(_currentItems),
@@ -245,6 +255,18 @@ class BillProvider extends ChangeNotifier {
     );
 
     _completedBills.insert(0, newBill);
+
+    // Sync bill directly to MongoDB Atlas bills collection
+    if (apiService != null) {
+      apiService.saveBill(
+        billId: newBill.billId,
+        items: newBill.items,
+        totalAmount: newBill.totalAmount,
+        paymentMode: mode.name,
+        customerName: newBill.customerName,
+      );
+    }
+
     clearCart();
     return newBill;
   }

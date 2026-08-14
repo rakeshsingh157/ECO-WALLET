@@ -6,9 +6,9 @@ class AuthProvider extends ChangeNotifier {
   String _apiKey = '';
   String _webhookSecret = '';
   String _merchantId = '';
-  String _shopName = 'Sharma Kirana Store';
-  String _ownerName = 'Mr. Sharma';
-  String _mobileNumber = '9876543210';
+  String _shopName = '';
+  String _ownerName = '';
+  String _mobileNumber = '';
   String _securityPin = '';
   String _baseUrl = AppConstants.defaultEcoWalletBaseUrl;
   bool _isConfigured = false;
@@ -33,9 +33,9 @@ class AuthProvider extends ChangeNotifier {
     _apiKey = prefs.getString(AppConstants.keyApiKey) ?? '';
     _webhookSecret = prefs.getString(AppConstants.keyWebhookSecret) ?? '';
     _merchantId = prefs.getString(AppConstants.keyMerchantId) ?? '';
-    _shopName = prefs.getString(AppConstants.keyShopName) ?? 'Sharma Kirana Store';
-    _ownerName = prefs.getString(AppConstants.keyOwnerName) ?? 'Mr. Sharma';
-    _mobileNumber = prefs.getString('mobile_number') ?? '9876543210';
+    _shopName = prefs.getString(AppConstants.keyShopName) ?? '';
+    _ownerName = prefs.getString(AppConstants.keyOwnerName) ?? '';
+    _mobileNumber = prefs.getString('mobile_number') ?? '';
     _securityPin = prefs.getString('security_pin') ?? '';
     _baseUrl = prefs.getString(AppConstants.keyBaseUrl) ?? AppConstants.defaultEcoWalletBaseUrl;
     
@@ -85,7 +85,14 @@ class AuthProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(AppConstants.keyApiKey);
     await prefs.remove(AppConstants.keyMerchantId);
+    await prefs.remove('mobile_number');
+    await prefs.remove(AppConstants.keyShopName);
+    await prefs.remove(AppConstants.keyOwnerName);
     _apiKey = '';
+    _merchantId = '';
+    _mobileNumber = '';
+    _shopName = '';
+    _ownerName = '';
     _isConfigured = false;
     notifyListeners();
   }

@@ -26,13 +26,7 @@ class KhataCustomer {
 }
 
 class KhataStore {
-  static final List<KhataCustomer> customers = [
-    KhataCustomer(id: '1', name: 'Ramesh Kumar', phone: '+91 98765 43210', address: 'Shop 4, Main Market', aadhaarNumber: '1234 5678 9012', dueAmount: 450.0, lastTransaction: DateTime.now().subtract(const Duration(hours: 2))),
-    KhataCustomer(id: '2', name: 'Suresh Sharma', phone: '+91 98123 45678', address: 'Block B, Sector 5', aadhaarNumber: '9876 5432 1098', dueAmount: 1200.0, lastTransaction: DateTime.now().subtract(const Duration(days: 1))),
-    KhataCustomer(id: '3', name: 'Anita Verma', phone: '+91 97111 22334', address: 'House 12, Gandhi Nagar', aadhaarNumber: '4567 8901 2345', dueAmount: 650.0, lastTransaction: DateTime.now().subtract(const Duration(days: 2))),
-    KhataCustomer(id: '4', name: 'Vikram Singh', phone: '+91 96555 88990', address: 'Station Road', dueAmount: 2400.0, lastTransaction: DateTime.now().subtract(const Duration(days: 3))),
-    KhataCustomer(id: '5', name: 'Pooja Gupta', phone: '+91 95444 33221', dueAmount: 850.0, lastTransaction: DateTime.now().subtract(const Duration(days: 4))),
-  ];
+  static final List<KhataCustomer> customers = [];
 }
 
 class KhataScreen extends StatefulWidget {
