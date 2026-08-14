@@ -15,6 +15,8 @@ class ProductProvider extends ChangeNotifier {
     }).toList();
   }
 
+  List<Product> get lowStockProducts => _products.where((p) => p.stock <= 5).toList();
+
   List<String> get categories => ['All', 'Beverages', 'Snacks', 'Grains', 'Spices', 'Bakery', 'Oil & Ghee'];
   String get selectedCategory => _selectedCategory;
   String get searchQuery => _searchQuery;

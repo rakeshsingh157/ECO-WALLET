@@ -63,10 +63,11 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
     }).session(session);
 
     // If not found in User, check if it's a Merchant ID or API key
+    let merchant = null;
     if (!receiver) {
       const Merchant = require("../models/Merchant");
-      const merchant = await Merchant.findOne({
-        $or: [{ merchant_id: cleanId }, { api_key: cleanId }]
+      merchant = await Merchant.findOne({
+        $or: [{ merchant_id: cleanId }, { api_key: cleanId }, { user_id: cleanId }]
       });
       if (merchant) {
         receiver = await User.findOne({ user_id: merchant.user_id }).session(session);
@@ -77,12 +78,13 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
     if (!receiver) {
       const bcrypt = require("bcryptjs");
       const newUserId = cleanId.startsWith('mch_') ? cleanId : `USR_${Date.now()}`;
+      const defaultName = merchant ? merchant.business_name : (cleanId.startsWith('mch_') ? `Store (${cleanId})` : `User (${cleanId})`);
       const [newReceiver] = await User.create([
         {
           user_id: newUserId,
-          name: cleanId.startsWith('mch_') ? 'Sharma Kirana Store' : `Shopkeeper (${cleanId})`,
-          email: `${cleanId.toLowerCase().replaceAll(/[^a-z0-9]/g, '') || 'merchant'}@ecowallet.io`,
-          phone: cleanPhoneDigits.length >= 10 ? cleanPhoneDigits : '9876543210',
+          name: defaultName,
+          email: `${cleanId.toLowerCase().replaceAll(/[^a-z0-9]/g, '') || 'user'}@ecowallet.io`,
+          phone: cleanPhoneDigits.length >= 10 ? cleanPhoneDigits : cleanId,
           password: await bcrypt.hash("EcoWallet2026!", 10),
           balance: 0,
         }

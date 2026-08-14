@@ -74,34 +74,38 @@ router.get("/user/:user_id", protect, async (req, res) => {
     }).select("user_id name phone email");
 
     // Check Merchant table
+    let merchant = null;
     if (!user) {
-      const merchant = await Merchant.findOne({
-        $or: [{ merchant_id: cleanId }, { api_key: cleanId }]
+      merchant = await Merchant.findOne({
+        $or: [{ merchant_id: cleanId }, { api_key: cleanId }, { user_id: cleanId }]
       });
       if (merchant) {
         user = await User.findOne({ user_id: merchant.user_id }).select("user_id name phone email");
       }
     }
 
-    // Auto-create shopkeeper user if querying an auto-merchant ID or phone
-    if (!user) {
+    // Dynamic fallback if querying an un-registered merchant ID or phone
+    if (!user && !merchant) {
       const newUserId = cleanId.startsWith('mch_') ? cleanId : `USR_${Date.now()}`;
+      const defaultName = cleanId.startsWith('mch_') ? `Merchant Store (${cleanId})` : `User (${cleanId})`;
       user = await User.create({
         user_id: newUserId,
-        name: cleanId.startsWith('mch_') ? 'Sharma Kirana Store' : `Shopkeeper (${cleanId})`,
-        email: `${cleanId.toLowerCase().replaceAll(/[^a-z0-9]/g, '') || 'merchant'}@ecowallet.io`,
-        phone: cleanPhoneDigits.length >= 10 ? cleanPhoneDigits : '9876543210',
+        name: defaultName,
+        email: `${cleanId.toLowerCase().replaceAll(/[^a-z0-9]/g, '') || 'user'}@ecowallet.io`,
+        phone: cleanPhoneDigits.length >= 10 ? cleanPhoneDigits : cleanId,
         password: await bcrypt.hash("EcoWallet2026!", 10),
         balance: 0,
       });
     }
 
+    const displayName = merchant ? merchant.business_name : (user ? user.name : cleanId);
+
     res.json({
       success: true,
       data: {
-        user_id: user.user_id,
-        name: user.name,
-        phone: user.phone,
+        user_id: user ? user.user_id : cleanId,
+        name: displayName,
+        phone: user ? user.phone : cleanId,
       },
     });
   } catch (error) {

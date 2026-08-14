@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../core/theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/bill_provider.dart';
+import '../providers/product_provider.dart';
 import '../models/bill.dart';
 import 'create_bill_screen.dart';
 import 'add_product_screen.dart';
@@ -18,9 +19,11 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final billProvider = context.watch<BillProvider>();
+    final productProvider = context.watch<ProductProvider>();
 
-    final todaySales = billProvider.todaySales > 0 ? billProvider.todaySales : 12450.0;
-    final todayBills = billProvider.todayBillCount > 0 ? billProvider.todayBillCount : 42;
+    final todaySales = billProvider.todaySales;
+    final todayBills = billProvider.todayBillCount;
+    final lowStockItems = productProvider.lowStockProducts;
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -263,29 +266,39 @@ class DashboardScreen extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // Low Stock Alert Banner
+                // Dynamic Low Stock Alert Banner
                 GlassCard(
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                   borderRadius: 16,
-                  color: AppColors.warning.withValues(alpha: 0.12),
+                  color: lowStockItems.isNotEmpty
+                      ? AppColors.warning.withValues(alpha: 0.12)
+                      : AppColors.success.withValues(alpha: 0.12),
                   child: Row(
                     children: [
-                      const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 24),
+                      Icon(
+                        lowStockItems.isNotEmpty ? Icons.warning_amber_rounded : Icons.check_circle_rounded,
+                        color: lowStockItems.isNotEmpty ? AppColors.warning : AppColors.success,
+                        size: 24,
+                      ),
                       const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '3 Items Low Stock',
+                              lowStockItems.isNotEmpty
+                                  ? '${lowStockItems.length} Items Low Stock'
+                                  : 'All Products in Stock',
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.warning,
+                                color: lowStockItems.isNotEmpty ? AppColors.warning : AppColors.success,
                               ),
                             ),
                             Text(
-                              'Turmeric Powder, Bread Loaf, Sunflower Oil',
+                              lowStockItems.isNotEmpty
+                                  ? lowStockItems.map((p) => p.name).join(', ')
+                                  : 'Inventory levels healthy',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.inter(
@@ -294,14 +307,6 @@ class DashboardScreen extends StatelessWidget {
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                      Text(
-                        'View',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.warning,
                         ),
                       ),
                     ],
@@ -322,24 +327,58 @@ class DashboardScreen extends StatelessWidget {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () {},
-                      child: Text(
-                        'See All',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.warmCoral,
+                    if (billProvider.completedBills.isNotEmpty)
+                      TextButton(
+                        onPressed: () {},
+                        child: Text(
+                          'See All',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.warmCoral,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
 
                 const SizedBox(height: 10),
 
-                // Recent Bills List
-                ...billProvider.completedBills.map((bill) => _buildTransactionItem(bill)),
+                // Recent Bills List (Dynamic Empty State or Live Items)
+                if (billProvider.completedBills.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.darkCard,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: AppColors.glassBorder.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.receipt_long_outlined, size: 38, color: AppColors.textMuted),
+                        const SizedBox(height: 10),
+                        Text(
+                          'No bills generated yet today',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Tap "Create Bill" above to start',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ...billProvider.completedBills.map((bill) => _buildTransactionItem(bill)),
               ],
             ),
           ),

@@ -7,38 +7,16 @@ import '../core/api_service.dart';
 
 class BillProvider extends ChangeNotifier {
   final List<BillItem> _currentItems = [];
-  final List<Bill> _completedBills = [
-    Bill(
-      billId: '1042',
-      items: [],
-      totalAmount: 1250.0,
-      timestamp: DateTime.now().subtract(const Duration(minutes: 45)),
-      paymentMode: PaymentMode.cash,
-      status: BillStatus.completed,
-      customerName: 'Rice 25kg Bag, Dal...',
-    ),
-    Bill(
-      billId: '1041',
-      items: [],
-      totalAmount: 450.0,
-      timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-      paymentMode: PaymentMode.pending,
-      status: BillStatus.pending,
-      customerName: 'Ramesh (Khata)',
-    ),
-    Bill(
-      billId: '1040',
-      items: [],
-      totalAmount: 320.0,
-      timestamp: DateTime.now().subtract(const Duration(hours: 3)),
-      paymentMode: PaymentMode.upi,
-      status: BillStatus.completed,
-      customerName: 'Biscuits, Soap, Oil',
-    ),
-  ];
+  final List<Bill> _completedBills = [];
 
   List<BillItem> get currentItems => List.unmodifiable(_currentItems);
   List<Bill> get completedBills => List.unmodifiable(_completedBills);
+
+  double get todaySales => _completedBills
+      .where((b) => b.status == BillStatus.completed)
+      .fold(0, (sum, b) => sum + b.totalAmount);
+
+  int get todayBillCount => _completedBills.length;
 
   double get currentTotal => _currentItems.fold(0, (sum, item) => sum + item.totalPrice);
   int get itemCount => _currentItems.fold(0, (sum, item) => sum + item.quantity);
@@ -66,13 +44,7 @@ class BillProvider extends ChangeNotifier {
     return "$minutes:$seconds";
   }
 
-  // Stats
-  double get todaySales => _completedBills
-      .where((b) => b.status == BillStatus.completed)
-      .fold(0.0, (sum, b) => sum + b.totalAmount);
-
-  int get todayBillCount => _completedBills.where((b) => b.status == BillStatus.completed).length;
-
+  // Actions
   void addItem(Product product) {
     final index = _currentItems.indexWhere((item) => item.product.id == product.id);
     if (index >= 0) {
