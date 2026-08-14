@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
@@ -21,7 +21,8 @@ router.post(
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ success: false, errors: errors.array() });
+        const errorMsg = errors.array().map(e => e.msg).join(", ");
+        return res.status(400).json({ success: false, message: errorMsg, errors: errors.array() });
       }
 
       const { name, email, password, phone } = req.body;
@@ -54,12 +55,14 @@ router.post(
 
       const tokens = generateTokens(user.user_id, user.role);
 
-      await auditLog("USER_REGISTER", user.user_id, `New user registered: ${email}`, {}, req.ip);
-      await notify(user.user_id, "system", "Welcome to ECO Wallet", `Your wallet ID is ${user.user_id}. Start earning ECO coins!`);
+      try {
+        await auditLog("USER_REGISTER", user.user_id, `New user registered: ${email}`, {}, req.ip);
+        await notify(user.user_id, "system", "Welcome to ECO Wallet", `Your wallet ID is ${user.user_id}. Start earning ECO coins!`);
+      } catch (_) {}
 
       res.status(201).json({
         success: true,
-        message: "Account created successfully",
+        message: "Registration successful",
         data: {
           user: user.toPublic(),
           ...tokens,
@@ -67,7 +70,7 @@ router.post(
       });
     } catch (error) {
       console.error("Register error:", error);
-      res.status(500).json({ success: false, message: "Server error" });
+      res.status(500).json({ success: false, message: error.message || "Registration failed" });
     }
   }
 );
@@ -77,59 +80,38 @@ router.post("/login", async (req, res) => {
     const rawIdentifier = (req.body.email || req.body.phone || req.body.user_id || req.body.identifier || "").trim();
     const password = req.body.password || req.body.pin || req.body.security_pin;
 
-    if (!rawIdentifier) {
-      return res.status(400).json({ success: false, message: "Email or Mobile Number is required" });
-    }
-    if (!password) {
-      return res.status(400).json({ success: false, message: "Password or PIN is required" });
+    if (!rawIdentifier || !password) {
+      return res.status(400).json({ success: false, message: "Identifier and password are required" });
     }
 
-    const cleanPhoneDigits = rawIdentifier.replace(/\D/g, "");
+    const cleanPhone = rawIdentifier.replace(/\D/g, "");
     const isEmail = rawIdentifier.includes("@");
 
-    const query = {
-      $or: [
-        ...(isEmail ? [{ email: rawIdentifier.toLowerCase() }] : []),
-        { user_id: rawIdentifier },
-        { phone: rawIdentifier },
-        ...(cleanPhoneDigits.length >= 10
-          ? [
-              { phone: cleanPhoneDigits },
-              { user_id: `mch_${cleanPhoneDigits}` },
-              { email: `${cleanPhoneDigits}@dukaandost.io` },
-            ]
-          : []),
-      ],
-    };
+    const query = isEmail
+      ? { email: rawIdentifier.toLowerCase() }
+      : {
+          $or: [
+            { user_id: rawIdentifier },
+            { email: rawIdentifier.toLowerCase() },
+            { phone: rawIdentifier },
+            ...(cleanPhone.length >= 10
+              ? [
+                  { phone: cleanPhone },
+                  { user_id: `mch_${cleanPhone}` },
+                ]
+              : []),
+          ],
+        };
 
-    let user = await User.findOne(query);
-
+    const user = await User.findOne(query);
     if (!user) {
-      const Merchant = require("../models/Merchant");
-      const merchant = await Merchant.findOne({
-        $or: [
-          { merchant_id: rawIdentifier },
-          ...(cleanPhoneDigits.length >= 10 ? [{ mobile_number: cleanPhoneDigits }] : []),
-        ],
-      });
-
-      if (merchant) {
-        user = await User.findOne({ user_id: merchant.user_id });
-      }
-    }
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "No account found with these credentials. Please check your number or email.",
-      });
+      return res.status(401).json({ success: false, message: "No account found with this identifier" });
     }
 
     let isMatch = false;
-
     if (user.password) {
       try {
-        isMatch = await bcrypt.compare(password, user.password);
+        isMatch = await user.matchPassword(password);
       } catch (_) {}
       if (!isMatch && user.password === password) {
         isMatch = true;
@@ -138,15 +120,14 @@ router.post("/login", async (req, res) => {
 
     if (!isMatch && user.pin) {
       try {
-        isMatch = await bcrypt.compare(password, user.pin);
+        isMatch = await user.matchPin(password);
       } catch (_) {}
-      if (!isMatch && user.pin === password) {
-        isMatch = true;
-      }
     }
 
     if (!isMatch) {
-      await auditLog("LOGIN_FAILED", rawIdentifier, `Failed login attempt`, {}, req.ip);
+      try {
+        await auditLog("LOGIN_FAILED", rawIdentifier, "Failed login attempt", {}, req.ip);
+      } catch (_) {}
       return res.status(401).json({
         success: false,
         message: "Incorrect password or PIN",
@@ -155,7 +136,9 @@ router.post("/login", async (req, res) => {
 
     const tokens = generateTokens(user.user_id, user.role);
 
-    await auditLog("USER_LOGIN", user.user_id, `User logged in`, {}, req.ip);
+    try {
+      await auditLog("USER_LOGIN", user.user_id, "User logged in", {}, req.ip);
+    } catch (_) {}
 
     res.json({
       success: true,
@@ -167,7 +150,7 @@ router.post("/login", async (req, res) => {
     });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: error.message || "Server error" });
   }
 });
 
@@ -201,14 +184,15 @@ router.post(
   "/set-pin",
   protect,
   [
-    body("pin").matches(/^\d{6}$/).withMessage("PIN must be exactly 6 digits"),
-    body("current_pin").optional().matches(/^\d{6}$/).withMessage("Current PIN must be exactly 6 digits")
+    body("pin").matches(/^\d{4,6}$/).withMessage("PIN must be 4 to 6 digits"),
+    body("current_pin").optional().matches(/^\d{4,6}$/).withMessage("Current PIN must be 4 to 6 digits")
   ],
   async (req, res) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ success: false, errors: errors.array() });
+        const errorMsg = errors.array().map(e => e.msg).join(", ");
+        return res.status(400).json({ success: false, message: errorMsg, errors: errors.array() });
       }
 
       const user = await User.findOne({ user_id: req.user.user_id });
@@ -224,18 +208,20 @@ router.post(
         }
       }
 
-      const salt = await bcrypt.genSalt(12);
-      const pinHash = await bcrypt.hash(req.body.pin, salt);
+      const salt = await bcrypt.genSalt(10);
+      const pinHash = await bcrypt.hash(String(req.body.pin).trim(), salt);
 
       user.pin = pinHash;
       await user.save();
 
-      await auditLog("PIN_SET", req.user.user_id, "Payment PIN updated", {}, req.ip);
+      try {
+        await auditLog("PIN_SET", req.user.user_id, "Payment PIN updated", {}, req.ip);
+      } catch (_) {}
 
       res.json({ success: true, message: "Payment PIN set successfully" });
     } catch (error) {
       console.error("Set PIN error:", error);
-      res.status(500).json({ success: false, message: "Server error" });
+      res.status(500).json({ success: false, message: error.message || "Failed to set PIN" });
     }
   }
 );
@@ -243,6 +229,7 @@ router.post(
 router.get("/me", protect, async (req, res) => {
   try {
     const user = await User.findOne({ user_id: req.user.user_id }).select("-password");
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
     const hasPin = !!user.pin;
     const publicData = user.toPublic();
     res.json({
@@ -253,7 +240,7 @@ router.get("/me", protect, async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: error.message || "Server error" });
   }
 });
 
@@ -278,12 +265,14 @@ router.post(
       user.pin = null;
       await user.save();
 
-      await auditLog("PIN_REMOVED", req.user.user_id, "Payment PIN removed", {}, req.ip);
+      try {
+        await auditLog("PIN_REMOVED", req.user.user_id, "Payment PIN removed", {}, req.ip);
+      } catch (_) {}
 
       res.json({ success: true, message: "Payment PIN removed successfully" });
     } catch (error) {
       console.error("Remove PIN error:", error);
-      res.status(500).json({ success: false, message: "Server error" });
+      res.status(500).json({ success: false, message: error.message || "Server error" });
     }
   }
 );
@@ -299,7 +288,8 @@ router.put(
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ success: false, errors: errors.array() });
+        const errorMsg = errors.array().map(e => e.msg).join(", ");
+        return res.status(400).json({ success: false, message: errorMsg, errors: errors.array() });
       }
 
       const updates = {};
@@ -319,7 +309,7 @@ router.put(
       res.json({ success: true, message: "Profile updated successfully", data: user.toPublic() });
     } catch (error) {
       console.error("Update profile error:", error);
-      res.status(500).json({ success: false, message: "Server error" });
+      res.status(500).json({ success: false, message: error.message || "Server error" });
     }
   }
 );
@@ -394,7 +384,7 @@ router.get("/profile", protect, async (req, res) => {
     });
   } catch (error) {
     console.error("Profile fetch error:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: error.message || "Server error" });
   }
 });
 

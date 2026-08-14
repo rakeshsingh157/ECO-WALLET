@@ -1,7 +1,4 @@
-/**
- * ECO Wallet — User Model (Mongoose)
- */
-const mongoose = require("mongoose");
+﻿const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
@@ -37,7 +34,7 @@ const userSchema = new mongoose.Schema(
       minlength: 8,
     },
     pin: {
-      type: String, // bcrypt hashed
+      type: String,
       default: null,
     },
     balance: {
@@ -50,25 +47,24 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
-      version: {
-        type: Number,
-        default: 0, // Optimistic concurrency control
-      },
-      fcmToken: {
-        type: String,
-        default: null,
-      },
-      referred_by: {
-        type: String,
-        default: null,
-      },
+    version: {
+      type: Number,
+      default: 0,
     },
-    {
+    fcmToken: {
+      type: String,
+      default: null,
+    },
+    referred_by: {
+      type: String,
+      default: null,
+    },
+  },
+  {
     timestamps: true,
   }
 );
 
-// Hash password before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(12);
@@ -76,18 +72,25 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-// Compare password
 userSchema.methods.matchPassword = async function (entered) {
   return await bcrypt.compare(entered, this.password);
 };
 
-// Compare PIN
 userSchema.methods.matchPin = async function (entered) {
-  if (!this.pin) return true; // No pin set = skip
-  return await bcrypt.compare(entered, this.pin);
+  if (!this.pin) return true;
+  const rawEntered = String(entered || "").trim();
+  const rawStored = String(this.pin || "").trim();
+  try {
+    if (rawStored.startsWith("$2a$") || rawStored.startsWith("$2b$") || rawStored.startsWith("$2y$")) {
+      const match = await bcrypt.compare(rawEntered, rawStored);
+      if (match) return true;
+    }
+    return rawEntered === rawStored;
+  } catch (_) {
+    return rawEntered === rawStored;
+  }
 };
 
-// Never return sensitive fields
 userSchema.methods.toPublic = function () {
   return {
     user_id: this.user_id,

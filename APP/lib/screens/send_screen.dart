@@ -64,7 +64,7 @@ class _SendScreenState extends State<SendScreen> {
   void _onRecipientChanged(String val) {
     _debounce?.cancel();
     final query = val.trim();
-    if (query.length < 3) {
+    if (query.isEmpty) {
       if (mounted && widget.prefillReceiverName == null) {
         setState(() {
           _recipientInfo = null;
@@ -87,7 +87,7 @@ class _SendScreenState extends State<SendScreen> {
 
   Future<void> _lookupRecipientDirect(String query) async {
     final clean = query.trim();
-    if (clean.length < 3) {
+    if (clean.isEmpty) {
       if (mounted) {
         setState(() {
           _isChecking = false;
@@ -117,7 +117,7 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   void _appendDigit(String digit) {
-    FocusScope.of(context).unfocus(); // hide keyboard when typing amount
+    FocusScope.of(context).unfocus();
     if (_isAmountLocked) return;
 
     setState(() {
@@ -134,7 +134,7 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   void _deleteDigit() {
-    FocusScope.of(context).unfocus(); // hide keyboard when typing amount
+    FocusScope.of(context).unfocus();
     if (_isAmountLocked) return;
 
     setState(() {
@@ -158,17 +158,25 @@ class _SendScreenState extends State<SendScreen> {
       return;
     }
 
-    if (_recipientCtrl.text.trim().isEmpty) {
+    final cleanRecipient = _recipientCtrl.text.trim();
+    if (cleanRecipient.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter recipient ID')),
+        const SnackBar(content: Text('Enter recipient ID or mobile number')),
       );
       return;
     }
 
-    if (_recipientNotFound) {
+    if (_isChecking) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Verifying recipient ID, please wait...')),
+      );
+      return;
+    }
+
+    if (!_isReceiverLocked && (_recipientNotFound || _recipientInfo == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Recipient not found. Please enter a valid registered user ID or mobile number.'),
+          content: Text('Recipient not found with ID "$cleanRecipient". Please enter a valid registered user ID or mobile number.'),
           backgroundColor: EcoColors.errorContainer,
         ),
       );
@@ -510,7 +518,7 @@ class _SendScreenState extends State<SendScreen> {
                         ],
                       ),
                     ),
-                  ] else if (_recipientNotFound && _recipientCtrl.text.trim().length >= 3) ...[
+                  ] else if (_recipientNotFound && _recipientCtrl.text.trim().isNotEmpty) ...[
                     const SizedBox(height: 10),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
