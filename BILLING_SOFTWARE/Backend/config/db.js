@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 
-// Ensure environment variables are loaded
 dotenv.config();
 
 let ecoWalletConn = null;
@@ -11,23 +10,24 @@ const connectDB = async () => {
   const ecoWalletUri = process.env.ECO_WALLET_MONGO_URI;
 
   if (!billingUri) {
-    console.error(" ERROR: MONGO_URI is not defined in environment variables (.env)");
+    console.error("❌ ERROR: MONGO_URI is missing in .env");
     process.exit(1);
   }
 
+  const options = {
+    serverSelectionTimeoutMS: 15000,
+    connectTimeoutMS: 15000,
+  };
+
   try {
     // 1. Connect primary database: billing_soft
-    const conn = await mongoose.connect(billingUri, {
-      serverSelectionTimeoutMS: 5000,
-    });
+    const conn = await mongoose.connect(billingUri, options);
     console.log(`✅ MongoDB Atlas Primary Connected: ${conn.connection.host} [DB: ${conn.connection.name}]`);
 
-    // 2. Establish secondary sync connection to eco_wallet for real-time merchant & payment sharing
+    // 2. Establish secondary connection: eco_wallet
     if (ecoWalletUri) {
       try {
-        ecoWalletConn = mongoose.createConnection(ecoWalletUri, {
-          serverSelectionTimeoutMS: 5000,
-        });
+        ecoWalletConn = mongoose.createConnection(ecoWalletUri, options);
         ecoWalletConn.on("connected", () => {
           console.log(`🔗 Secondary Sync Connected [DB: ${ecoWalletConn.name}] (Real-time Merchant Sync)`);
         });
@@ -40,7 +40,6 @@ const connectDB = async () => {
     }
   } catch (error) {
     console.error(`❌ MongoDB Connection Error: ${error.message}`);
-    console.log(`🚀 Starting Dukaan Dost Backend in resilient database mode...`);
   }
 };
 

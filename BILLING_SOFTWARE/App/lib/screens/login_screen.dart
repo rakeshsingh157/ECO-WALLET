@@ -265,14 +265,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
                   // Tab Selector: Login vs Sign Up
                   Container(
+                    height: 52,
                     decoration: BoxDecoration(
-                      color: AppColors.darkCard.withValues(alpha: 0.9),
+                      color: AppColors.darkCard.withValues(alpha: 0.95),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppColors.glassBorder.withValues(alpha: 0.3)),
                     ),
                     padding: const EdgeInsets.all(4),
                     child: TabBar(
                       controller: _tabController,
+                      indicatorSize: TabBarIndicatorSize.tab,
                       indicator: BoxDecoration(
                         gradient: AppColors.sunsetGradient,
                         borderRadius: BorderRadius.circular(12),
@@ -283,8 +285,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       unselectedLabelStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
                       dividerColor: Colors.transparent,
                       tabs: const [
-                        Tab(text: 'Sign In (Login)'),
-                        Tab(text: 'Register Store (Sign Up)'),
+                        Tab(text: 'Sign In'),
+                        Tab(text: 'Register Store'),
                       ],
                     ),
                   ),

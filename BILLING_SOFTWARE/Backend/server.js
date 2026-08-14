@@ -7,9 +7,6 @@ const MerchantPayment = require("./models/MerchantPayment");
 
 dotenv.config();
 
-// Connect to MongoDB Atlas (Primary: billing_soft, Secondary Sync: eco_wallet)
-connectDB();
-
 const app = express();
 
 // Middleware
@@ -313,11 +310,16 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, () => {
-  console.log(`==================================================`);
-  console.log(`🚀 Dukaan Dost Billing Server Running on Port ${PORT}`);
-  console.log(`📦 Primary Database: MongoDB Atlas (billing_soft)`);
-  console.log(`🔗 Secondary Sync: MongoDB Atlas (eco_wallet)`);
-  console.log(`⏱️ Payment QR Expiry: 5 Minutes Active Session`);
-  console.log(`==================================================`);
-});
+const startServer = async () => {
+  await connectDB();
+  app.listen(PORT, () => {
+    console.log(`==================================================`);
+    console.log(`🚀 Dukaan Dost Billing Server Running on Port ${PORT}`);
+    console.log(`📦 Primary Database: MongoDB Atlas (billing_soft)`);
+    console.log(`🔗 Secondary Sync: MongoDB Atlas (eco_wallet)`);
+    console.log(`⏱️ Payment QR Expiry: 5 Minutes Active Session`);
+    console.log(`==================================================`);
+  });
+};
+
+startServer();

@@ -8,23 +8,28 @@ const { getEcoWalletConnection } = require("../config/db");
 async function syncToEcoWalletDB(userData, merchantData) {
   try {
     const ecoConn = getEcoWalletConnection();
-    if (ecoConn && ecoConn.readyState === 1) {
+    if (!ecoConn) return;
+
+    if (ecoConn.readyState !== 1) {
+      await ecoConn.asPromise().catch(() => null);
+    }
+
+    if (ecoConn.readyState === 1) {
       const EcoUser = ecoConn.models.User || ecoConn.model("User", User.schema);
       const EcoMerchant = ecoConn.models.Merchant || ecoConn.model("Merchant", Merchant.schema);
 
-      // Sync User
-      await EcoUser.findOneAndUpdate(
-        { $or: [{ user_id: userData.user_id }, { phone: userData.phone }] },
-        { $set: userData },
-        { upsert: true, new: true }
-      );
-
-      // Sync Merchant
-      await EcoMerchant.findOneAndUpdate(
-        { $or: [{ merchant_id: merchantData.merchant_id }, { mobile_number: merchantData.mobile_number }] },
-        { $set: merchantData },
-        { upsert: true, new: true }
-      );
+      await Promise.allSettled([
+        EcoUser.findOneAndUpdate(
+          { $or: [{ user_id: userData.user_id }, { phone: userData.phone }] },
+          { $set: userData },
+          { upsert: true, new: true, maxTimeMS: 5000 }
+        ),
+        EcoMerchant.findOneAndUpdate(
+          { $or: [{ merchant_id: merchantData.merchant_id }, { mobile_number: merchantData.mobile_number }] },
+          { $set: merchantData },
+          { upsert: true, new: true, maxTimeMS: 5000 }
+        ),
+      ]);
 
       console.log(`⚡ Synced Merchant to eco_wallet DB: ${merchantData.merchant_id} (${merchantData.business_name})`);
     }
