@@ -83,16 +83,14 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(AppConstants.keyApiKey);
-    await prefs.remove(AppConstants.keyMerchantId);
-    await prefs.remove('mobile_number');
-    await prefs.remove(AppConstants.keyShopName);
-    await prefs.remove(AppConstants.keyOwnerName);
+    await prefs.clear();
     _apiKey = '';
+    _webhookSecret = '';
     _merchantId = '';
-    _mobileNumber = '';
     _shopName = '';
     _ownerName = '';
+    _mobileNumber = '';
+    _securityPin = '';
     _isConfigured = false;
     notifyListeners();
   }
