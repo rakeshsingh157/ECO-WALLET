@@ -145,9 +145,16 @@ class _SendScreenState extends State<SendScreen> {
     if (res['success'] == true) {
       auth.updateBalance((res['data']['new_balance'] ?? auth.balance).toDouble());
       if (mounted) {
+        final data = Map<String, dynamic>.from(res['data'] ?? {});
+        final displayName = widget.prefillReceiverName ?? _recipientInfo?['name'] ?? _recipientCtrl.text.trim();
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => SuccessScreen(transactionData: res['data'])),
+          MaterialPageRoute(
+            builder: (_) => SuccessScreen(
+              transactionData: data,
+              fallbackReceiverName: displayName,
+            ),
+          ),
         );
       }
     } else {

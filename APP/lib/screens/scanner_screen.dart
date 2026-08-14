@@ -54,7 +54,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
       if (payload is Map<String, dynamic>) {
         targetUserId = payload['user_id']?.toString() ?? payload['merchant_id']?.toString() ?? payload['merchant']?.toString();
         amountStr = payload['amount']?.toString();
-        recipientName = payload['name']?.toString() ?? payload['business_name']?.toString() ?? payload['merchant_name']?.toString() ?? payload['shop_name']?.toString();
+        recipientName = payload['name']?.toString() ??
+            payload['business_name']?.toString() ??
+            payload['merchant_name']?.toString() ??
+            payload['shop_name']?.toString() ??
+            payload['owner_name']?.toString() ??
+            payload['receiver_name']?.toString() ??
+            payload['title']?.toString();
         paymentId = payload['payment_id']?.toString() ?? payload['paymentId']?.toString();
       }
     } catch (_) {}
