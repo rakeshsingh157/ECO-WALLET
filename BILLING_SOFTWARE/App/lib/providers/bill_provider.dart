@@ -167,13 +167,14 @@ class BillProvider extends ChangeNotifier {
     });
   }
 
-  /// Poll status every 3 seconds
+  /// Clean Session Polling — Monitors active payment session every 3s
   void startStatusPolling(ApiService apiService, {Function(Bill)? onSuccess}) {
     _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
-      if (_activePaymentId == null) return;
-      _isCheckingStatus = true;
-      notifyListeners();
+      if (_activePaymentId == null) {
+        stopPolling();
+        return;
+      }
 
       try {
         final response = await apiService.checkPaymentStatus(_activePaymentId!);
@@ -183,8 +184,12 @@ class BillProvider extends ChangeNotifier {
           final status = data["status"];
 
           if (status == "completed") {
+            // STOP POLLING IMMEDIATELY & TERMINATE SESSION
             stopPolling();
             _isCheckingStatus = false;
+            final completedPaymentId = _activePaymentId;
+            _activePaymentId = null;
+            _activeQrData = null;
 
             // Finalize bill
             final newBill = Bill(
@@ -194,7 +199,7 @@ class BillProvider extends ChangeNotifier {
               timestamp: DateTime.now(),
               paymentMode: PaymentMode.ecoWallet,
               status: BillStatus.completed,
-              ecoPaymentId: _activePaymentId,
+              ecoPaymentId: completedPaymentId,
               ecoTransactionId: data["transaction_id"],
               customerName: data["payer_name"] ?? "ECO Customer",
             );
@@ -203,24 +208,28 @@ class BillProvider extends ChangeNotifier {
             clearCart();
             if (onSuccess != null) onSuccess(newBill);
           } else if (status == "expired" || status == "failed") {
+            // STOP POLLING IMMEDIATELY & TERMINATE EXPIRED SESSION
             stopPolling();
             _isCheckingStatus = false;
+            _activePaymentId = null;
             _activeQrData = null;
             _errorMessage = "QR Payment expired after 5 minutes.";
             notifyListeners();
           }
         }
       } catch (e) {
-        // Silent retry
+        // Network timeout / retry
       }
     });
   }
 
+  /// Terminate session and cancel all background timers
   void stopPolling() {
     _pollingTimer?.cancel();
     _pollingTimer = null;
     _countdownTimer?.cancel();
     _countdownTimer = null;
+    _isCheckingStatus = false;
   }
 
   /// Complete cash/UPI bill directly

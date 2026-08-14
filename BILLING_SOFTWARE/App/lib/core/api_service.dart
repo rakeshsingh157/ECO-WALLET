@@ -15,7 +15,7 @@ class ApiService {
         "X-API-Key": apiKey,
       };
 
-  /// Create payment request on ECO Wallet merchant backend
+  /// Create payment request on ECO Wallet merchant backend (Render & Local support)
   Future<Map<String, dynamic>> createPayment({
     required String orderId,
     required double amount,
@@ -33,7 +33,7 @@ class ApiService {
           "amount": amount,
           "description": description ?? "Dukaan Dost Bill #$orderId",
         }),
-      ).timeout(const Duration(seconds: 4));
+      ).timeout(const Duration(seconds: 15)); // 15s timeout for Render free tier spin-up
 
       final bodyText = response.body.trim();
 
@@ -71,7 +71,7 @@ class ApiService {
     };
   }
 
-  /// Poll status of a merchant payment
+  /// Poll status of a merchant payment (Render & Local support)
   Future<Map<String, dynamic>> checkPaymentStatus(String paymentId) async {
     final cleanBaseUrl = baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
     final url = Uri.parse("$cleanBaseUrl/merchant/payment/$paymentId/status");
@@ -80,7 +80,7 @@ class ApiService {
       final response = await http.get(
         url,
         headers: _headers,
-      ).timeout(const Duration(seconds: 3));
+      ).timeout(const Duration(seconds: 10)); // 10s timeout for Render free tier
 
       final bodyText = response.body.trim();
       if (bodyText.startsWith('{') || bodyText.startsWith('[')) {

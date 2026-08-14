@@ -29,6 +29,48 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (KhataStore.customers.isNotEmpty) {
       _selectedKhataCustomer = KhataStore.customers.first;
     }
+    // Auto-generate ECO QR code & start background session immediately!
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_selectedMode == PaymentMode.ecoWallet) {
+        _autoStartEcoPayment();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // Terminate active session & cancel all timers when screen closes
+    context.read<BillProvider>().stopPolling();
+    super.dispose();
+  }
+
+  void _autoStartEcoPayment() async {
+    final billProvider = context.read<BillProvider>();
+    final auth = context.read<AuthProvider>();
+
+    if (billProvider.activeQrData != null || billProvider.isCreatingPayment) return;
+
+    final apiService = ApiService(
+      baseUrl: auth.baseUrl,
+      apiKey: auth.apiKey,
+    );
+
+    final success = await billProvider.initiateEcoPayment(apiService);
+    if (success && mounted) {
+      billProvider.startStatusPolling(
+        apiService,
+        onSuccess: (completedBill) {
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BillSuccessScreen(bill: completedBill),
+              ),
+            );
+          }
+        },
+      );
+    }
   }
 
   void _openCustomerSearch() async {
@@ -47,30 +89,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   void _processPayment() async {
     final billProvider = context.read<BillProvider>();
-    final auth = context.read<AuthProvider>();
 
     if (_selectedMode == PaymentMode.ecoWallet) {
-      final apiService = ApiService(
-        baseUrl: auth.baseUrl,
-        apiKey: auth.apiKey,
-      );
-
-      final success = await billProvider.initiateEcoPayment(apiService);
-      if (success) {
-        billProvider.startStatusPolling(
-          apiService,
-          onSuccess: (completedBill) {
-            if (mounted) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BillSuccessScreen(bill: completedBill),
-                ),
-              );
-            }
-          },
-        );
-      }
+      // Re-trigger auto start if needed
+      _autoStartEcoPayment();
     } else if (_selectedMode == PaymentMode.pending) {
       // Khata Payment
       if (_selectedKhataCustomer == null) {
@@ -419,7 +441,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                           const SizedBox(width: 10),
                           Text(
-                            'Waiting for customer payment...',
+                            'Listening for live payment...',
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,

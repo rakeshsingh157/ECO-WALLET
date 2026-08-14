@@ -151,6 +151,48 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
     await session.commitTransaction();
     session.endSession();
 
+    // Update any matching pending MerchantPayment status in MongoDB Atlas
+    try {
+      const MerchantPayment = require("../models/MerchantPayment");
+      let paymentId = req.body.payment_id;
+      if (!paymentId && req.body.qr_payload) {
+        try {
+          const parsed = JSON.parse(req.body.qr_payload);
+          paymentId = parsed.payment_id;
+        } catch (_) {}
+      }
+
+      if (paymentId) {
+        await MerchantPayment.findOneAndUpdate(
+          { payment_id: paymentId },
+          {
+            $set: {
+              status: "completed",
+              payer_id: sender_id,
+              payer_name: sender.name,
+              transaction_id: txn_id,
+              completed_at: new Date(),
+            }
+          }
+        );
+      } else {
+        await MerchantPayment.findOneAndUpdate(
+          { merchant_id: receiver.user_id, status: "pending" },
+          {
+            $set: {
+              status: "completed",
+              payer_id: sender_id,
+              payer_name: sender.name,
+              transaction_id: txn_id,
+              completed_at: new Date(),
+            }
+          }
+        );
+      }
+    } catch (mpErr) {
+      console.log("MerchantPayment update warning:", mpErr.message);
+    }
+
     // Post-transaction notifications (outside transaction)
     await notify(
       sender_id,
