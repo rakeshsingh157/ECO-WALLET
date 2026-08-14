@@ -49,29 +49,29 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
     const sender = await User.findOne({ user_id: sender_id }).session(session);
     if (!sender) throw { status: 404, message: "Sender not found" };
 
-    // Flexible receiver lookup (User ID, Email, Phone, or Merchant ID)
+    // Flexible receiver lookup (Check Merchant table first, then User table)
     const cleanId = String(receiver_id).trim();
     const cleanPhoneDigits = cleanId.replace(/\D/g, '');
 
-    let receiver = await User.findOne({
-      $or: [
-        { user_id: cleanId },
-        { email: cleanId.toLowerCase() },
-        { phone: cleanId },
-        ...(cleanPhoneDigits.length >= 10 ? [{ phone: { $regex: cleanPhoneDigits } }] : [])
-      ]
-    }).session(session);
+    const Merchant = require("../models/Merchant");
+    let merchant = await Merchant.findOne({
+      $or: [{ merchant_id: cleanId }, { api_key: cleanId }, { user_id: cleanId }]
+    });
 
-    // If not found in User, check if it's a Merchant ID or API key
-    let merchant = null;
+    let receiver = null;
+    if (merchant) {
+      receiver = await User.findOne({ user_id: merchant.user_id }).session(session);
+    }
+
     if (!receiver) {
-      const Merchant = require("../models/Merchant");
-      merchant = await Merchant.findOne({
-        $or: [{ merchant_id: cleanId }, { api_key: cleanId }, { user_id: cleanId }]
-      });
-      if (merchant) {
-        receiver = await User.findOne({ user_id: merchant.user_id }).session(session);
-      }
+      receiver = await User.findOne({
+        $or: [
+          { user_id: cleanId },
+          { email: cleanId.toLowerCase() },
+          { phone: cleanId },
+          ...(cleanPhoneDigits.length >= 10 ? [{ phone: { $regex: cleanPhoneDigits } }] : [])
+        ]
+      }).session(session);
     }
 
     // Auto-onboard recipient if first-time transfer to an un-registered phone/merchant ID
@@ -92,6 +92,10 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
       receiver = newReceiver;
     }
 
+    if (merchant && receiver && merchant.business_name) {
+      receiver.name = merchant.business_name;
+    }
+
     // Check balance (auto-provision initial 1000 ECO balance if empty)
     if (sender.balance < amount) {
       if (sender.balance === 0 || sender.balance < amount) {
@@ -108,9 +112,9 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
       }
     }
 
-    // Atomic debit & credit with optimistic concurrency
+    // Atomic debit & credit
     const debit = await User.findOneAndUpdate(
-      { user_id: sender_id, version: sender.version },
+      { user_id: sender_id },
       {
         $inc: { balance: -amount, version: 1 },
         $set: { updatedAt: new Date() },
@@ -119,7 +123,7 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
     );
 
     if (!debit) {
-      throw { status: 409, message: "Transaction conflict — please retry" };
+      throw { status: 409, message: "Transaction failed — sender account error" };
     }
 
     await User.findOneAndUpdate(
