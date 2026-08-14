@@ -1,7 +1,7 @@
 name: eco_wallet
 description: ECO Wallet - Secure Closed Digital Wallet Ecosystem
 publish_to: 'none'
-version: 1.0.16
+version: 1.0.17
 
 environment:
   sdk: '>=3.2.0 <4.0.0'

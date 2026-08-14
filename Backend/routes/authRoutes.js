@@ -15,7 +15,7 @@ router.post(
   [
     body("name").trim().isLength({ min: 2, max: 100 }).withMessage("Name must be 2-100 characters"),
     body("email").isEmail().normalizeEmail().withMessage("Valid email required"),
-    body("password").isLength({ min: 8 }).withMessage("Password must be at least 8 characters"),
+    body("password").isLength({ min: 4 }).withMessage("Password must be at least 4 characters"),
   ],
   async (req, res) => {
     try {
@@ -113,9 +113,6 @@ router.post("/login", async (req, res) => {
       try {
         isMatch = await user.matchPassword(password);
       } catch (_) {}
-      if (!isMatch && user.password === password) {
-        isMatch = true;
-      }
     }
 
     if (!isMatch && user.pin) {
@@ -211,8 +208,10 @@ router.post(
       const salt = await bcrypt.genSalt(10);
       const pinHash = await bcrypt.hash(String(req.body.pin).trim(), salt);
 
-      user.pin = pinHash;
-      await user.save();
+      await User.findOneAndUpdate(
+        { user_id: req.user.user_id },
+        { $set: { pin: pinHash } }
+      );
 
       try {
         await auditLog("PIN_SET", req.user.user_id, "Payment PIN updated", {}, req.ip);
@@ -262,8 +261,10 @@ router.post(
         }
       }
 
-      user.pin = null;
-      await user.save();
+      await User.findOneAndUpdate(
+        { user_id: req.user.user_id },
+        { $set: { pin: null } }
+      );
 
       try {
         await auditLog("PIN_REMOVED", req.user.user_id, "Payment PIN removed", {}, req.ip);
