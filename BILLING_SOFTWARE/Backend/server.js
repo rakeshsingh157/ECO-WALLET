@@ -136,23 +136,13 @@ app.get("/api/merchant/payment/:payment_id/status", async (req, res) => {
     const ecoConn = getEcoWalletConnection();
     if (ecoConn && ecoConn.readyState === 1) {
       const EcoPayment = ecoConn.models.MerchantPayment || ecoConn.model("MerchantPayment", MerchantPayment.schema);
-      
-      const mchId = payment ? payment.merchant_id : (dbPayment ? dbPayment.merchant_id : null);
-      const cleanDigits = mchId ? mchId.replace(/\D/g, '') : '';
 
-      let ecoDbPayment = await EcoPayment.findOne({
-        $or: [
-          { payment_id: paymentId },
-          ...(mchId ? [{ merchant_id: mchId, status: "completed" }] : []),
-          ...(cleanDigits.length >= 10 ? [{ merchant_id: `mch_${cleanDigits}`, status: "completed" }, { merchant_id: cleanDigits, status: "completed" }] : []),
-        ]
-      }).sort({ updatedAt: -1, completed_at: -1 });
+      const ecoDbPayment = await EcoPayment.findOne({
+        payment_id: paymentId,
+        status: "completed",
+      });
 
-      if (!ecoDbPayment) {
-        ecoDbPayment = await EcoPayment.findOne({ status: "completed" }).sort({ updatedAt: -1, completed_at: -1 });
-      }
-
-      if (ecoDbPayment && ecoDbPayment.status === "completed") {
+      if (ecoDbPayment) {
         dbPayment = ecoDbPayment;
         await MerchantPayment.findOneAndUpdate(
           { payment_id: paymentId },
@@ -187,15 +177,6 @@ app.get("/api/merchant/payment/:payment_id/status", async (req, res) => {
       }
     }
   } catch (_) {}
-
-  if (!payment || payment.status === "pending") {
-    for (const [id, rec] of activePayments.entries()) {
-      if (rec.status === "completed") {
-        payment = rec;
-        break;
-      }
-    }
-  }
 
   if (!payment) {
     return res.json({

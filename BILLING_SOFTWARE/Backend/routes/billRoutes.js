@@ -36,7 +36,7 @@ router.post("/", async (req, res) => {
     }
 
     const billId = bill_id || `BILL_${Date.now()}`;
-    const newBill = new Bill({
+    const billData = {
       bill_id: billId,
       items: items.map(item => ({
         product_id: item.product_id || item.id || `p_${Date.now()}`,
@@ -50,11 +50,15 @@ router.post("/", async (req, res) => {
       customer_phone: customer_phone || null,
       khata_customer_id: khata_customer_id || null,
       status: payment_mode === "pending" ? "pending" : "completed",
-    });
+    };
 
-    await newBill.save();
+    const savedBill = await Bill.findOneAndUpdate(
+      { bill_id: billId },
+      { $set: billData },
+      { upsert: true, new: true }
+    );
 
-    for (const item of newBill.items) {
+    for (const item of savedBill.items) {
       if (item.product_id) {
         try {
           await Product.findOneAndUpdate(
@@ -67,10 +71,10 @@ router.post("/", async (req, res) => {
       }
     }
 
-    console.log(`[INFO] Bill generated: #${newBill.bill_id}`);
-    res.status(201).json({ success: true, data: newBill });
+    console.log(`[INFO] Bill recorded: #${savedBill.bill_id}`);
+    res.status(201).json({ success: true, data: savedBill });
   } catch (error) {
-    console.error("[ERROR] Bill generation failed:", error.message);
+    console.error("[ERROR] Bill recording failed:", error.message);
     res.status(400).json({ success: false, error: error.message });
   }
 });

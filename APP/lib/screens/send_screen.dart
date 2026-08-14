@@ -58,12 +58,14 @@ class _SendScreenState extends State<SendScreen> {
 
   Future<void> _lookupRecipient() async {
     if (_recipientCtrl.text.trim().length < 5) {
-      if (mounted) setState(() => _recipientInfo = null);
+      if (mounted && widget.prefillReceiverName == null) setState(() => _recipientInfo = null);
       return;
     }
     final wallet = context.read<WalletProvider>();
     final info = await wallet.lookupUser(_recipientCtrl.text.trim());
-    if (mounted) setState(() => _recipientInfo = info);
+    if (mounted && info != null) {
+      setState(() => _recipientInfo = info);
+    }
   }
 
   void _appendDigit(String digit) {

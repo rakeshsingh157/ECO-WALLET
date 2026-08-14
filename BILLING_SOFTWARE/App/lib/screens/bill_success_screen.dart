@@ -105,7 +105,7 @@ class BillSuccessScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      const Divider(color: AppColors.darkBorder),
+                      const Divider(color: AppColors.glassBorder),
                       const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
