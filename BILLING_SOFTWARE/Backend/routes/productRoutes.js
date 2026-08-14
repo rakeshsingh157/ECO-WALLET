@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const Product = require("../models/Product");
 
-// GET /api/products — Fetch catalog from MongoDB Atlas
 router.get("/", async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
@@ -12,7 +11,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET /api/products/:id — Fetch single product
 router.get("/:id", async (req, res) => {
   try {
     const product = await Product.findOne({
@@ -27,7 +25,6 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// POST /api/products — Add new catalog item with validation
 router.post("/", async (req, res) => {
   try {
     const { name, price, category, unit, stock, icon, product_id } = req.body;
@@ -51,15 +48,14 @@ router.post("/", async (req, res) => {
     });
 
     await newProduct.save();
-    console.log(`✅ Product created in MongoDB Atlas: ${newProduct.name} (₹${newProduct.price})`);
+    console.log(`[INFO] Product added: ${newProduct.name}`);
     res.status(201).json({ success: true, data: newProduct });
   } catch (error) {
-    console.error("Product create error:", error);
+    console.error("[ERROR] Failed to add product:", error.message);
     res.status(400).json({ success: false, error: error.message });
   }
 });
 
-// PUT /api/products/:id — Update catalog item
 router.put("/:id", async (req, res) => {
   try {
     const { name, price, category, unit, stock, icon } = req.body;
@@ -85,7 +81,6 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// DELETE /api/products/:id — Delete catalog item
 router.delete("/:id", async (req, res) => {
   try {
     const query = {

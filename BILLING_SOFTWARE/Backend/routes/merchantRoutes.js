@@ -4,7 +4,6 @@ const User = require("../models/User");
 const Merchant = require("../models/Merchant");
 const { getEcoWalletConnection } = require("../config/db");
 
-// Helper to sync user & merchant to secondary eco_wallet DB
 async function syncToEcoWalletDB(userData, merchantData) {
   try {
     const ecoConn = getEcoWalletConnection();
@@ -31,14 +30,13 @@ async function syncToEcoWalletDB(userData, merchantData) {
         ),
       ]);
 
-      console.log(`⚡ Synced Merchant to eco_wallet DB: ${merchantData.merchant_id} (${merchantData.business_name})`);
+      console.log(`[INFO] Synchronized merchant record: ${merchantData.merchant_id}`);
     }
   } catch (err) {
-    console.log("Secondary eco_wallet sync notice:", err.message);
+    console.error("[ERROR] Merchant sync error:", err.message);
   }
 }
 
-// POST /api/merchant/signup — Register New Merchant Store (Saved to billing_soft DB & synced to eco_wallet DB)
 router.post("/signup", async (req, res) => {
   try {
     const { mobile_number, shop_name, owner_name, security_pin } = req.body;
@@ -47,7 +45,7 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({ success: false, message: "A valid 10-digit mobile number is required" });
     }
     if (!shop_name || shop_name.trim().length === 0) {
-      return res.status(400).json({ success: false, message: "Shop / Store name is required" });
+      return res.status(400).json({ success: false, message: "Shop name is required" });
     }
     if (!owner_name || owner_name.trim().length === 0) {
       return res.status(400).json({ success: false, message: "Owner name is required" });
@@ -62,7 +60,6 @@ router.post("/signup", async (req, res) => {
     const oName = owner_name.trim();
     const pin = security_pin.trim();
 
-    // Check if account already exists in billing_soft
     const existingUser = await User.findOne({ $or: [{ phone }, { user_id: mchId }] });
     const existingMerchant = await Merchant.findOne({ $or: [{ mobile_number: phone }, { merchant_id: mchId }] });
 
@@ -73,7 +70,6 @@ router.post("/signup", async (req, res) => {
       });
     }
 
-    // 1. Create User in billing_soft DB
     const userData = {
       user_id: mchId,
       name: oName,
@@ -86,7 +82,6 @@ router.post("/signup", async (req, res) => {
     };
     const user = await User.create(userData);
 
-    // 2. Create Merchant in billing_soft DB
     const autoApiKey = `key_mch_${phone}_auto`;
     const autoWebhookSecret = `whsec_auto_${phone}`;
     const merchantData = {
@@ -102,14 +97,13 @@ router.post("/signup", async (req, res) => {
     };
     const merchant = await Merchant.create(merchantData);
 
-    console.log(`✅ New Merchant Created in [DB: billing_soft]: ${mchId} (${bName})`);
+    console.log(`[INFO] Registered new merchant: ${mchId}`);
 
-    // 3. Auto-sync to eco_wallet DB so consumer payments immediately work
     await syncToEcoWalletDB(userData, merchantData);
 
     res.status(201).json({
       success: true,
-      message: `Welcome, ${oName}! Your store "${bName}" is registered successfully.`,
+      message: `Welcome, ${oName}. Store ${bName} registered successfully.`,
       merchant: {
         merchant_id: merchant.merchant_id,
         user_id: merchant.user_id,
@@ -121,12 +115,11 @@ router.post("/signup", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Merchant signup error:", error);
+    console.error("[ERROR] Merchant registration failed:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// POST /api/merchant/login — Login with Phone Number & Security PIN
 router.post("/login", async (req, res) => {
   try {
     const { mobile_number, security_pin } = req.body;
@@ -142,7 +135,6 @@ router.post("/login", async (req, res) => {
     const pin = security_pin.trim();
     const mchId = `mch_${phone}`;
 
-    // Find in billing_soft DB
     let user = await User.findOne({ $or: [{ phone }, { user_id: mchId }] });
     let merchant = await Merchant.findOne({ $or: [{ mobile_number: phone }, { merchant_id: mchId }] });
 
@@ -153,7 +145,6 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // Strict PIN verification
     if (user && user.pin && user.pin !== pin) {
       return res.status(401).json({
         success: false,
@@ -161,7 +152,6 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // If user record is missing, auto-create it linked to merchant
     if (!user && merchant) {
       user = await User.create({
         user_id: merchant.user_id || mchId,
@@ -184,7 +174,6 @@ router.post("/login", async (req, res) => {
     const autoApiKey = merchant ? (merchant.api_key_hash || `key_mch_${phone}_auto`) : `key_mch_${phone}_auto`;
     const autoWebhookSecret = merchant ? (merchant.webhook_secret || `whsec_auto_${phone}`) : `whsec_auto_${phone}`;
 
-    // Ensure sync to eco_wallet DB
     await syncToEcoWalletDB(
       {
         user_id: user.user_id,
@@ -209,11 +198,11 @@ router.post("/login", async (req, res) => {
       }
     );
 
-    console.log(`✅ Merchant Logged In [DB: billing_soft]: ${mchId} (${shopName})`);
+    console.log(`[INFO] Merchant authenticated: ${mchId}`);
 
     res.json({
       success: true,
-      message: `Welcome back, ${ownerName}!`,
+      message: `Welcome back, ${ownerName}`,
       merchant: {
         merchant_id: merchant ? merchant.merchant_id : mchId,
         user_id: user ? user.user_id : mchId,
@@ -225,18 +214,17 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Merchant login error:", error);
+    console.error("[ERROR] Authentication failure:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// Legacy Onboard fallback route
 router.post("/onboard", async (req, res) => {
   try {
     const { mobile_number, shop_name, owner_name, security_pin, api_key, merchant_id } = req.body;
     const phone = mobile_number || "9876543210";
     const mchId = merchant_id || `mch_${phone}`;
-    const bName = shop_name || "Dukaan Store";
+    const bName = shop_name || "Store";
     const oName = owner_name || "Shopkeeper";
 
     let user = await User.findOne({ $or: [{ phone }, { user_id: mchId }] });
@@ -280,7 +268,6 @@ router.post("/onboard", async (req, res) => {
       await merchant.save();
     }
 
-    // Sync to eco_wallet DB as well
     await syncToEcoWalletDB(
       {
         user_id: user.user_id,
@@ -307,7 +294,7 @@ router.post("/onboard", async (req, res) => {
 
     res.json({
       success: true,
-      message: "Merchant account saved to MongoDB Atlas (billing_soft) successfully!",
+      message: "Merchant account configured successfully",
       merchant: {
         merchant_id: merchant.merchant_id,
         user_id: merchant.user_id,

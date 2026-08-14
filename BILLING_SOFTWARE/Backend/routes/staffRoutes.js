@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const StaffMember = require("../models/StaffMember");
 
-// GET /api/staff — Fetch staff members from MongoDB Atlas
 router.get("/", async (req, res) => {
   try {
     const staff = await StaffMember.find().sort({ createdAt: -1 });
@@ -12,7 +11,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST /api/staff — Register staff member with validation
 router.post("/", async (req, res) => {
   try {
     const { name, phone, role, pin, member_id } = req.body;
@@ -31,15 +29,14 @@ router.post("/", async (req, res) => {
     });
 
     await newMember.save();
-    console.log(` Staff member created in MongoDB Atlas: ${newMember.name} (${newMember.role})`);
+    console.log(`[INFO] Staff member added: ${newMember.name}`);
     res.status(201).json({ success: true, data: newMember });
   } catch (error) {
-    console.error("Staff member create error:", error);
+    console.error("[ERROR] Failed to add staff member:", error.message);
     res.status(400).json({ success: false, error: error.message });
   }
 });
 
-// DELETE /api/staff/:id — Delete staff member
 router.delete("/:id", async (req, res) => {
   try {
     const query = {

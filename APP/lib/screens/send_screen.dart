@@ -17,7 +17,8 @@ import 'notifications_screen.dart';
 class SendScreen extends StatefulWidget {
   final String? prefillReceiverId;
   final String? prefillAmount;
-  const SendScreen({super.key, this.prefillReceiverId, this.prefillAmount});
+  final String? prefillReceiverName;
+  const SendScreen({super.key, this.prefillReceiverId, this.prefillAmount, this.prefillReceiverName});
 
   @override
   State<SendScreen> createState() => _SendScreenState();
@@ -34,6 +35,12 @@ class _SendScreenState extends State<SendScreen> {
     super.initState();
     if (widget.prefillAmount != null && widget.prefillAmount!.isNotEmpty) {
       _amount = widget.prefillAmount!;
+    }
+    if (widget.prefillReceiverName != null && widget.prefillReceiverName!.isNotEmpty) {
+      _recipientInfo = {
+        'name': widget.prefillReceiverName!,
+        'user_id': widget.prefillReceiverId ?? '',
+      };
     }
     if (widget.prefillReceiverId != null && widget.prefillReceiverId!.isNotEmpty) {
       _recipientCtrl.text = widget.prefillReceiverId!;
@@ -337,22 +344,45 @@ class _SendScreenState extends State<SendScreen> {
                     ),
                     onChanged: (_) => _lookupRecipient(),
                   ),
-                  if (_recipientInfo != null) ...[
-                    const SizedBox(height: 8),
+                  if (_recipientInfo != null || _isReceiverLocked) ...[
+                    const SizedBox(height: 10),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
-                        color: EcoColors.primaryContainer.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(8),
+                        color: EcoColors.primaryContainer.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: EcoColors.primaryContainer.withOpacity(0.35)),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.check_circle, size: 14, color: EcoColors.primaryContainer),
-                          const SizedBox(width: 8),
-                          Text(
-                            _recipientInfo!['name'] ?? '',
-                            style: GoogleFonts.inter(fontSize: 13, color: EcoColors.primaryContainer, fontWeight: FontWeight.w500),
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: EcoColors.primaryContainer.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.storefront_rounded, size: 20, color: EcoColors.primaryContainer),
                           ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'PAYING TO',
+                                  style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: EcoColors.onSurfaceVariant),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _recipientInfo?['name'] ?? widget.prefillReceiverName ?? _recipientCtrl.text,
+                                  style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: EcoColors.primaryContainer),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.verified_rounded, size: 18, color: EcoColors.primaryContainer),
                         ],
                       ),
                     ),
@@ -439,9 +469,15 @@ class _SendScreenState extends State<SendScreen> {
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text('SEND MONEY', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 3, color: EcoColors.surface)),
+                            Text(
+                              _recipientInfo?['name'] != null 
+                                  ? 'PAY TO ${_recipientInfo!['name'].toString().toUpperCase()}'
+                                  : 'SEND MONEY',
+                              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 2, color: EcoColors.surface),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             const SizedBox(width: 8),
-                            const Icon(Icons.send, color: EcoColors.surface, size: 18),
+                            const Icon(Icons.arrow_forward_rounded, color: EcoColors.surface, size: 18),
                           ],
                         ),
                 ),

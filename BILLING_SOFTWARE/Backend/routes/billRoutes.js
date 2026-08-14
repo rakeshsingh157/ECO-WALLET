@@ -3,12 +3,10 @@ const router = express.Router();
 const Bill = require("../models/Bill");
 const Product = require("../models/Product");
 
-// GET /api/bills — Fetch recent bills & dynamic sales summary
 router.get("/", async (req, res) => {
   try {
     const bills = await Bill.find().sort({ createdAt: -1 }).limit(100);
     
-    // Calculate today's sales based on current date
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
@@ -29,7 +27,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST /api/bills — Create new bill with stock auto-decrement
 router.post("/", async (req, res) => {
   try {
     const { items, total_amount, payment_mode, customer_name, customer_phone, khata_customer_id, bill_id } = req.body;
@@ -57,7 +54,6 @@ router.post("/", async (req, res) => {
 
     await newBill.save();
 
-    // Auto decrement stock for each product in the bill
     for (const item of newBill.items) {
       if (item.product_id) {
         try {
@@ -66,20 +62,19 @@ router.post("/", async (req, res) => {
             { $inc: { stock: -item.quantity } }
           );
         } catch (stockErr) {
-          console.warn("Could not decrement stock for product:", item.product_id);
+          console.warn("[WARN] Stock decrement notice:", item.product_id);
         }
       }
     }
 
-    console.log(`✅ Bill created in MongoDB Atlas: #${newBill.bill_id} (₹${newBill.total_amount}, Mode: ${newBill.payment_mode})`);
+    console.log(`[INFO] Bill generated: #${newBill.bill_id}`);
     res.status(201).json({ success: true, data: newBill });
   } catch (error) {
-    console.error("Bill create error:", error);
+    console.error("[ERROR] Bill generation failed:", error.message);
     res.status(400).json({ success: false, error: error.message });
   }
 });
 
-// GET /api/bills/invoice/:bill_id — Dynamic HTML Invoice Download Route
 router.get("/invoice/:bill_id", async (req, res) => {
   const billId = req.params.bill_id;
   try {

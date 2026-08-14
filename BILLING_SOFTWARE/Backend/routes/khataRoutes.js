@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const KhataCustomer = require("../models/KhataCustomer");
 
-// GET /api/khata — Fetch all Khata customers from MongoDB Atlas
 router.get("/", async (req, res) => {
   try {
     const customers = await KhataCustomer.find().sort({ updatedAt: -1 });
@@ -13,7 +12,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST /api/khata — Add new Khata customer
 router.post("/", async (req, res) => {
   try {
     const { name, phone, address, aadhaar_number, due_amount, customer_id } = req.body;
@@ -36,18 +34,17 @@ router.post("/", async (req, res) => {
     });
 
     await newCustomer.save();
-    console.log(`✅ Khata customer created in MongoDB Atlas: ${newCustomer.name} (${newCustomer.phone})`);
+    console.log(`[INFO] Customer added to Khata: ${newCustomer.name}`);
     res.status(201).json({ success: true, data: newCustomer });
   } catch (error) {
-    console.error("Khata customer create error:", error);
+    console.error("[ERROR] Failed to add Khata customer:", error.message);
     res.status(400).json({ success: false, error: error.message });
   }
 });
 
-// POST /api/khata/:id/transaction — Record credit / payment on Khata
 router.post("/:id/transaction", async (req, res) => {
   try {
-    const { type, amount, note } = req.body; // type: 'credit' (add due) or 'payment' (reduce due)
+    const { type, amount } = req.body;
     const numAmount = Number(amount);
 
     if (!numAmount || numAmount <= 0) {
@@ -72,13 +69,12 @@ router.post("/:id/transaction", async (req, res) => {
       return res.status(404).json({ success: false, message: "Khata customer not found" });
     }
 
-    res.json({ success: true, data: customer, message: `Khata updated. New due: ₹${customer.due_amount}` });
+    res.json({ success: true, data: customer, message: `Khata updated. Balance: ${customer.due_amount}` });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
   }
 });
 
-// DELETE /api/khata/:id — Delete Khata customer
 router.delete("/:id", async (req, res) => {
   try {
     const query = {

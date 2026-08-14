@@ -76,13 +76,17 @@ class BillProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Create ECO Wallet merchant payment and start 5-minute countdown + status polling
-  Future<bool> initiateEcoPayment(ApiService apiService) async {
+  Future<bool> initiateEcoPayment(
+    ApiService apiService, {
+    String? merchantId,
+    String? shopName,
+    String? ownerName,
+  }) async {
     if (_currentItems.isEmpty) return false;
 
     _isCreatingPayment = true;
     _errorMessage = null;
-    _remainingSeconds = 300; // Reset 5-minute timer
+    _remainingSeconds = 300;
     notifyListeners();
 
     try {
@@ -94,6 +98,9 @@ class BillProvider extends ChangeNotifier {
         orderId: orderId,
         amount: amount,
         description: description,
+        merchantId: merchantId,
+        shopName: shopName,
+        ownerName: ownerName,
       );
 
       final data = response["data"] ?? response["payment"];

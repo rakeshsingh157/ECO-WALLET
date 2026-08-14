@@ -55,7 +55,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       apiKey: auth.apiKey,
     );
 
-    final success = await billProvider.initiateEcoPayment(apiService);
+    final success = await billProvider.initiateEcoPayment(
+      apiService,
+      merchantId: auth.merchantId.isNotEmpty ? auth.merchantId : (auth.mobileNumber.isNotEmpty ? 'mch_${auth.mobileNumber}' : null),
+      shopName: auth.shopName.isNotEmpty ? auth.shopName : null,
+      ownerName: auth.ownerName.isNotEmpty ? auth.ownerName : null,
+    );
     if (success && mounted) {
       billProvider.startStatusPolling(
         apiService,

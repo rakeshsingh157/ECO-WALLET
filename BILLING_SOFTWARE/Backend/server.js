@@ -4,38 +4,57 @@ const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const { getEcoWalletConnection } = require("./config/db");
 const MerchantPayment = require("./models/MerchantPayment");
+const Merchant = require("./models/Merchant");
+const User = require("./models/User");
 
 dotenv.config();
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// In-Memory Active Payments Tracker with 5-Minute Expiry Session
 const activePayments = new Map();
 
-// Routes
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/bills", require("./routes/billRoutes"));
 app.use("/api/khata", require("./routes/khataRoutes"));
 app.use("/api/staff", require("./routes/staffRoutes"));
 app.use("/api/merchant", require("./routes/merchantRoutes"));
 
-// Merchant Payment QR Routes (Seamless integration for Dukaan Dost App)
 app.post("/api/merchant/create-payment", async (req, res) => {
-  const { order_id, amount, description } = req.body;
+  const { order_id, amount, description, shop_name, owner_name } = req.body;
   const paymentId = `pay_${Date.now()}`;
-  const merchantId = req.body.merchant_id || req.headers["x-merchant-id"] || req.headers["x-api-key"] || "mch_store";
+  const rawMerchantId = req.body.merchant_id || req.headers["x-merchant-id"] || req.headers["x-api-key"] || "mch_store";
   const now = Date.now();
   const FIVE_MINUTES_MS = 5 * 60 * 1000;
   const expiresAt = new Date(now + FIVE_MINUTES_MS);
 
-  // Universal QR JSON payload for instant ECO Wallet app parsing
+  let merchant = null;
+  try {
+    const cleanDigits = rawMerchantId.replace(/\D/g, "");
+    merchant = await Merchant.findOne({
+      $or: [
+        { merchant_id: rawMerchantId },
+        { api_key_hash: rawMerchantId },
+        { user_id: rawMerchantId },
+        ...(cleanDigits.length >= 10 ? [{ mobile_number: cleanDigits }, { merchant_id: `mch_${cleanDigits}` }] : [])
+      ]
+    });
+  } catch (_) {}
+
+  const businessName = (merchant && merchant.business_name) ? merchant.business_name : (shop_name || "Merchant Store");
+  const owner = (merchant && merchant.owner_name) ? merchant.owner_name : (owner_name || "Shopkeeper");
+  const resolvedMerchantId = merchant ? merchant.merchant_id : (rawMerchantId.startsWith("mch_") ? rawMerchantId : `mch_${rawMerchantId}`);
+
   const qrData = JSON.stringify({
-    user_id: merchantId,
-    merchant_id: merchantId,
+    user_id: resolvedMerchantId,
+    merchant_id: resolvedMerchantId,
+    name: businessName,
+    merchant_name: businessName,
+    business_name: businessName,
+    shop_name: businessName,
+    owner_name: owner,
     payment_id: paymentId,
     amount: amount || 100,
     order_id: order_id || `BILL_${Date.now()}`,
@@ -44,9 +63,11 @@ app.post("/api/merchant/create-payment", async (req, res) => {
 
   const paymentRecord = {
     payment_id: paymentId,
+    merchant_id: resolvedMerchantId,
+    business_name: businessName,
     order_id: order_id || `BILL_${Date.now()}`,
     amount: amount || 100,
-    description: description || "Dukaan Dost Bill",
+    description: description || `Bill Payment for ${businessName}`,
     qr_data: qrData,
     status: "pending",
     created_at: now,
@@ -55,45 +76,45 @@ app.post("/api/merchant/create-payment", async (req, res) => {
 
   activePayments.set(paymentId, paymentRecord);
 
-  // 1. Save to primary billing_soft DB
   try {
     await MerchantPayment.create({
       payment_id: paymentId,
-      merchant_id: merchantId,
+      merchant_id: resolvedMerchantId,
       order_id: order_id || `BILL_${Date.now()}`,
       amount: amount || 100,
-      description: description || "Dukaan Dost Bill",
+      description: description || `Bill Payment for ${businessName}`,
       expires_at: expiresAt,
       status: "pending",
     });
   } catch (err) {
-    console.log("MerchantPayment billing_soft save warning:", err.message);
+    console.error("[ERROR] Failed to record payment in database:", err.message);
   }
 
-  // 2. Sync to secondary eco_wallet DB
   try {
     const ecoConn = getEcoWalletConnection();
     if (ecoConn && ecoConn.readyState === 1) {
       const EcoPayment = ecoConn.models.MerchantPayment || ecoConn.model("MerchantPayment", MerchantPayment.schema);
       await EcoPayment.create({
         payment_id: paymentId,
-        merchant_id: merchantId,
+        merchant_id: resolvedMerchantId,
         order_id: order_id || `BILL_${Date.now()}`,
         amount: amount || 100,
-        description: description || "Dukaan Dost Bill",
+        description: description || `Bill Payment for ${businessName}`,
         expires_at: expiresAt,
         status: "pending",
       });
-      console.log(`⚡ Payment Session Synced to eco_wallet DB: ${paymentId}`);
+      console.log(`[INFO] Payment session synchronized: ${paymentId}`);
     }
   } catch (err) {
-    console.log("MerchantPayment eco_wallet sync notice:", err.message);
+    console.error("[ERROR] Secondary sync notice:", err.message);
   }
 
   res.status(201).json({
     success: true,
     payment: {
       payment_id: paymentId,
+      merchant_id: resolvedMerchantId,
+      business_name: businessName,
       order_id: paymentRecord.order_id,
       amount: paymentRecord.amount,
       qr_data: qrData,
@@ -108,11 +129,9 @@ app.get("/api/merchant/payment/:payment_id/status", async (req, res) => {
   const paymentId = req.params.payment_id;
   let payment = activePayments.get(paymentId);
 
-  // Check MongoDB Atlas primary billing_soft DB
   try {
     let dbPayment = await MerchantPayment.findOne({ payment_id: paymentId });
     
-    // If not found in primary, check secondary eco_wallet DB
     if (!dbPayment || dbPayment.status === "pending") {
       const ecoConn = getEcoWalletConnection();
       if (ecoConn && ecoConn.readyState === 1) {
@@ -120,7 +139,6 @@ app.get("/api/merchant/payment/:payment_id/status", async (req, res) => {
         const ecoDbPayment = await EcoPayment.findOne({ payment_id: paymentId });
         if (ecoDbPayment && ecoDbPayment.status === "completed") {
           dbPayment = ecoDbPayment;
-          // Update billing_soft DB as well
           await MerchantPayment.findOneAndUpdate(
             { payment_id: paymentId },
             {
@@ -156,7 +174,6 @@ app.get("/api/merchant/payment/:payment_id/status", async (req, res) => {
     }
   } catch (_) {}
 
-  // Fallback check
   if (!payment || payment.status === "pending") {
     for (const [id, rec] of activePayments.entries()) {
       if (rec.status === "completed") {
@@ -183,7 +200,7 @@ app.get("/api/merchant/payment/:payment_id/status", async (req, res) => {
       payment: {
         payment_id: paymentId,
         status: "expired",
-        message: "Payment session expired after 5 minutes.",
+        message: "Payment session expired.",
       },
     });
   }
@@ -196,14 +213,13 @@ app.get("/api/merchant/payment/:payment_id/status", async (req, res) => {
       payment_id: payment.payment_id || paymentId,
       order_id: payment.order_id || `BILL_${Date.now()}`,
       status: payment.status,
-      payer_name: payment.payer_name || "ECO Customer",
+      payer_name: payment.payer_name || "Customer",
       transaction_id: payment.transaction_id || `TXN_${Date.now()}`,
       remaining_seconds: remainingSeconds,
     },
   });
 });
 
-// Customer Direct Pay Simulation Endpoint
 app.post("/api/merchant/pay", async (req, res) => {
   const { payment_id } = req.body;
   const txnId = `TXN_${Date.now()}`;
@@ -238,7 +254,7 @@ app.post("/api/merchant/pay", async (req, res) => {
 
   res.json({
     success: true,
-    message: "Payment completed successfully!",
+    message: "Payment processed successfully.",
     data: {
       transaction_id: txnId,
       status: "completed",
@@ -247,13 +263,10 @@ app.post("/api/merchant/pay", async (req, res) => {
   });
 });
 
-// Wallet User Lookup Endpoint
 app.get("/api/wallet/user/:user_id", async (req, res) => {
   const cleanId = req.params.user_id;
   const cleanPhoneDigits = cleanId.replace(/\D/g, '');
   try {
-    const User = require("./models/User");
-    const Merchant = require("./models/Merchant");
     let merchant = await Merchant.findOne({
       $or: [
         { merchant_id: cleanId },
@@ -274,7 +287,7 @@ app.get("/api/wallet/user/:user_id", async (req, res) => {
       success: true,
       data: {
         user_id: user ? user.user_id : cleanId,
-        name: merchant ? merchant.business_name : (user ? user.name : `Shop (${cleanId})`),
+        name: merchant ? merchant.business_name : (user ? user.name : `Store ${cleanId}`),
         phone: user ? user.phone : (merchant ? merchant.mobile_number : cleanId),
       },
     });
@@ -283,27 +296,23 @@ app.get("/api/wallet/user/:user_id", async (req, res) => {
       success: true,
       data: {
         user_id: cleanId,
-        name: `Shop (${cleanId})`,
+        name: `Store ${cleanId}`,
         phone: cleanId,
       },
     });
   }
 });
 
-// Health Check Endpoint
 app.get("/api/health", (req, res) => {
   res.json({
-    status: "online",
-    app: "Dukaan Dost Billing Software Backend",
-    database: "MongoDB Atlas (billing_soft + eco_wallet sync)",
+    status: "healthy",
     timestamp: new Date().toISOString(),
   });
 });
 
-// Root Route
 app.get("/", (req, res) => {
   res.json({
-    message: "🚀 Dukaan Dost Billing & POS Backend API is Running!",
+    status: "online",
     health: "/api/health",
   });
 });
@@ -312,13 +321,8 @@ const PORT = process.env.PORT || 5001;
 
 const startServer = async () => {
   await connectDB();
-  app.listen(PORT, () => {
-    console.log(`==================================================`);
-    console.log(`🚀 Dukaan Dost Billing Server Running on Port ${PORT}`);
-    console.log(`📦 Primary Database: MongoDB Atlas (billing_soft)`);
-    console.log(`🔗 Secondary Sync: MongoDB Atlas (eco_wallet)`);
-    console.log(`⏱️ Payment QR Expiry: 5 Minutes Active Session`);
-    console.log(`==================================================`);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`[INFO] Server running on port ${PORT} across all interfaces (0.0.0.0)`);
   });
 };
 

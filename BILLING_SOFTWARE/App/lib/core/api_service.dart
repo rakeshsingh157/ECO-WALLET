@@ -6,6 +6,9 @@ class ApiService {
   final String baseUrl;
   final String apiKey;
 
+  // 5 Minutes timeout to accommodate Render cloud cold-starts and spinning up
+  static const Duration requestTimeout = Duration(minutes: 5);
+
   ApiService({
     required this.baseUrl,
     required this.apiKey,
@@ -38,12 +41,12 @@ class ApiService {
           "owner_name": ownerName,
           "security_pin": securityPin,
         }),
-      ).timeout(const Duration(seconds: 12));
+      ).timeout(requestTimeout);
 
       final data = jsonDecode(response.body);
       return data;
     } catch (e) {
-      return {"success": false, "message": "Connection error: ${e.toString()}"};
+      return {"success": false, "message": "Connection timeout or error: ${e.toString()}"};
     }
   }
 
@@ -61,12 +64,12 @@ class ApiService {
           "mobile_number": mobileNumber,
           "security_pin": securityPin,
         }),
-      ).timeout(const Duration(seconds: 12));
+      ).timeout(requestTimeout);
 
       final data = jsonDecode(response.body);
       return data;
     } catch (e) {
-      return {"success": false, "message": "Connection error: ${e.toString()}"};
+      return {"success": false, "message": "Connection timeout or error: ${e.toString()}"};
     }
   }
 
@@ -76,7 +79,7 @@ class ApiService {
   Future<List<Product>> getProducts() async {
     final url = Uri.parse("$_cleanBase/products");
     try {
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 10));
+      final response = await http.get(url, headers: _headers).timeout(requestTimeout);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data["success"] == true && data["data"] is List) {
@@ -113,7 +116,7 @@ class ApiService {
           "stock": product.stock,
           "icon": product.icon,
         }),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (_) {
@@ -125,7 +128,7 @@ class ApiService {
   Future<bool> deleteProduct(String productId) async {
     final url = Uri.parse("$_cleanBase/products/$productId");
     try {
-      final response = await http.delete(url, headers: _headers).timeout(const Duration(seconds: 10));
+      final response = await http.delete(url, headers: _headers).timeout(requestTimeout);
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -138,7 +141,7 @@ class ApiService {
   Future<Map<String, dynamic>> getBills() async {
     final url = Uri.parse("$_cleanBase/bills");
     try {
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 10));
+      final response = await http.get(url, headers: _headers).timeout(requestTimeout);
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
@@ -178,7 +181,7 @@ class ApiService {
           "khata_customer_id": khataCustomerId,
           "status": paymentMode == "pending" ? "pending" : "completed",
         }),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (_) {
@@ -192,7 +195,7 @@ class ApiService {
   Future<List<Map<String, dynamic>>> getKhataCustomers() async {
     final url = Uri.parse("$_cleanBase/khata");
     try {
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 10));
+      final response = await http.get(url, headers: _headers).timeout(requestTimeout);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data["success"] == true && data["data"] is List) {
@@ -227,7 +230,7 @@ class ApiService {
           "aadhaar_number": aadhaarNumber,
           "due_amount": dueAmount,
         }),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (_) {
@@ -238,7 +241,7 @@ class ApiService {
   /// Record Khata transaction (credit/payment)
   Future<bool> recordKhataTransaction({
     required String customerId,
-    required String type, // 'credit' or 'payment'
+    required String type,
     required double amount,
   }) async {
     final url = Uri.parse("$_cleanBase/khata/$customerId/transaction");
@@ -250,7 +253,7 @@ class ApiService {
           "type": type,
           "amount": amount,
         }),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return response.statusCode == 200;
     } catch (_) {
@@ -264,7 +267,7 @@ class ApiService {
   Future<List<Map<String, dynamic>>> getStaffMembers() async {
     final url = Uri.parse("$_cleanBase/staff");
     try {
-      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 10));
+      final response = await http.get(url, headers: _headers).timeout(requestTimeout);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data["success"] == true && data["data"] is List) {
@@ -297,7 +300,7 @@ class ApiService {
           "role": role,
           "pin": pin,
         }),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (_) {
@@ -312,6 +315,9 @@ class ApiService {
     required String orderId,
     required double amount,
     String? description,
+    String? merchantId,
+    String? shopName,
+    String? ownerName,
   }) async {
     final url = Uri.parse("$_cleanBase/merchant/create-payment");
     try {
@@ -322,8 +328,11 @@ class ApiService {
           "order_id": orderId,
           "amount": amount,
           "description": description ?? "Dukaan Dost Bill #$orderId",
+          "merchant_id": merchantId,
+          "shop_name": shopName,
+          "owner_name": ownerName,
         }),
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(requestTimeout);
 
       final bodyText = response.body.trim();
       if (bodyText.startsWith('{') || bodyText.startsWith('[')) {
@@ -353,7 +362,7 @@ class ApiService {
       final response = await http.get(
         url,
         headers: _headers,
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 15));
 
       final bodyText = response.body.trim();
       if (bodyText.startsWith('{') || bodyText.startsWith('[')) {

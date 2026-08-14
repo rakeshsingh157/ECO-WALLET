@@ -221,7 +221,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           border: Border.all(color: AppColors.warmPeach, width: 2),
                         ),
                         child: const Center(
-                          child: Text('🏪', style: TextStyle(fontSize: 22)),
+                          child: Icon(Icons.storefront_rounded, color: AppColors.warmCoral, size: 24),
                         ),
                       ),
                       const SizedBox(width: 12),

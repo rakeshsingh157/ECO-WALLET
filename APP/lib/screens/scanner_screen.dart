@@ -48,22 +48,23 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
     String? targetUserId;
     String? amountStr;
+    String? recipientName;
 
-    // 1. Try JSON parsing
     try {
       final payload = jsonDecode(rawValue);
       if (payload is Map<String, dynamic>) {
         targetUserId = payload['user_id']?.toString() ?? payload['merchant_id']?.toString() ?? payload['merchant']?.toString();
         amountStr = payload['amount']?.toString();
+        recipientName = payload['name']?.toString() ?? payload['business_name']?.toString() ?? payload['merchant_name']?.toString() ?? payload['shop_name']?.toString();
       }
     } catch (_) {}
 
-    // 2. Try URI parsing (eco://pay... or ecowallet://pay... or upi://pay...)
     if (targetUserId == null && (rawValue.contains('://') || rawValue.contains('pay?'))) {
       try {
         final uri = Uri.parse(rawValue);
         targetUserId = uri.queryParameters['merchant'] ?? uri.queryParameters['user_id'] ?? uri.queryParameters['pa'];
         amountStr = uri.queryParameters['amount'] ?? uri.queryParameters['am'];
+        recipientName = uri.queryParameters['name'] ?? uri.queryParameters['pn'] ?? uri.queryParameters['business_name'];
         
         if (targetUserId == null && uri.pathSegments.isNotEmpty) {
           final lastSeg = uri.pathSegments.last;
@@ -74,7 +75,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
       } catch (_) {}
     }
 
-    // 3. Fallback to rawValue directly
     targetUserId ??= rawValue;
 
     if (targetUserId.isNotEmpty) {
@@ -84,6 +84,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
           builder: (_) => SendScreen(
             prefillReceiverId: targetUserId,
             prefillAmount: amountStr,
+            prefillReceiverName: recipientName,
           ),
         ),
       );

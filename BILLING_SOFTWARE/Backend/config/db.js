@@ -3,6 +3,8 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
+mongoose.set("bufferTimeoutMS", 300000);
+
 let ecoWalletConn = null;
 
 const connectDB = async () => {
@@ -10,36 +12,35 @@ const connectDB = async () => {
   const ecoWalletUri = process.env.ECO_WALLET_MONGO_URI;
 
   if (!billingUri) {
-    console.error("❌ ERROR: MONGO_URI is missing in .env");
+    console.error("[ERROR] MONGO_URI is missing in .env");
     process.exit(1);
   }
 
   const options = {
-    serverSelectionTimeoutMS: 15000,
-    connectTimeoutMS: 15000,
+    serverSelectionTimeoutMS: 300000,
+    connectTimeoutMS: 300000,
+    socketTimeoutMS: 300000,
   };
 
   try {
-    // 1. Connect primary database: billing_soft
     const conn = await mongoose.connect(billingUri, options);
-    console.log(`✅ MongoDB Atlas Primary Connected: ${conn.connection.host} [DB: ${conn.connection.name}]`);
+    console.log(`[INFO] Connected to primary database: ${conn.connection.name}`);
 
-    // 2. Establish secondary connection: eco_wallet
     if (ecoWalletUri) {
       try {
         ecoWalletConn = mongoose.createConnection(ecoWalletUri, options);
         ecoWalletConn.on("connected", () => {
-          console.log(`🔗 Secondary Sync Connected [DB: ${ecoWalletConn.name}] (Real-time Merchant Sync)`);
+          console.log(`[INFO] Connected to secondary database: ${ecoWalletConn.name}`);
         });
         ecoWalletConn.on("error", (err) => {
-          console.warn(`⚠️ Secondary eco_wallet sync notice: ${err.message}`);
+          console.warn(`[WARN] Secondary database notice: ${err.message}`);
         });
       } catch (secErr) {
-        console.warn(`⚠️ Secondary eco_wallet sync notice: ${secErr.message}`);
+        console.warn(`[WARN] Secondary connection error: ${secErr.message}`);
       }
     }
   } catch (error) {
-    console.error(`❌ MongoDB Connection Error: ${error.message}`);
+    console.error(`[ERROR] Database connection failed: ${error.message}`);
   }
 };
 
