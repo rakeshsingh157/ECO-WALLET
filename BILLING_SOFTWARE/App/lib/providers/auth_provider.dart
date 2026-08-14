@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants.dart';
+import '../core/api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   String _apiKey = '';
@@ -23,6 +24,8 @@ class AuthProvider extends ChangeNotifier {
   bool get hasPinSet => _securityPin.isNotEmpty;
   String get baseUrl => _baseUrl;
   bool get isConfigured => _isConfigured;
+
+  ApiService get apiService => ApiService(baseUrl: _baseUrl, apiKey: _apiKey);
 
   AuthProvider() {
     loadSavedCredentials();

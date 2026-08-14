@@ -9,19 +9,23 @@ class BillProvider extends ChangeNotifier {
   final List<BillItem> _currentItems = [];
   final List<Bill> _completedBills = [];
 
+  double _todaySales = 0.0;
+  int _todayBillCount = 0;
+  bool _isLoadingBills = false;
+
   List<BillItem> get currentItems => List.unmodifiable(_currentItems);
   List<Bill> get completedBills => List.unmodifiable(_completedBills);
 
-  double get todaySales => _completedBills
+  double get todaySales => _todaySales > 0 ? _todaySales : _completedBills
       .where((b) => b.status == BillStatus.completed)
       .fold(0, (sum, b) => sum + b.totalAmount);
 
-  int get todayBillCount => _completedBills.length;
+  int get todayBillCount => _todayBillCount > 0 ? _todayBillCount : _completedBills.length;
+  bool get isLoadingBills => _isLoadingBills;
 
   double get currentTotal => _currentItems.fold(0, (sum, item) => sum + item.totalPrice);
   int get itemCount => _currentItems.fold(0, (sum, item) => sum + item.quantity);
 
-  // Current active payment state
   bool _isCreatingPayment = false;
   bool _isCheckingStatus = false;
   String? _activeQrData;
@@ -29,7 +33,7 @@ class BillProvider extends ChangeNotifier {
   String? _errorMessage;
   Timer? _pollingTimer;
   Timer? _countdownTimer;
-  int _remainingSeconds = 300; // 5 minutes
+  int _remainingSeconds = 300;
 
   bool get isCreatingPayment => _isCreatingPayment;
   bool get isCheckingStatus => _isCheckingStatus;
@@ -44,7 +48,6 @@ class BillProvider extends ChangeNotifier {
     return "$minutes:$seconds";
   }
 
-  // Actions
   void addItem(Product product) {
     final index = _currentItems.indexWhere((item) => item.product.id == product.id);
     if (index >= 0) {
@@ -67,12 +70,76 @@ class BillProvider extends ChangeNotifier {
     }
   }
 
+  void deleteItem(Product product) {
+    _currentItems.removeWhere((item) => item.product.id == product.id);
+    notifyListeners();
+  }
+
   void clearCart() {
     _currentItems.clear();
     _activeQrData = null;
     _activePaymentId = null;
     _errorMessage = null;
+    _isCreatingPayment = false;
     stopPolling();
+    notifyListeners();
+  }
+
+  Future<void> fetchBills(ApiService apiService) async {
+    _isLoadingBills = true;
+    notifyListeners();
+
+    try {
+      final response = await apiService.getBills();
+      if (response["success"] == true) {
+        _todaySales = (response["todaySales"] as num?)?.toDouble() ?? 0.0;
+        _todayBillCount = (response["todayBillCount"] as num?)?.toInt() ?? 0;
+
+        if (response["data"] is List) {
+          final List<dynamic> billsList = response["data"];
+          _completedBills.clear();
+          for (final b in billsList) {
+            final rawItems = b["items"] is List ? b["items"] as List : [];
+            final items = rawItems.map((item) {
+              final product = Product(
+                id: item["product_id"] ?? "p_${DateTime.now().millisecondsSinceEpoch}",
+                name: item["name"] ?? "Item",
+                price: (item["price"] as num?)?.toDouble() ?? 0.0,
+                category: "General",
+                unit: "pcs",
+                stock: 10,
+                icon: "box",
+              );
+              return BillItem(
+                product: product,
+                quantity: (item["quantity"] as num?)?.toInt() ?? 1,
+              );
+            }).toList();
+
+            final modeStr = b["payment_mode"]?.toString().toLowerCase() ?? "cash";
+            PaymentMode mode = PaymentMode.cash;
+            if (modeStr.contains("upi")) mode = PaymentMode.upi;
+            if (modeStr.contains("eco") || modeStr.contains("wallet")) mode = PaymentMode.ecoWallet;
+            if (modeStr.contains("pending") || modeStr.contains("khata")) mode = PaymentMode.pending;
+
+            final statusStr = b["status"]?.toString().toLowerCase() ?? "completed";
+            BillStatus status = statusStr == "pending" ? BillStatus.pending : BillStatus.completed;
+
+            _completedBills.add(Bill(
+              billId: b["bill_id"] ?? "BILL_${DateTime.now().millisecondsSinceEpoch}",
+              items: items,
+              totalAmount: (b["total_amount"] as num?)?.toDouble() ?? 0.0,
+              timestamp: b["createdAt"] != null ? DateTime.tryParse(b["createdAt"]) ?? DateTime.now() : DateTime.now(),
+              paymentMode: mode,
+              status: status,
+              customerName: b["customer_name"] ?? "Counter Customer",
+            ));
+          }
+        }
+      }
+    } catch (_) {}
+
+    _isLoadingBills = false;
     notifyListeners();
   }
 
@@ -111,10 +178,7 @@ class BillProvider extends ChangeNotifier {
         _isCreatingPayment = false;
         notifyListeners();
 
-        // Start 5-minute live countdown timer
         _startCountdownTimer();
-
-        // Start polling for payment completion
         startStatusPolling(apiService);
         return true;
       } else {
@@ -146,7 +210,6 @@ class BillProvider extends ChangeNotifier {
     });
   }
 
-  /// Clean Session Polling — Monitors active payment session every 3s
   void startStatusPolling(ApiService apiService, {Function(Bill)? onSuccess}) {
     _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
@@ -163,14 +226,12 @@ class BillProvider extends ChangeNotifier {
           final status = data["status"];
 
           if (status == "completed") {
-            // STOP POLLING IMMEDIATELY & TERMINATE SESSION
+            final completedPaymentId = _activePaymentId;
             stopPolling();
             _isCheckingStatus = false;
-            final completedPaymentId = _activePaymentId;
             _activePaymentId = null;
             _activeQrData = null;
 
-            // Finalize bill
             final newBill = Bill(
               billId: data["order_id"] ?? "BILL-${DateTime.now().millisecondsSinceEpoch}",
               items: List.from(_currentItems),
@@ -184,8 +245,9 @@ class BillProvider extends ChangeNotifier {
             );
 
             _completedBills.insert(0, newBill);
+            _todaySales += newBill.totalAmount;
+            _todayBillCount++;
 
-            // Sync to MongoDB Atlas bills collection
             apiService.saveBill(
               billId: newBill.billId,
               items: newBill.items,
@@ -197,7 +259,6 @@ class BillProvider extends ChangeNotifier {
             clearCart();
             if (onSuccess != null) onSuccess(newBill);
           } else if (status == "expired" || status == "failed") {
-            // STOP POLLING IMMEDIATELY & TERMINATE EXPIRED SESSION
             stopPolling();
             _isCheckingStatus = false;
             _activePaymentId = null;
@@ -206,13 +267,10 @@ class BillProvider extends ChangeNotifier {
             notifyListeners();
           }
         }
-      } catch (e) {
-        // Network timeout / retry
-      }
+      } catch (_) {}
     });
   }
 
-  /// Terminate session and cancel all background timers
   void stopPolling() {
     _pollingTimer?.cancel();
     _pollingTimer = null;
@@ -221,7 +279,6 @@ class BillProvider extends ChangeNotifier {
     _isCheckingStatus = false;
   }
 
-  /// Complete cash/UPI/Khata bill directly and save to MongoDB Atlas bills collection
   Bill completeManualBill(PaymentMode mode, {String? customerName, ApiService? apiService}) {
     final newBill = Bill(
       billId: "BILL-${DateTime.now().millisecondsSinceEpoch}",
@@ -234,8 +291,11 @@ class BillProvider extends ChangeNotifier {
     );
 
     _completedBills.insert(0, newBill);
+    if (newBill.status == BillStatus.completed) {
+      _todaySales += newBill.totalAmount;
+      _todayBillCount++;
+    }
 
-    // Sync bill directly to MongoDB Atlas bills collection
     if (apiService != null) {
       apiService.saveBill(
         billId: newBill.billId,

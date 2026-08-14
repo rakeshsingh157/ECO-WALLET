@@ -27,6 +27,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final auth = context.read<AuthProvider>();
       if (auth.baseUrl.isNotEmpty) {
         context.read<ProductProvider>().fetchProducts(auth.baseUrl, auth.apiKey);
+        context.read<BillProvider>().fetchBills(auth.apiService);
       }
     });
   }
