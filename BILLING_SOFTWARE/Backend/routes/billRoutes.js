@@ -61,10 +61,11 @@ router.post("/", async (req, res) => {
     for (const item of savedBill.items) {
       if (item.product_id) {
         try {
-          await Product.findOneAndUpdate(
-            { product_id: item.product_id },
-            { $inc: { stock: -item.quantity } }
-          );
+          const prod = await Product.findOne({ product_id: item.product_id });
+          if (prod) {
+            const nextStock = Math.max(0, (prod.stock || 0) - item.quantity);
+            await Product.updateOne({ product_id: item.product_id }, { $set: { stock: nextStock } });
+          }
         } catch (stockErr) {
           console.warn("[WARN] Stock decrement notice:", item.product_id);
         }

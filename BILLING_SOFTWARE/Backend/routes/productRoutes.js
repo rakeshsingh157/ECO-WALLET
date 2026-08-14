@@ -4,8 +4,14 @@ const Product = require("../models/Product");
 
 router.get("/", async (req, res) => {
   try {
+    await Product.updateMany({ stock: { $lt: 0 } }, { $set: { stock: 0 } });
     const products = await Product.find().sort({ createdAt: -1 });
-    res.json({ success: true, count: products.length, data: products });
+    const sanitized = products.map(p => {
+      const doc = p.toObject ? p.toObject() : p;
+      if (doc.stock < 0) doc.stock = 0;
+      return doc;
+    });
+    res.json({ success: true, count: sanitized.length, data: sanitized });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message, data: [] });
   }

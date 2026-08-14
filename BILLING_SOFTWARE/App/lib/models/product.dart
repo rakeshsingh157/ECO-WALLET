@@ -18,13 +18,15 @@ class Product {
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
+    final rawStock = json['stock'] ?? 0;
+    final parsedStock = (rawStock is num) ? rawStock.toInt() : (int.tryParse(rawStock.toString()) ?? 0);
     return Product(
-      id: json['id'],
-      name: json['name'],
-      price: (json['price'] as num).toDouble(),
-      category: json['category'],
+      id: json['id'] ?? json['product_id'] ?? '',
+      name: json['name'] ?? 'Product',
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      category: json['category'] ?? 'General',
       unit: json['unit'] ?? 'pcs',
-      stock: json['stock'] ?? 0,
+      stock: parsedStock < 0 ? 0 : parsedStock,
       icon: json['icon'] ?? 'box',
     );
   }

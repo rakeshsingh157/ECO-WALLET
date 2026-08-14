@@ -36,12 +36,13 @@ class ProductGridItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLowStock = product.stock <= 5;
+    final isOutOfStock = product.stock <= 0;
+    final isLowStock = product.stock > 0 && product.stock <= 5;
 
     return GlassCard(
       padding: const EdgeInsets.all(14),
       borderRadius: 18,
-      onTap: onAdd,
+      onTap: isOutOfStock ? null : onAdd,
       color: countInCart > 0
           ? AppColors.warmCoral.withValues(alpha: 0.15)
           : AppColors.darkCard,
@@ -51,7 +52,6 @@ class ProductGridItem extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Icon + Badge Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -87,7 +87,6 @@ class ProductGridItem extends StatelessWidget {
               ),
               const SizedBox(height: 8),
 
-              // Title
               Text(
                 product.name,
                 maxLines: 2,
@@ -95,15 +94,23 @@ class ProductGridItem extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: isOutOfStock ? AppColors.textMuted : AppColors.textPrimary,
                   height: 1.2,
                 ),
               ),
 
               const SizedBox(height: 4),
 
-              // Stock warning if low
-              if (isLowStock)
+              if (isOutOfStock)
+                Text(
+                  'Out of stock',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.error,
+                  ),
+                )
+              else if (isLowStock)
                 Text(
                   'Only ${product.stock} left!',
                   style: GoogleFonts.inter(
@@ -115,7 +122,6 @@ class ProductGridItem extends StatelessWidget {
 
               const SizedBox(height: 6),
 
-              // Price + Add Button
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -124,18 +130,19 @@ class ProductGridItem extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.warmPeach,
+                      color: isOutOfStock ? AppColors.textMuted : AppColors.warmPeach,
                     ),
                   ),
                   Container(
                     width: 28,
                     height: 28,
-                    decoration: const BoxDecoration(
-                      gradient: AppColors.sunsetGradient,
+                    decoration: BoxDecoration(
+                      gradient: isOutOfStock ? null : AppColors.sunsetGradient,
+                      color: isOutOfStock ? AppColors.darkCardLight : null,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.add_rounded,
+                    child: Icon(
+                      isOutOfStock ? Icons.block_rounded : Icons.add_rounded,
                       color: Colors.white,
                       size: 18,
                     ),
