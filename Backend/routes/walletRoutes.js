@@ -64,24 +64,25 @@ router.get("/user/:user_id", protect, async (req, res) => {
     const cleanId = String(req.params.user_id).trim();
     const cleanPhoneDigits = cleanId.replace(/\D/g, '');
 
-    let user = await User.findOne({
-      $or: [
-        { user_id: cleanId },
-        { email: cleanId.toLowerCase() },
-        { phone: cleanId },
-        ...(cleanPhoneDigits.length >= 10 ? [{ phone: { $regex: cleanPhoneDigits } }] : [])
-      ]
-    }).select("user_id name phone email");
+    // Check Merchant table first
+    let merchant = await Merchant.findOne({
+      $or: [{ merchant_id: cleanId }, { api_key: cleanId }, { user_id: cleanId }]
+    });
 
-    // Check Merchant table
-    let merchant = null;
+    let user = null;
+    if (merchant) {
+      user = await User.findOne({ user_id: merchant.user_id }).select("user_id name phone email");
+    }
+
     if (!user) {
-      merchant = await Merchant.findOne({
-        $or: [{ merchant_id: cleanId }, { api_key: cleanId }, { user_id: cleanId }]
-      });
-      if (merchant) {
-        user = await User.findOne({ user_id: merchant.user_id }).select("user_id name phone email");
-      }
+      user = await User.findOne({
+        $or: [
+          { user_id: cleanId },
+          { email: cleanId.toLowerCase() },
+          { phone: cleanId },
+          ...(cleanPhoneDigits.length >= 10 ? [{ phone: { $regex: cleanPhoneDigits } }] : [])
+        ]
+      }).select("user_id name phone email");
     }
 
     // Dynamic fallback if querying an un-registered merchant ID or phone
