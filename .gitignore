@@ -1,4 +1,74 @@
-# OS-specific files
+# ==========================================
+# Comprehensive Git Ignore for ECO-WALLET
+# ==========================================
+
+# --- Environment & Secret Variables ---
+.env
+.env.*
+*.env
+*.env.local
+*.env.*.local
+Backend/.env
+BILLING_SOFTWARE/Backend/.env
+.env.development
+.env.production
+.env.staging
+
+# --- Security Keys & Credentials ---
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+*.keystore
+*.jks
+key.properties
+google-services.json
+GoogleService-Info.plist
+
+# --- Node.js & NPM / Yarn ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+package-lock.json.backup
+
+# --- Flutter & Dart Build Artifacts ---
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+android/app/build/
+android/.gradle/
+android/local.properties
+ios/.symlinks/
+ios/Pods/
+ios/Podfile.lock
+ios/.symlinks
+*.apk
+*.aab
+*.ipa
+*.app
+flutter_*.png
+
+# --- IDEs & Code Editors ---
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.history/
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+
+# --- Operating System Files ---
 .DS_Store
 .DS_Store?
 ._*
@@ -7,29 +77,20 @@
 ehthumbs.db
 Thumbs.db
 [Dd]esktop.ini
+$RECYCLE.BIN/
 
-# IDE files
-.idea/
-.vscode/
-
-
-# Project-specific logs
+# --- Logs, Dumps & Temp Files ---
 *.log
+logs/
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+coverage/
+.nyc_output/
 
-# Sensitive environment variables
-./Backend/.env
-./BILLING_SOFTWARE/Backend/.env
-.env.local
-.env.*.local
-
-# Hidden dependency files
-node_modules/
-.pub-cache/
-.dart_tool/
-
-# Build artifacts
-build/
-dist/
-out/
-bin/
-obj/
+# --- Local Test & Scratch Scripts ---
+test_auth.js
+check_user.js

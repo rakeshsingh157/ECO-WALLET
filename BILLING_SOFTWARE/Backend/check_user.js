@@ -7,7 +7,7 @@ dotenv.config();
 async function check() {
   const uri = process.env.MONGO_URI;
   if (!uri) {
-    console.error('❌ MONGO_URI missing in .env');
+    console.error(' MONGO_URI missing in .env');
     return;
   }
   await mongoose.connect(uri);
