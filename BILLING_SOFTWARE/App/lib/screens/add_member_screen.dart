@@ -289,13 +289,13 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                               decoration: BoxDecoration(
                                 color: m.role.contains('Owner')
                                     ? AppColors.warmPeach.withValues(alpha: 0.2)
-                                    : AppColors.accentTeal.withValues(alpha: 0.2),
+                                    : AppColors.info.withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
                               ),
                               child: Center(
                                 child: Icon(
                                   m.role.contains('Owner') ? Icons.stars_rounded : Icons.person_rounded,
-                                  color: m.role.contains('Owner') ? AppColors.warmPeach : AppColors.accentTeal,
+                                  color: m.role.contains('Owner') ? AppColors.warmPeach : AppColors.info,
                                 ),
                               ),
                             ),
@@ -320,7 +320,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                                 style: GoogleFonts.inter(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: m.role.contains('Owner') ? AppColors.warmPeach : AppColors.accentTeal,
+                                  color: m.role.contains('Owner') ? AppColors.warmPeach : AppColors.info,
                                 ),
                               ),
                             ),

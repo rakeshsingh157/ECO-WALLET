@@ -148,13 +148,30 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // Verify PIN strictly
-    const userPin = user ? (user.pin || user.password) : null;
-    if (userPin && userPin !== pin) {
+    // Strict PIN verification
+    if (user && user.pin && user.pin !== pin) {
       return res.status(401).json({
         success: false,
         message: "Incorrect Security PIN. Access Denied.",
       });
+    }
+
+    // If user record is missing, auto-create it linked to merchant
+    if (!user && merchant) {
+      user = await User.create({
+        user_id: merchant.user_id || mchId,
+        name: merchant.owner_name || "Shopkeeper",
+        email: `${phone}@dukaandost.io`,
+        phone: phone,
+        password: pin,
+        pin: pin,
+        balance: 1000,
+        role: "user",
+      });
+    } else if (user && !user.pin) {
+      user.pin = pin;
+      user.password = pin;
+      await user.save();
     }
 
     const shopName = merchant ? merchant.business_name : "My Dukaan";
@@ -163,31 +180,29 @@ router.post("/login", async (req, res) => {
     const autoWebhookSecret = merchant ? (merchant.webhook_secret || `whsec_auto_${phone}`) : `whsec_auto_${phone}`;
 
     // Ensure sync to eco_wallet DB
-    if (user && merchant) {
-      await syncToEcoWalletDB(
-        {
-          user_id: user.user_id,
-          name: ownerName,
-          email: `${phone}@dukaandost.io`,
-          phone: phone,
-          password: pin,
-          pin: pin,
-          balance: 1000,
-          role: "user",
-        },
-        {
-          merchant_id: merchant.merchant_id,
-          user_id: user.user_id,
-          business_name: shopName,
-          owner_name: ownerName,
-          mobile_number: phone,
-          webhook_url: "http://localhost:5001/api/webhook",
-          webhook_secret: autoWebhookSecret,
-          api_key_hash: autoApiKey,
-          is_active: true,
-        }
-      );
-    }
+    await syncToEcoWalletDB(
+      {
+        user_id: user.user_id,
+        name: ownerName,
+        email: `${phone}@dukaandost.io`,
+        phone: phone,
+        password: pin,
+        pin: pin,
+        balance: 1000,
+        role: "user",
+      },
+      {
+        merchant_id: merchant ? merchant.merchant_id : mchId,
+        user_id: user.user_id,
+        business_name: shopName,
+        owner_name: ownerName,
+        mobile_number: phone,
+        webhook_url: "http://localhost:5001/api/webhook",
+        webhook_secret: autoWebhookSecret,
+        api_key_hash: autoApiKey,
+        is_active: true,
+      }
+    );
 
     console.log(`✅ Merchant Logged In [DB: billing_soft]: ${mchId} (${shopName})`);
 
@@ -226,8 +241,8 @@ router.post("/onboard", async (req, res) => {
         name: oName,
         email: `${phone}@dukaandost.io`,
         phone: phone,
-        password: security_pin || "123456",
-        pin: security_pin || "123456",
+        password: security_pin || "1234",
+        pin: security_pin || "1234",
         balance: 1000,
         role: "user",
       });
@@ -267,8 +282,8 @@ router.post("/onboard", async (req, res) => {
         name: oName,
         email: `${phone}@dukaandost.io`,
         phone: phone,
-        password: security_pin || "123456",
-        pin: security_pin || "123456",
+        password: security_pin || "1234",
+        pin: security_pin || "1234",
         balance: 1000,
         role: "user",
       },

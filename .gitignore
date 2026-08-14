@@ -12,11 +12,13 @@ Thumbs.db
 .idea/
 .vscode/
 
+
 # Project-specific logs
 *.log
 
 # Sensitive environment variables
-.env
+./Backend/.env
+./BILLING_SOFTWARE/Backend/.env
 .env.local
 .env.*.local
 

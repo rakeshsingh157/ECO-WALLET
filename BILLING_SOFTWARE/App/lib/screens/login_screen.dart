@@ -268,13 +268,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     decoration: BoxDecoration(
                       color: AppColors.darkCard.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.darkBorder),
+                      border: Border.all(color: AppColors.glassBorder.withValues(alpha: 0.3)),
                     ),
                     padding: const EdgeInsets.all(4),
                     child: TabBar(
                       controller: _tabController,
                       indicator: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
+                        gradient: AppColors.sunsetGradient,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       labelColor: Colors.white,
