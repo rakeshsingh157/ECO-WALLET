@@ -64,9 +64,20 @@ router.get("/user/:user_id", protect, async (req, res) => {
     const cleanId = String(req.params.user_id).trim();
     const cleanPhoneDigits = cleanId.replace(/\D/g, '');
 
-    // Check Merchant table first
+    // 1. Search Merchant collection with rich flexible matching
     let merchant = await Merchant.findOne({
-      $or: [{ merchant_id: cleanId }, { api_key: cleanId }, { user_id: cleanId }]
+      $or: [
+        { merchant_id: cleanId },
+        { user_id: cleanId },
+        { api_key: cleanId },
+        { api_key_hash: cleanId },
+        ...(cleanPhoneDigits.length >= 10 ? [
+          { mobile_number: cleanPhoneDigits },
+          { merchant_id: `mch_${cleanPhoneDigits}` },
+          { user_id: `mch_${cleanPhoneDigits}` },
+          { api_key_hash: `key_mch_${cleanPhoneDigits}_auto` },
+        ] : [])
+      ]
     });
 
     let user = null;
@@ -80,33 +91,51 @@ router.get("/user/:user_id", protect, async (req, res) => {
           { user_id: cleanId },
           { email: cleanId.toLowerCase() },
           { phone: cleanId },
-          ...(cleanPhoneDigits.length >= 10 ? [{ phone: { $regex: cleanPhoneDigits } }] : [])
+          ...(cleanPhoneDigits.length >= 10 ? [
+            { phone: cleanPhoneDigits },
+            { user_id: `mch_${cleanPhoneDigits}` },
+            { phone: { $regex: cleanPhoneDigits } }
+          ] : [])
         ]
       }).select("user_id name phone email");
     }
 
-    // Dynamic fallback if querying an un-registered merchant ID or phone
+    // 2. Dynamic fallback if querying an un-registered merchant ID or phone
     if (!user && !merchant) {
-      const newUserId = cleanId.startsWith('mch_') ? cleanId : `USR_${Date.now()}`;
-      const defaultName = cleanId.startsWith('mch_') ? `Merchant Store (${cleanId})` : `User (${cleanId})`;
+      const newUserId = cleanId.startsWith('mch_') ? cleanId : (cleanPhoneDigits.length >= 10 ? `mch_${cleanPhoneDigits}` : `USR_${Date.now()}`);
+      const defaultName = cleanPhoneDigits.length >= 10 ? `Store (${cleanPhoneDigits})` : (cleanId.startsWith('mch_') ? `Merchant Store (${cleanId})` : `User (${cleanId})`);
       user = await User.create({
         user_id: newUserId,
         name: defaultName,
         email: `${cleanId.toLowerCase().replaceAll(/[^a-z0-9]/g, '') || 'user'}@ecowallet.io`,
         phone: cleanPhoneDigits.length >= 10 ? cleanPhoneDigits : cleanId,
         password: await bcrypt.hash("EcoWallet2026!", 10),
-        balance: 0,
+        balance: 1000,
       });
     }
 
-    const displayName = merchant ? merchant.business_name : (user ? user.name : cleanId);
+    // Determine accurate display name
+    let displayName = cleanId;
+    if (merchant && merchant.business_name) {
+      displayName = merchant.business_name;
+    } else if (user && user.name && user.name !== "ECO Admin" && user.name !== "eco_admin") {
+      displayName = user.name;
+    } else if (merchant && merchant.owner_name) {
+      displayName = merchant.owner_name;
+    } else if (cleanPhoneDigits.length >= 10) {
+      displayName = `Store (${cleanPhoneDigits})`;
+    } else if (user && user.name) {
+      displayName = user.name;
+    }
+
+    const resolvedUserId = user ? user.user_id : (merchant ? merchant.user_id : cleanId);
 
     res.json({
       success: true,
       data: {
-        user_id: user ? user.user_id : cleanId,
+        user_id: resolvedUserId,
         name: displayName,
-        phone: user ? user.phone : cleanId,
+        phone: user ? user.phone : (merchant ? merchant.mobile_number : cleanId),
       },
     });
   } catch (error) {

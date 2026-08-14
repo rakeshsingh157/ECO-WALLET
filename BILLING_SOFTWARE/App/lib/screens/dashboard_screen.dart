@@ -12,8 +12,24 @@ import 'add_product_screen.dart';
 import 'eco_payment_screen.dart';
 import 'khata_screen.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = context.read<AuthProvider>();
+      if (auth.baseUrl.isNotEmpty) {
+        context.read<ProductProvider>().fetchProducts(auth.baseUrl, auth.apiKey);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

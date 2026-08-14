@@ -12,21 +12,46 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST /api/staff — Register staff member
+// POST /api/staff — Register staff member with validation
 router.post("/", async (req, res) => {
   try {
-    const { name, phone, role, pin } = req.body;
+    const { name, phone, role, pin, member_id } = req.body;
+
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({ success: false, message: "Staff member name is required" });
+    }
+
+    const memberId = member_id || `m_${Date.now()}`;
     const newMember = new StaffMember({
-      member_id: `m_${Date.now()}`,
-      name,
-      phone,
-      role: role || "Staff",
+      member_id: memberId,
+      name: name.trim(),
+      phone: phone ? phone.trim() : "",
+      role: role || "Counter Cashier",
       pin: pin || "0000",
     });
+
     await newMember.save();
+    console.log(` Staff member created in MongoDB Atlas: ${newMember.name} (${newMember.role})`);
     res.status(201).json({ success: true, data: newMember });
   } catch (error) {
+    console.error("Staff member create error:", error);
     res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE /api/staff/:id — Delete staff member
+router.delete("/:id", async (req, res) => {
+  try {
+    const query = {
+      $or: [{ member_id: req.params.id }, { _id: req.params.id.match(/^[0-9a-fA-F]{24}$/) ? req.params.id : null }],
+    };
+    const deleted = await StaffMember.findOneAndDelete(query);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: "Staff member not found" });
+    }
+    res.json({ success: true, message: "Staff member removed successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

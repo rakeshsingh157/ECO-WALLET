@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../core/theme.dart';
 import '../core/constants.dart';
+import '../core/api_service.dart';
 import '../providers/auth_provider.dart';
+import '../providers/product_provider.dart';
 import 'main_shell.dart';
 import 'server_config_screen.dart';
 
@@ -16,128 +16,169 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
-  late TextEditingController _mobileCtrl;
-  final _pinCtrl = TextEditingController();
-  final _newPinCtrl = TextEditingController();
-  final _confirmPinCtrl = TextEditingController();
-  late TextEditingController _shopNameCtrl;
-  late TextEditingController _ownerNameCtrl;
+class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
 
-  bool _wantSetPin = false;
-  bool _obscurePin = true;
+  // Login form controllers
+  final _loginFormKey = GlobalKey<FormState>();
+  final _loginMobileCtrl = TextEditingController();
+  final _loginPinCtrl = TextEditingController();
+
+  // Signup form controllers
+  final _signupFormKey = GlobalKey<FormState>();
+  final _signupShopNameCtrl = TextEditingController();
+  final _signupOwnerNameCtrl = TextEditingController();
+  final _signupMobileCtrl = TextEditingController();
+  final _signupPinCtrl = TextEditingController();
+  final _signupConfirmPinCtrl = TextEditingController();
+
+  bool _obscureLoginPin = true;
+  bool _obscureSignupPin = true;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     final auth = context.read<AuthProvider>();
-    _mobileCtrl = TextEditingController(text: auth.mobileNumber);
-    _shopNameCtrl = TextEditingController(text: auth.shopName);
-    _ownerNameCtrl = TextEditingController(text: auth.ownerName);
+    if (auth.mobileNumber.isNotEmpty) {
+      _loginMobileCtrl.text = auth.mobileNumber;
+    }
   }
 
   @override
   void dispose() {
-    _mobileCtrl.dispose();
-    _pinCtrl.dispose();
-    _newPinCtrl.dispose();
-    _confirmPinCtrl.dispose();
-    _shopNameCtrl.dispose();
-    _ownerNameCtrl.dispose();
+    _tabController.dispose();
+    _loginMobileCtrl.dispose();
+    _loginPinCtrl.dispose();
+    _signupShopNameCtrl.dispose();
+    _signupOwnerNameCtrl.dispose();
+    _signupMobileCtrl.dispose();
+    _signupPinCtrl.dispose();
+    _signupConfirmPinCtrl.dispose();
     super.dispose();
   }
 
-  void _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+  void _handleLogin() async {
+    if (!_loginFormKey.currentState!.validate()) return;
 
     final auth = context.read<AuthProvider>();
-    final phone = _mobileCtrl.text.trim();
-
-    // 1. Check if PIN was previously set
-    if (auth.hasPinSet) {
-      if (!auth.verifyPin(_pinCtrl.text.trim())) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Incorrect Security PIN! Access Denied.'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-        return;
-      }
-    }
-
-    // 2. Validate new PIN if setting option selected
-    String finalPin = auth.securityPin;
-    if (!auth.hasPinSet && _wantSetPin) {
-      if (_newPinCtrl.text.length != 4) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Security PIN must be 4 digits'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-        return;
-      }
-      if (_newPinCtrl.text != _confirmPinCtrl.text) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('PINs do not match!'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-        return;
-      }
-      finalPin = _newPinCtrl.text;
-    }
+    final phone = _loginMobileCtrl.text.trim();
+    final pin = _loginPinCtrl.text.trim();
+    final targetBase = auth.baseUrl.isNotEmpty ? auth.baseUrl : AppConstants.defaultEcoWalletBaseUrl;
 
     setState(() => _isLoading = true);
 
-    // Auto-generate Merchant ID and API Key from phone number
-    final autoMerchantId = 'mch_$phone';
-    final autoApiKey = 'key_mch_${phone}_auto';
+    final apiService = ApiService(baseUrl: targetBase, apiKey: '');
+    final result = await apiService.loginMerchant(mobileNumber: phone, securityPin: pin);
+
+    setState(() => _isLoading = false);
+
+    if (!mounted) return;
+
+    if (result['success'] == true && result['merchant'] != null) {
+      final m = result['merchant'];
+      await auth.saveCredentials(
+        apiKey: m['api_key'] ?? 'key_mch_${phone}_auto',
+        webhookSecret: m['webhook_secret'] ?? 'whsec_auto_$phone',
+        merchantId: m['merchant_id'] ?? 'mch_$phone',
+        shopName: m['business_name'] ?? 'My Shop',
+        ownerName: m['owner_name'] ?? 'Shopkeeper',
+        mobileNumber: phone,
+        securityPin: pin,
+        baseUrl: targetBase,
+      );
+
+      // Pre-load catalog products from MongoDB
+      if (mounted) {
+        context.read<ProductProvider>().fetchProducts(targetBase, m['api_key'] ?? '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Login successful!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MainShell()),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Login failed. Please check credentials.'),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  void _handleSignup() async {
+    if (!_signupFormKey.currentState!.validate()) return;
+
+    if (_signupPinCtrl.text.trim() != _signupConfirmPinCtrl.text.trim()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Security PINs do not match!'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    final auth = context.read<AuthProvider>();
+    final phone = _signupMobileCtrl.text.trim();
+    final shopName = _signupShopNameCtrl.text.trim();
+    final ownerName = _signupOwnerNameCtrl.text.trim();
+    final pin = _signupPinCtrl.text.trim();
     final targetBase = auth.baseUrl.isNotEmpty ? auth.baseUrl : AppConstants.defaultEcoWalletBaseUrl;
-    final cleanBase = targetBase.endsWith('/api') ? targetBase : '$targetBase/api';
 
-    // Onboard & save merchant directly to MongoDB Atlas
-    try {
-      await http.post(
-        Uri.parse('$cleanBase/merchant/onboard'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'mobile_number': phone,
-          'shop_name': _shopNameCtrl.text.trim(),
-          'owner_name': _ownerNameCtrl.text.trim(),
-          'security_pin': finalPin,
-          'merchant_id': autoMerchantId,
-          'api_key': autoApiKey,
-        }),
-      ).timeout(const Duration(seconds: 10));
-    } catch (_) {}
+    setState(() => _isLoading = true);
 
-    await auth.saveCredentials(
-      apiKey: autoApiKey,
-      webhookSecret: 'whsec_auto_$phone',
-      merchantId: autoMerchantId,
-      shopName: _shopNameCtrl.text.trim(),
-      ownerName: _ownerNameCtrl.text.trim(),
+    final apiService = ApiService(baseUrl: targetBase, apiKey: '');
+    final result = await apiService.signupMerchant(
       mobileNumber: phone,
-      securityPin: finalPin,
-      baseUrl: targetBase,
+      shopName: shopName,
+      ownerName: ownerName,
+      securityPin: pin,
     );
 
     setState(() => _isLoading = false);
 
-    if (mounted) {
+    if (!mounted) return;
+
+    if (result['success'] == true && result['merchant'] != null) {
+      final m = result['merchant'];
+      await auth.saveCredentials(
+        apiKey: m['api_key'] ?? 'key_mch_${phone}_auto',
+        webhookSecret: m['webhook_secret'] ?? 'whsec_auto_$phone',
+        merchantId: m['merchant_id'] ?? 'mch_$phone',
+        shopName: shopName,
+        ownerName: ownerName,
+        mobileNumber: phone,
+        securityPin: pin,
+        baseUrl: targetBase,
+      );
+
+      if (mounted) {
+        context.read<ProductProvider>().fetchProducts(targetBase, m['api_key'] ?? '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Store registered successfully!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MainShell()),
+        );
+      }
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Welcome, ${auth.ownerName}! Auto-Merchant Account Ready.'),
-          backgroundColor: AppColors.success,
+          content: Text(result['message'] ?? 'Sign Up failed. Please try again.'),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 4),
         ),
-      );
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const MainShell()),
       );
     }
   }
@@ -150,6 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         child: Container(
+          constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height),
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
@@ -159,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Color(0xFFE8446D),
                 AppColors.darkNavy,
               ],
-              stops: [0.0, 0.3, 0.7],
+              stops: [0.0, 0.25, 0.65],
             ),
           ),
           child: SafeArea(
@@ -171,274 +213,353 @@ class _LoginScreenState extends State<LoginScreen> {
                   Row(
                     children: [
                       Container(
-                        width: 50,
-                        height: 50,
+                        width: 48,
+                        height: 48,
                         decoration: BoxDecoration(
                           color: AppColors.darkNavy,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: AppColors.warmPeach, width: 2),
                         ),
                         child: const Center(
-                          child: Icon(Icons.storefront_rounded, color: AppColors.warmCoral, size: 28),
+                          child: Text('🏪', style: TextStyle(fontSize: 22)),
                         ),
                       ),
-                      const SizedBox(width: 14),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Dukaan Dost',
-                            style: GoogleFonts.poppins(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'DUKAAN DOST',
+                              style: GoogleFonts.poppins(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
                             ),
-                          ),
-                          Text(
-                            'Smart POS & Auto ECO Payment',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.85),
+                            Text(
+                              'Smart Retail & POS Terminal',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: Colors.white.withValues(alpha: 0.85),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const ServerConfigScreen()),
+                          );
+                        },
+                        icon: const Icon(Icons.tune_rounded, color: Colors.white),
+                        tooltip: 'Server Settings',
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
-                  // Boxie Mascot Banner
-                  GlassCard(
-                    padding: const EdgeInsets.all(16),
-                    borderRadius: 20,
-                    color: AppColors.darkNavy.withValues(alpha: 0.85),
-                    child: Row(
-                      children: [
-                        Image.asset(
-                          'assets/images/boxie.png',
-                          width: 54,
-                          height: 54,
-                          errorBuilder: (c, e, s) => const Icon(Icons.security_rounded, size: 36, color: AppColors.warmCoral),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            auth.hasPinSet
-                                ? 'Enter Mobile & Security PIN to login.'
-                                : 'Merchant account & QR payments are automatically generated!',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.warmPeach,
-                            ),
-                          ),
-                        ),
+                  // Tab Selector: Login vs Sign Up
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.darkCard.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.darkBorder),
+                    ),
+                    padding: const EdgeInsets.all(4),
+                    child: TabBar(
+                      controller: _tabController,
+                      indicator: BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      labelColor: Colors.white,
+                      unselectedLabelColor: AppColors.textMuted,
+                      labelStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700),
+                      unselectedLabelStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
+                      dividerColor: Colors.transparent,
+                      tabs: const [
+                        Tab(text: 'Sign In (Login)'),
+                        Tab(text: 'Register Store (Sign Up)'),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
-                  // Form Container Card
+                  // Form Container
                   GlassCard(
-                    borderRadius: 24,
                     padding: const EdgeInsets.all(22),
+                    borderRadius: 24,
                     color: AppColors.darkCard.withValues(alpha: 0.95),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Shopkeeper Setup',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.settings_input_component_rounded, color: AppColors.warmCoral),
-                                tooltip: 'Server Config',
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const ServerConfigScreen()),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Mobile Number Field
-                          TextFormField(
-                            controller: _mobileCtrl,
-                            keyboardType: TextInputType.phone,
-                            maxLength: 10,
-                            decoration: const InputDecoration(
-                              labelText: 'Mobile Number *',
-                              hintText: '10-digit Mobile',
-                              prefixIcon: Icon(Icons.phone_rounded, color: AppColors.warmCoral),
-                              counterText: '',
-                            ),
-                            validator: (v) {
-                              if (v == null || v.trim().length != 10) {
-                                return 'Enter valid 10-digit mobile number';
-                              }
-                              return null;
-                            },
-                          ),
-
-                          const SizedBox(height: 14),
-
-                          // If PIN IS SET -> Show Enter PIN field
-                          if (auth.hasPinSet) ...[
-                            TextFormField(
-                              controller: _pinCtrl,
-                              keyboardType: TextInputType.number,
-                              maxLength: 4,
-                              obscureText: _obscurePin,
-                              decoration: InputDecoration(
-                                labelText: 'Enter 4-Digit Security PIN *',
-                                prefixIcon: const Icon(Icons.lock_rounded, color: AppColors.warmCoral),
-                                counterText: '',
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePin ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                    color: AppColors.textMuted,
-                                  ),
-                                  onPressed: () => setState(() => _obscurePin = !_obscurePin),
-                                ),
-                              ),
-                              validator: (v) {
-                                if (v == null || v.length != 4) {
-                                  return 'Enter 4-digit security PIN';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 14),
-                          ],
-
-                          // If PIN IS NOT SET -> Optional Set PIN Toggle & Fields
-                          if (!auth.hasPinSet) ...[
-                            SwitchListTile(
-                              value: _wantSetPin,
-                              onChanged: (val) => setState(() => _wantSetPin = val),
-                              activeColor: AppColors.warmCoral,
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(
-                                'Set Security PIN (Optional)',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              subtitle: Text(
-                                'Protect shop access with a 4-digit PIN',
-                                style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
-                              ),
-                            ),
-
-                            if (_wantSetPin) ...[
-                              const SizedBox(height: 10),
-                              TextFormField(
-                                controller: _newPinCtrl,
-                                keyboardType: TextInputType.number,
-                                maxLength: 4,
-                                obscureText: _obscurePin,
-                                decoration: const InputDecoration(
-                                  labelText: 'Create 4-Digit PIN',
-                                  prefixIcon: Icon(Icons.pin_rounded, color: AppColors.warmCoral),
-                                  counterText: '',
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              TextFormField(
-                                controller: _confirmPinCtrl,
-                                keyboardType: TextInputType.number,
-                                maxLength: 4,
-                                obscureText: _obscurePin,
-                                decoration: const InputDecoration(
-                                  labelText: 'Confirm 4-Digit PIN',
-                                  prefixIcon: Icon(Icons.check_circle_outline_rounded, color: AppColors.warmCoral),
-                                  counterText: '',
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                            ],
-                          ],
-
-                          // Shop & Owner Details
-                          TextFormField(
-                            controller: _shopNameCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Shop Name',
-                              prefixIcon: Icon(Icons.store_rounded, color: AppColors.warmCoral),
-                            ),
-                            validator: (v) => v == null || v.isEmpty ? 'Shop Name required' : null,
-                          ),
-                          const SizedBox(height: 14),
-
-                          TextFormField(
-                            controller: _ownerNameCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Owner Name',
-                              prefixIcon: Icon(Icons.person_rounded, color: AppColors.warmCoral),
-                            ),
-                            validator: (v) => v == null || v.isEmpty ? 'Owner Name required' : null,
-                          ),
-                          const SizedBox(height: 18),
-
-                          // Auto-Generation Badge
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.success.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.auto_awesome_rounded, color: AppColors.success, size: 20),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    'Merchant QR Account will be auto-created instantly.',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.success,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          GradientButton(
-                            text: auth.hasPinSet ? 'Login with PIN' : 'Start Billing & QR App',
-                            icon: Icons.arrow_forward_rounded,
-                            isLoading: _isLoading,
-                            onPressed: _submit,
-                          ),
-                        ],
-                      ),
+                    child: AnimatedBuilder(
+                      animation: _tabController,
+                      builder: (context, _) {
+                        return _tabController.index == 0
+                            ? _buildLoginForm()
+                            : _buildSignupForm();
+                      },
                     ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Server Connection Footer
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: AppColors.success,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Server: ${auth.baseUrl.isNotEmpty ? auth.baseUrl : "Default (Port 5001)"}',
+                        style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  // ==================== LOGIN FORM ====================
+  Widget _buildLoginForm() {
+    return Form(
+      key: _loginFormKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.login_rounded, color: AppColors.warmPeach, size: 22),
+              const SizedBox(width: 8),
+              Text(
+                'Welcome Back',
+                style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.warmPeach),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Enter your registered mobile number and 4-digit PIN.',
+            style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 20),
+
+          // Mobile Number
+          TextFormField(
+            controller: _loginMobileCtrl,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              labelText: 'Mobile Number *',
+              hintText: '10-digit number',
+              prefixIcon: Icon(Icons.phone_android_rounded, color: AppColors.warmCoral),
+              prefixText: '+91 ',
+            ),
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Mobile number required';
+              if (v.trim().length < 10) return 'Enter a valid 10-digit number';
+              return null;
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          // Security PIN
+          TextFormField(
+            controller: _loginPinCtrl,
+            keyboardType: TextInputType.number,
+            maxLength: 4,
+            obscureText: _obscureLoginPin,
+            decoration: InputDecoration(
+              labelText: '4-Digit Security PIN *',
+              prefixIcon: const Icon(Icons.lock_rounded, color: AppColors.warmCoral),
+              counterText: '',
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscureLoginPin ? Icons.visibility_off : Icons.visibility,
+                  color: AppColors.textMuted,
+                ),
+                onPressed: () => setState(() => _obscureLoginPin = !_obscureLoginPin),
+              ),
+            ),
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'PIN is required';
+              if (v.trim().length != 4) return 'PIN must be 4 digits';
+              return null;
+            },
+          ),
+
+          const SizedBox(height: 24),
+
+          GradientButton(
+            text: 'Sign In to Store',
+            icon: Icons.arrow_forward_rounded,
+            isLoading: _isLoading,
+            onPressed: _handleLogin,
+          ),
+
+          const SizedBox(height: 14),
+
+          Center(
+            child: TextButton(
+              onPressed: () => _tabController.animateTo(1),
+              child: Text(
+                'New merchant? Register your store here',
+                style: GoogleFonts.inter(fontSize: 12, color: AppColors.warmCoral, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==================== SIGNUP FORM ====================
+  Widget _buildSignupForm() {
+    return Form(
+      key: _signupFormKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.storefront_rounded, color: AppColors.warmPeach, size: 22),
+              const SizedBox(width: 8),
+              Text(
+                'Register New Store',
+                style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.warmPeach),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Create your Dukaan account to start billing and accept ECO Wallet.',
+            style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 18),
+
+          // Shop Name
+          TextFormField(
+            controller: _signupShopNameCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Store / Shop Name *',
+              hintText: 'e.g. Sharma Kirana Store',
+              prefixIcon: Icon(Icons.storefront_rounded, color: AppColors.warmCoral),
+            ),
+            validator: (v) => v == null || v.trim().isEmpty ? 'Shop name is required' : null,
+          ),
+
+          const SizedBox(height: 12),
+
+          // Owner Name
+          TextFormField(
+            controller: _signupOwnerNameCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Owner / Merchant Name *',
+              hintText: 'e.g. Ramesh Sharma',
+              prefixIcon: Icon(Icons.person_rounded, color: AppColors.warmCoral),
+            ),
+            validator: (v) => v == null || v.trim().isEmpty ? 'Owner name is required' : null,
+          ),
+
+          const SizedBox(height: 12),
+
+          // Mobile Number
+          TextFormField(
+            controller: _signupMobileCtrl,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              labelText: 'Mobile Number *',
+              hintText: '10-digit number',
+              prefixIcon: Icon(Icons.phone_android_rounded, color: AppColors.warmCoral),
+              prefixText: '+91 ',
+            ),
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Mobile number required';
+              if (v.trim().length < 10) return 'Enter a valid 10-digit number';
+              return null;
+            },
+          ),
+
+          const SizedBox(height: 12),
+
+          // Set 4-Digit PIN
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _signupPinCtrl,
+                  keyboardType: TextInputType.number,
+                  maxLength: 4,
+                  obscureText: _obscureSignupPin,
+                  decoration: const InputDecoration(
+                    labelText: 'Set 4-Digit PIN *',
+                    counterText: '',
+                    prefixIcon: Icon(Icons.lock_rounded, color: AppColors.warmCoral),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().length != 4) return '4 digits required';
+                    return null;
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextFormField(
+                  controller: _signupConfirmPinCtrl,
+                  keyboardType: TextInputType.number,
+                  maxLength: 4,
+                  obscureText: _obscureSignupPin,
+                  decoration: const InputDecoration(
+                    labelText: 'Confirm PIN *',
+                    counterText: '',
+                    prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.warmCoral),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().length != 4) return '4 digits required';
+                    return null;
+                  },
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 22),
+
+          GradientButton(
+            text: 'Create Store Account',
+            icon: Icons.check_circle_rounded,
+            isLoading: _isLoading,
+            onPressed: _handleSignup,
+          ),
+
+          const SizedBox(height: 14),
+
+          Center(
+            child: TextButton(
+              onPressed: () => _tabController.animateTo(0),
+              child: Text(
+                'Already registered? Sign In here',
+                style: GoogleFonts.inter(fontSize: 12, color: AppColors.warmCoral, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

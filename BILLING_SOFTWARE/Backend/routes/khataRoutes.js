@@ -6,29 +6,91 @@ const KhataCustomer = require("../models/KhataCustomer");
 router.get("/", async (req, res) => {
   try {
     const customers = await KhataCustomer.find().sort({ updatedAt: -1 });
-    const totalDue = customers.reduce((sum, c) => sum + (c.due_amount || 0), 0);
+    const totalDue = customers.reduce((sum, c) => sum + (Number(c.due_amount) || 0), 0);
     res.json({ success: true, totalDue, count: customers.length, data: customers });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message, data: [] });
+    res.status(500).json({ success: false, error: error.message, totalDue: 0, data: [] });
   }
 });
 
 // POST /api/khata — Add new Khata customer
 router.post("/", async (req, res) => {
   try {
-    const { name, phone, address, aadhaar_number, due_amount } = req.body;
+    const { name, phone, address, aadhaar_number, due_amount, customer_id } = req.body;
+
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({ success: false, message: "Customer name is required" });
+    }
+    if (!phone || phone.trim().length === 0) {
+      return res.status(400).json({ success: false, message: "Customer phone number is required" });
+    }
+
+    const customerId = customer_id || `k_${Date.now()}`;
     const newCustomer = new KhataCustomer({
-      customer_id: `k_${Date.now()}`,
-      name,
-      phone,
-      address,
-      aadhaar_number,
+      customer_id: customerId,
+      name: name.trim(),
+      phone: phone.trim(),
+      address: address ? address.trim() : null,
+      aadhaar_number: aadhaar_number ? aadhaar_number.trim() : null,
       due_amount: Number(due_amount) || 0,
     });
+
     await newCustomer.save();
+    console.log(`✅ Khata customer created in MongoDB Atlas: ${newCustomer.name} (${newCustomer.phone})`);
     res.status(201).json({ success: true, data: newCustomer });
   } catch (error) {
+    console.error("Khata customer create error:", error);
     res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/khata/:id/transaction — Record credit / payment on Khata
+router.post("/:id/transaction", async (req, res) => {
+  try {
+    const { type, amount, note } = req.body; // type: 'credit' (add due) or 'payment' (reduce due)
+    const numAmount = Number(amount);
+
+    if (!numAmount || numAmount <= 0) {
+      return res.status(400).json({ success: false, message: "Valid transaction amount is required" });
+    }
+
+    const delta = type === "payment" ? -numAmount : numAmount;
+    const query = {
+      $or: [{ customer_id: req.params.id }, { _id: req.params.id.match(/^[0-9a-fA-F]{24}$/) ? req.params.id : null }],
+    };
+
+    const customer = await KhataCustomer.findOneAndUpdate(
+      query,
+      {
+        $inc: { due_amount: delta },
+        $set: { updatedAt: new Date() },
+      },
+      { new: true }
+    );
+
+    if (!customer) {
+      return res.status(404).json({ success: false, message: "Khata customer not found" });
+    }
+
+    res.json({ success: true, data: customer, message: `Khata updated. New due: ₹${customer.due_amount}` });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE /api/khata/:id — Delete Khata customer
+router.delete("/:id", async (req, res) => {
+  try {
+    const query = {
+      $or: [{ customer_id: req.params.id }, { _id: req.params.id.match(/^[0-9a-fA-F]{24}$/) ? req.params.id : null }],
+    };
+    const deleted = await KhataCustomer.findOneAndDelete(query);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: "Customer not found" });
+    }
+    res.json({ success: true, message: "Khata customer deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
