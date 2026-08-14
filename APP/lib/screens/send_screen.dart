@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -28,6 +29,8 @@ class _SendScreenState extends State<SendScreen> {
   String _amount = '0';
   bool _sending = false;
   bool _recipientNotFound = false;
+  bool _isChecking = false;
+  Timer? _debounce;
   Map<String, dynamic>? _recipientInfo;
 
   @override
@@ -44,12 +47,13 @@ class _SendScreenState extends State<SendScreen> {
     }
     if (widget.prefillReceiverId != null && widget.prefillReceiverId!.isNotEmpty) {
       _recipientCtrl.text = widget.prefillReceiverId!;
-      _lookupRecipient();
+      _lookupRecipientDirect(widget.prefillReceiverId!);
     }
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _recipientCtrl.dispose();
     super.dispose();
   }
@@ -57,30 +61,59 @@ class _SendScreenState extends State<SendScreen> {
   bool get _isReceiverLocked => widget.prefillReceiverId != null && widget.prefillReceiverId!.isNotEmpty;
   bool get _isAmountLocked => widget.prefillAmount != null && widget.prefillAmount!.isNotEmpty;
 
-  Future<void> _lookupRecipient() async {
-    final query = _recipientCtrl.text.trim();
+  void _onRecipientChanged(String val) {
+    _debounce?.cancel();
+    final query = val.trim();
     if (query.length < 3) {
       if (mounted && widget.prefillReceiverName == null) {
         setState(() {
           _recipientInfo = null;
           _recipientNotFound = false;
+          _isChecking = false;
         });
       }
       return;
     }
-    final wallet = context.read<WalletProvider>();
-    final info = await wallet.lookupUser(query);
-    if (mounted) {
-      setState(() {
-        if (info != null && info['user_id'] != null) {
-          _recipientInfo = info;
+
+    setState(() {
+      _isChecking = true;
+      _recipientNotFound = false;
+    });
+
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      _lookupRecipientDirect(query);
+    });
+  }
+
+  Future<void> _lookupRecipientDirect(String query) async {
+    final clean = query.trim();
+    if (clean.length < 3) {
+      if (mounted) {
+        setState(() {
+          _isChecking = false;
           _recipientNotFound = false;
-        } else {
           _recipientInfo = null;
-          _recipientNotFound = true;
-        }
-      });
+        });
+      }
+      return;
     }
+
+    final wallet = context.read<WalletProvider>();
+    final info = await wallet.lookupUser(clean);
+
+    if (!mounted) return;
+    if (_recipientCtrl.text.trim() != clean) return;
+
+    setState(() {
+      _isChecking = false;
+      if (info != null && (info['user_id'] != null || info['name'] != null)) {
+        _recipientInfo = info;
+        _recipientNotFound = false;
+      } else {
+        _recipientInfo = null;
+        _recipientNotFound = true;
+      }
+    });
   }
 
   void _appendDigit(String digit) {
@@ -380,18 +413,55 @@ class _SendScreenState extends State<SendScreen> {
                     textInputAction: TextInputAction.done,
                     onEditingComplete: () {
                       FocusScope.of(context).unfocus();
-                      _lookupRecipient();
                     },
                     decoration: InputDecoration(
                       hintText: 'Recipient Unique ID or Mobile Number',
-                      suffixIcon: Icon(
-                        _isReceiverLocked ? Icons.lock : Icons.person, 
-                        color: EcoColors.onSurfaceVariant.withValues(alpha: 0.3)
+                      suffixIcon: _isChecking
+                          ? const Padding(
+                              padding: EdgeInsets.all(12),
+                              child: SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: EcoColors.primaryContainer,
+                                ),
+                              ),
+                            )
+                          : Icon(
+                              _isReceiverLocked ? Icons.lock : Icons.person,
+                              color: EcoColors.onSurfaceVariant.withValues(alpha: 0.3),
+                            ),
+                    ),
+                    onChanged: _onRecipientChanged,
+                  ),
+                  if (_isChecking) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: EcoColors.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: EcoColors.outlineVariant.withValues(alpha: 0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: EcoColors.primaryContainer),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Checking account ID in real time...',
+                              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: EcoColors.onSurfaceVariant),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    onChanged: (_) => _lookupRecipient(),
-                  ),
-                  if (_recipientInfo != null || _isReceiverLocked) ...[
+                  ] else if (_recipientInfo != null || _isReceiverLocked) ...[
                     const SizedBox(height: 10),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -417,7 +487,7 @@ class _SendScreenState extends State<SendScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'VERIFIED RECIPIENT',
+                                  _recipientInfo?['is_merchant'] == true ? 'VERIFIED STORE / MERCHANT' : 'VERIFIED RECIPIENT',
                                   style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: EcoColors.onSurfaceVariant),
                                 ),
                                 const SizedBox(height: 2),
@@ -440,10 +510,10 @@ class _SendScreenState extends State<SendScreen> {
                         ],
                       ),
                     ),
-                  ] else if (_recipientNotFound) ...[
+                  ] else if (_recipientNotFound && _recipientCtrl.text.trim().length >= 3) ...[
                     const SizedBox(height: 10),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
                         color: EcoColors.errorContainer.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(14),
@@ -451,12 +521,22 @@ class _SendScreenState extends State<SendScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.error_outline_rounded, size: 20, color: EcoColors.errorContainer),
+                          const Icon(Icons.cancel_rounded, size: 20, color: EcoColors.errorContainer),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: Text(
-                              'No registered account found with this ID',
-                              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: EcoColors.errorContainer),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'INVALID RECIPIENT ID',
+                                  style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: EcoColors.errorContainer),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'No registered account found for this ID',
+                                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: EcoColors.errorContainer),
+                                ),
+                              ],
                             ),
                           ),
                         ],
