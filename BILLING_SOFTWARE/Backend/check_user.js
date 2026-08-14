@@ -1,9 +1,16 @@
 const mongoose = require('mongoose');
+const dotenv = require('dotenv');
 const User = require('./models/User');
-const dotenv = require("dotenv")
+
+dotenv.config();
 
 async function check() {
-  await mongoose.connect('mongodb+srv://kumarpatelrakesh222_db_user:GVIbi4egR1Qv7qCO@upi.vczukul.mongodb.net/billing_soft?appName=UPI');
+  const uri = process.env.MONGO_URI;
+  if (!uri) {
+    console.error('❌ MONGO_URI missing in .env');
+    return;
+  }
+  await mongoose.connect(uri);
   const u = await User.findOne({ phone: '6200779484' });
   console.log('User 6200779484 in billing_soft:', {
     user_id: u?.user_id,
