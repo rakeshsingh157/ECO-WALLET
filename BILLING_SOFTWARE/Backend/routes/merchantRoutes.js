@@ -145,11 +145,14 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    if (user && user.pin && user.pin !== pin) {
-      return res.status(401).json({
-        success: false,
-        message: "Incorrect Security PIN. Access Denied.",
-      });
+    if (user && user.pin) {
+      const isMatch = await user.matchPin(pin);
+      if (!isMatch) {
+        return res.status(401).json({
+          success: false,
+          message: "Incorrect Security PIN. Access Denied.",
+        });
+      }
     }
 
     if (!user && merchant) {

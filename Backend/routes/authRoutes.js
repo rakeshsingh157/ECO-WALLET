@@ -1,4 +1,4 @@
-﻿const express = require("express");
+const express = require("express");
 const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
@@ -98,12 +98,28 @@ router.post("/login", async (req, res) => {
               ? [
                   { phone: cleanPhone },
                   { user_id: `mch_${cleanPhone}` },
+                  { email: `${cleanPhone}@dukaandost.io` },
                 ]
               : []),
           ],
         };
 
-    const user = await User.findOne(query);
+    let user = await User.findOne(query);
+
+    if (!user && cleanPhone.length >= 10) {
+      const Merchant = require("../models/Merchant");
+      const merchant = await Merchant.findOne({
+        $or: [
+          { merchant_id: rawIdentifier },
+          { merchant_id: `mch_${cleanPhone}` },
+          { mobile_number: cleanPhone },
+        ],
+      });
+      if (merchant) {
+        user = await User.findOne({ user_id: merchant.user_id });
+      }
+    }
+
     if (!user) {
       return res.status(401).json({ success: false, message: "No account found with this identifier" });
     }

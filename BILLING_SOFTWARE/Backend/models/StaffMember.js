@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const StaffMemberSchema = new mongoose.Schema(
   {
@@ -12,4 +13,30 @@ const StaffMemberSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("StaffMember", StaffMemberSchema);
+StaffMemberSchema.pre("save", async function (next) {
+  if (this.isModified("pin") && this.pin) {
+    const raw = String(this.pin).trim();
+    if (!raw.startsWith("$2a$") && !raw.startsWith("$2b$") && !raw.startsWith("$2y$")) {
+      const salt = await bcrypt.genSalt(10);
+      this.pin = await bcrypt.hash(raw, salt);
+    }
+  }
+  next();
+});
+
+StaffMemberSchema.methods.matchPin = async function (entered) {
+  if (!this.pin) return true;
+  const rawEntered = String(entered || "").trim();
+  const rawStored = String(this.pin || "").trim();
+  try {
+    if (rawStored.startsWith("$2a$") || rawStored.startsWith("$2b$") || rawStored.startsWith("$2y$")) {
+      const match = await bcrypt.compare(rawEntered, rawStored);
+      if (match) return true;
+    }
+    return rawEntered === rawStored;
+  } catch (_) {
+    return rawEntered === rawStored;
+  }
+};
+
+module.exports = mongoose.models.StaffMember || mongoose.model("StaffMember", StaffMemberSchema);

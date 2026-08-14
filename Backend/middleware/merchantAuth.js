@@ -1,18 +1,9 @@
-/**
- * ECO Wallet — Merchant API Key Authentication Middleware
- * Validates the X-API-Key header against registered merchants.
- * Used by billing software endpoints (create-payment, check status, etc.)
- */
 const Merchant = require("../models/Merchant");
 
-/**
- * Authenticate merchant via API key in X-API-Key header.
- * On success, attaches `req.merchant` with the merchant document.
- */
 const merchantAuth = async (req, res, next) => {
-  const apiKey = req.headers["x-api-key"];
+  const rawKey = req.headers["x-api-key"] || req.headers["x-merchant-id"] || req.query.api_key;
 
-  if (!apiKey) {
+  if (!rawKey) {
     return res.status(401).json({
       success: false,
       message: "Missing X-API-Key header",
@@ -20,16 +11,27 @@ const merchantAuth = async (req, res, next) => {
   }
 
   try {
-    // Find all active merchants and check key against each hash.
-    // For performance at scale, consider indexing a key prefix.
-    const merchants = await Merchant.find({ is_active: true });
+    const cleanKey = String(rawKey).trim();
+    const cleanDigits = cleanKey.replace(/\D/g, "");
 
-    let matched = null;
-    for (const merchant of merchants) {
-      const isMatch = await merchant.matchApiKey(apiKey);
-      if (isMatch) {
-        matched = merchant;
-        break;
+    let matched = await Merchant.findOne({
+      is_active: true,
+      $or: [
+        { api_key_hash: cleanKey },
+        { merchant_id: cleanKey },
+        { user_id: cleanKey },
+        ...(cleanDigits.length >= 10 ? [{ mobile_number: cleanDigits }, { merchant_id: `mch_${cleanDigits}` }] : []),
+      ],
+    });
+
+    if (!matched) {
+      const merchants = await Merchant.find({ is_active: true }).limit(50);
+      for (const merchant of merchants) {
+        const isMatch = await merchant.matchApiKey(cleanKey);
+        if (isMatch) {
+          matched = merchant;
+          break;
+        }
       }
     }
 
@@ -43,7 +45,6 @@ const merchantAuth = async (req, res, next) => {
     req.merchant = matched;
     next();
   } catch (error) {
-    console.error("Merchant auth error:", error);
     return res.status(500).json({
       success: false,
       message: "Authentication error",

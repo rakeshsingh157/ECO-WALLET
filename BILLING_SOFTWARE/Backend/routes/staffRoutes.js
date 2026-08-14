@@ -52,4 +52,35 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+router.post("/verify-pin", async (req, res) => {
+  try {
+    const { member_id, pin } = req.body;
+    if (!member_id || !pin) {
+      return res.status(400).json({ success: false, message: "Member ID and PIN are required" });
+    }
+
+    const member = await StaffMember.findOne({ member_id });
+    if (!member) {
+      return res.status(404).json({ success: false, message: "Staff member not found" });
+    }
+
+    const isMatch = await member.matchPin(pin);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: "Incorrect PIN" });
+    }
+
+    res.json({
+      success: true,
+      message: "PIN verified",
+      data: {
+        member_id: member.member_id,
+        name: member.name,
+        role: member.role,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;
