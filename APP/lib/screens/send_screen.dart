@@ -138,9 +138,6 @@ class _SendScreenState extends State<SendScreen> {
     setState(() => _sending = true);
 
     final wallet = context.read<WalletProvider>();
-    final auth = context.read<AuthProvider>();
-    
-    // Generate simple idempotency key
     final idempotencyKey = '${DateTime.now().millisecondsSinceEpoch}_${auth.userId}';
 
     final res = await wallet.sendMoney(
