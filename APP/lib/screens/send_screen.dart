@@ -117,6 +117,17 @@ class _SendScreenState extends State<SendScreen> {
       return;
     }
 
+    final auth = context.read<AuthProvider>();
+    if (amount > auth.balance) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Insufficient balance. Your balance is ${NumberFormat('#,##0.00').format(auth.balance)} ECO'),
+          backgroundColor: EcoColors.errorContainer,
+        ),
+      );
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     String? enteredPin;
     if (prefs.getBool('require_pin') == true) {

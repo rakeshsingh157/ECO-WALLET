@@ -1,15 +1,10 @@
-/**
- * ECO Wallet — Transfer Routes
- * POST /api/transfer/send     — Send by user_id
- * POST /api/transfer/qr-send  — Send via QR code
- * 
- * Uses MongoDB transactions for atomic debit/credit
- */
 const express = require("express");
 const { body, validationResult } = require("express-validator");
 const mongoose = require("mongoose");
 const { protect } = require("../middleware/auth");
 const User = require("../models/User");
+const Merchant = require("../models/Merchant");
+const MerchantPayment = require("../models/MerchantPayment");
 const Transaction = require("../models/Transaction");
 const { generateTransactionId } = require("../utils/idGenerator");
 const { verifyQRPayload } = require("../utils/qrService");
@@ -18,12 +13,8 @@ const { notify } = require("../utils/notificationService");
 
 const router = express.Router();
 
-/**
- * Core transfer logic — atomic transaction
- */
 const executeTransfer = async (sender_id, receiver_id, amount, description, req) => {
-  // Validate amount
-  if (amount <= 0 || amount > 50000) {
+  if (!amount || isNaN(amount) || amount <= 0 || amount > 50000) {
     throw { status: 400, message: "Amount must be between 0.01 and 50,000 ECO" };
   }
 
@@ -31,7 +22,6 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
   session.startTransaction();
 
   try {
-    // Check for idempotency key
     const idempotencyKey = req.body.idempotency_key;
     if (idempotencyKey) {
       const existingTxn = await Transaction.findOne({ transaction_id: idempotencyKey }).session(session);
@@ -40,29 +30,30 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
       }
     }
 
-    // Get sender within transaction
     const sender = await User.findOne({ user_id: sender_id }).session(session);
-    if (!sender) throw { status: 404, message: "Sender not found" };
+    if (!sender) {
+      throw { status: 404, message: "Sender account not found" };
+    }
 
-    // Flexible receiver lookup (Check Merchant table first, then User table)
-    const cleanId = String(receiver_id).trim();
-    const cleanPhoneDigits = cleanId.replace(/\D/g, '');
+    const cleanId = String(receiver_id || "").trim();
+    const cleanPhoneDigits = cleanId.replace(/\D/g, "");
 
-    const Merchant = require("../models/Merchant");
     let merchant = await Merchant.findOne({
       $or: [
         { merchant_id: cleanId },
         { user_id: cleanId },
         { api_key: cleanId },
         { api_key_hash: cleanId },
-        ...(cleanPhoneDigits.length >= 10 ? [
-          { mobile_number: cleanPhoneDigits },
-          { merchant_id: `mch_${cleanPhoneDigits}` },
-          { user_id: `mch_${cleanPhoneDigits}` },
-          { api_key_hash: `key_mch_${cleanPhoneDigits}_auto` },
-        ] : [])
-      ]
-    });
+        ...(cleanPhoneDigits.length >= 10
+          ? [
+              { mobile_number: cleanPhoneDigits },
+              { merchant_id: `mch_${cleanPhoneDigits}` },
+              { user_id: `mch_${cleanPhoneDigits}` },
+              { api_key_hash: `key_mch_${cleanPhoneDigits}_auto` },
+            ]
+          : []),
+      ],
+    }).session(session);
 
     let receiver = null;
     if (merchant) {
@@ -75,49 +66,34 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
           { user_id: cleanId },
           { email: cleanId.toLowerCase() },
           { phone: cleanId },
-          ...(cleanPhoneDigits.length >= 10 ? [
-            { phone: cleanPhoneDigits },
-            { user_id: `mch_${cleanPhoneDigits}` },
-            { phone: { $regex: cleanPhoneDigits } }
-          ] : [])
-        ]
+          ...(cleanPhoneDigits.length >= 10
+            ? [
+                { phone: cleanPhoneDigits },
+                { user_id: `mch_${cleanPhoneDigits}` },
+              ]
+            : []),
+        ],
       }).session(session);
     }
 
-    // Auto-onboard recipient if first-time transfer to an un-registered phone/merchant ID
     if (!receiver) {
-      const bcrypt = require("bcryptjs");
-      const newUserId = cleanId.startsWith('mch_') ? cleanId : (cleanPhoneDigits.length >= 10 ? `mch_${cleanPhoneDigits}` : `USR_${Date.now()}`);
-      const defaultName = merchant ? merchant.business_name : (cleanPhoneDigits.length >= 10 ? `Store (${cleanPhoneDigits})` : `User (${cleanId})`);
-      const [newReceiver] = await User.create([
-        {
-          user_id: newUserId,
-          name: defaultName,
-          email: `${cleanId.toLowerCase().replaceAll(/[^a-z0-9]/g, '') || 'user'}@ecowallet.io`,
-          phone: cleanPhoneDigits.length >= 10 ? cleanPhoneDigits : cleanId,
-          password: await bcrypt.hash("EcoWallet2026!", 10),
-          balance: 0,
-        }
-      ], { session });
-      receiver = newReceiver;
+      throw {
+        status: 404,
+        message: "Recipient not found. No account is registered with this ID or phone number.",
+      };
     }
 
-    // Validate: no self-transfer (only if actual user_id matches)
     if (sender.user_id === receiver.user_id) {
-      throw { status: 400, message: "Cannot transfer to your own wallet account" };
+      throw { status: 400, message: "Cannot transfer money to your own wallet account" };
     }
 
-    if (merchant && receiver && merchant.business_name) {
-      receiver.name = merchant.business_name;
-    }
-
-    // Check balance (auto-provision initial 1000 ECO balance if empty)
     if (sender.balance < amount) {
-      sender.balance = Math.max(sender.balance + 1000, amount + 500);
-      await sender.save({ session });
+      throw {
+        status: 400,
+        message: `Insufficient wallet balance. Your balance is ${sender.balance.toFixed(2)} ECO.`,
+      };
     }
 
-    // Check PIN if provided
     if (sender.pin && req.body.pin) {
       const pinMatch = await sender.matchPin(req.body.pin);
       if (!pinMatch) {
@@ -125,30 +101,39 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
       }
     }
 
-    // Atomic debit & credit
+    let receiverDisplayName = receiver.name;
+    if (merchant && merchant.business_name) {
+      receiverDisplayName = merchant.business_name;
+    } else if (merchant && merchant.owner_name) {
+      receiverDisplayName = merchant.owner_name;
+    }
+
     const debit = await User.findOneAndUpdate(
-      { user_id: sender.user_id },
+      { user_id: sender.user_id, balance: { $gte: amount } },
       {
-        $inc: { balance: -amount, version: 1 },
+        $inc: { balance: -amount },
         $set: { updatedAt: new Date() },
       },
       { session, new: true }
     );
 
     if (!debit) {
-      throw { status: 409, message: "Transaction failed — sender account error" };
+      throw { status: 400, message: "Transfer aborted: insufficient balance or account locked" };
     }
 
-    await User.findOneAndUpdate(
+    const credit = await User.findOneAndUpdate(
       { user_id: receiver.user_id },
       {
-        $inc: { balance: amount, version: 1 },
+        $inc: { balance: amount },
         $set: { updatedAt: new Date() },
       },
-      { session }
+      { session, new: true }
     );
 
-    // Create transaction record
+    if (!credit) {
+      throw { status: 500, message: "Transfer aborted: recipient account credit failed" };
+    }
+
     const txn_id = idempotencyKey || generateTransactionId();
     await Transaction.create(
       [
@@ -159,9 +144,9 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
           amount,
           type: "transfer",
           status: "success",
-          description: description || `Transfer to ${receiver.name}`,
+          description: description || `Transfer to ${receiverDisplayName}`,
           sender_name: sender.name,
-          receiver_name: receiver.name,
+          receiver_name: receiverDisplayName,
           timestamp: new Date(),
         },
       ],
@@ -171,9 +156,7 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
     await session.commitTransaction();
     session.endSession();
 
-    // Update any matching pending MerchantPayment status in MongoDB Atlas
     try {
-      const MerchantPayment = require("../models/MerchantPayment");
       let paymentId = req.body.payment_id;
       if (paymentId) {
         await MerchantPayment.findOneAndUpdate(
@@ -185,46 +168,24 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
               payer_name: sender.name,
               transaction_id: txn_id,
               completed_at: new Date(),
-            }
-          }
-        );
-      } else {
-        await MerchantPayment.findOneAndUpdate(
-          { 
-            $or: [
-              { merchant_id: receiver.user_id, status: "pending" },
-              { merchant_id: cleanId, status: "pending" },
-              { status: "pending" }
-            ]
-          },
-          {
-            $set: {
-              status: "completed",
-              payer_id: sender.user_id,
-              payer_name: sender.name,
-              transaction_id: txn_id,
-              completed_at: new Date(),
-            }
+            },
           }
         );
       }
-    } catch (mpErr) {
-      console.log("MerchantPayment update notice:", mpErr.message);
-    }
+    } catch (_) {}
 
-    // Post-transaction notifications
     try {
       await notify(
         sender.user_id,
         "transaction",
-        "Money Sent 💸",
-        `You sent ${amount} ECO to ${receiver.name}`,
+        "Money Sent",
+        `You sent ${amount} ECO to ${receiverDisplayName}`,
         { transaction_id: txn_id }
       );
       await notify(
         receiver.user_id,
         "transaction",
-        "Money Received 🎉",
+        "Money Received",
         `You received ${amount} ECO from ${sender.name}`,
         { transaction_id: txn_id }
       );
@@ -235,7 +196,7 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
       amount,
       sender_id: sender.user_id,
       receiver_id: receiver.user_id,
-      receiver_name: receiver.name,
+      receiver_name: receiverDisplayName,
       new_balance: debit.balance,
       timestamp: new Date().toISOString(),
     };
@@ -246,10 +207,6 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
   }
 };
 
-/**
- * @route   POST /api/transfer/send
- * @desc    Send money to another user by user_id, phone, email, or merchant_id
- */
 router.post(
   "/send",
   protect,
@@ -282,10 +239,6 @@ router.post(
   }
 );
 
-/**
- * @route   POST /api/transfer/qr-send
- * @desc    Send money by scanning a QR code payload
- */
 router.post(
   "/qr-send",
   protect,
@@ -302,22 +255,21 @@ router.post(
 
       const { qr_payload, amount: overrideAmount, description } = req.body;
 
-      // Handle raw JSON QR string or signed payload
       let parsedData;
       try {
-        parsedData = typeof qr_payload === 'string' ? JSON.parse(qr_payload) : qr_payload;
+        parsedData = typeof qr_payload === "string" ? JSON.parse(qr_payload) : qr_payload;
       } catch (_) {
         parsedData = await verifyQRPayload(qr_payload);
       }
 
-      const receiver_id = parsedData.merchant_id || parsedData.user_id;
+      const receiver_id = parsedData.merchant_id || parsedData.user_id || parsedData.merchant;
       const finalAmount = overrideAmount ? parseFloat(overrideAmount) : (parsedData.amount ? parseFloat(parsedData.amount) : 0);
 
       if (!receiver_id) {
         return res.status(400).json({ success: false, message: "Invalid QR code: missing recipient identifier" });
       }
       if (!finalAmount || finalAmount <= 0) {
-        return res.status(400).json({ success: false, message: "Please specify a transfer amount" });
+        return res.status(400).json({ success: false, message: "Please specify a valid transfer amount" });
       }
 
       req.body.payment_id = parsedData.payment_id;
@@ -336,7 +288,6 @@ router.post(
         data: result,
       });
     } catch (error) {
-      console.error("QR send error:", error);
       const status = error.status || 500;
       res.status(status).json({
         success: false,
