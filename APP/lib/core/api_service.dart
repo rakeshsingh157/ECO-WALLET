@@ -1,16 +1,18 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   static const String baseUrl = 'https://eco-wallet.onrender.com/api';
+  static const Duration defaultTimeout = Duration(seconds: 25);
 
   static String? _accessToken;
   static String? _refreshToken;
   static String? _backupRefreshToken;
-  static Future<bool>? _activeRefreshFuture;
+  static Completer<bool>? _refreshCompleter;
 
-  static Future<void> setTokens(String access, String refresh, [String? backupRefresh]) async {
+  static Future<void> setTokens(String access, String refresh, {String? backupRefresh}) async {
     _accessToken = access;
     _refreshToken = refresh;
     if (backupRefresh != null && backupRefresh.isNotEmpty) {
@@ -51,157 +53,140 @@ class ApiService {
     return headers;
   }
 
-  static Future<Map<String, dynamic>> _handleResponse(http.Response res) async {
-    try {
-      final data = jsonDecode(res.body);
-      if (res.statusCode == 401 && (_refreshToken != null || _backupRefreshToken != null)) {
-        final refreshed = await tryRefreshTokenLoop();
-        if (refreshed) {
-          return {'_retry': true};
-        }
-      }
-      return data;
-    } catch (_) {
-      if (res.statusCode == 401 && (_refreshToken != null || _backupRefreshToken != null)) {
-        final refreshed = await tryRefreshTokenLoop();
-        if (refreshed) {
-          return {'_retry': true};
-        }
-      }
-      return {'success': false, 'message': 'Unexpected response format'};
+  static Future<bool> _tryRefresh() async {
+    if (_refreshCompleter != null) {
+      return await _refreshCompleter!.future;
     }
-  }
 
-  static Future<bool> tryRefreshTokenLoop() async {
-    if (_activeRefreshFuture != null) {
-      return await _activeRefreshFuture!;
+    _refreshCompleter = Completer<bool>();
+
+    if (_refreshToken == null && _backupRefreshToken == null) {
+      await loadTokens();
     }
-    _activeRefreshFuture = _performTokenRefreshLoop();
-    try {
-      final result = await _activeRefreshFuture!;
-      _activeRefreshFuture = null;
-      return result;
-    } catch (_) {
-      _activeRefreshFuture = null;
+
+    final tokenCandidate = _refreshToken ?? _backupRefreshToken;
+    if (tokenCandidate == null) {
+      _refreshCompleter!.complete(false);
+      _refreshCompleter = null;
       return false;
     }
-  }
 
-  static Future<bool> _performTokenRefreshLoop() async {
-    final tokensToTry = <String>[];
-    if (_refreshToken != null && _refreshToken!.isNotEmpty) {
-      tokensToTry.add(_refreshToken!);
-    }
-    if (_backupRefreshToken != null && _backupRefreshToken!.isNotEmpty && _backupRefreshToken != _refreshToken) {
-      tokensToTry.add(_backupRefreshToken!);
-    }
+    bool success = false;
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/auth/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'refreshToken': tokenCandidate,
+          'backupRefreshToken': _backupRefreshToken,
+        }),
+      ).timeout(defaultTimeout);
 
-    for (final token in tokensToTry) {
-      try {
-        final res = await http.post(
-          Uri.parse('$baseUrl/auth/refresh'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'refreshToken': token}),
-        ).timeout(const Duration(seconds: 15));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['success'] == true && data['data'] != null) {
+          final newAccess = data['data']['accessToken'];
+          final newRefresh = data['data']['refreshToken'] ?? tokenCandidate;
+          final newBackup = data['data']['backupRefreshToken'] ?? _backupRefreshToken;
+          if (newAccess != null) {
+            await setTokens(newAccess, newRefresh, backupRefresh: newBackup);
+            success = true;
+          }
+        }
+      } else if (res.statusCode == 401 || res.statusCode == 403) {
+        if (_backupRefreshToken != null && tokenCandidate != _backupRefreshToken) {
+          final backupRes = await http.post(
+            Uri.parse('$baseUrl/auth/refresh'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'refreshToken': _backupRefreshToken}),
+          ).timeout(defaultTimeout);
 
-        if (res.statusCode == 200) {
-          final data = jsonDecode(res.body);
-          if (data['success'] == true && data['data'] != null) {
-            final newAccess = data['data']['accessToken'] ?? '';
-            final newRefresh = data['data']['refreshToken'] ?? token;
-            final newBackup = data['data']['backupRefreshToken'] ?? _backupRefreshToken;
-            if (newAccess.isNotEmpty) {
-              await setTokens(newAccess, newRefresh, newBackup);
-              return true;
+          if (backupRes.statusCode == 200) {
+            final data = jsonDecode(backupRes.body);
+            if (data['success'] == true && data['data'] != null) {
+              final newAccess = data['data']['accessToken'];
+              final newRefresh = data['data']['refreshToken'];
+              final newBackup = data['data']['backupRefreshToken'];
+              if (newAccess != null && newRefresh != null) {
+                await setTokens(newAccess, newRefresh, backupRefresh: newBackup);
+                success = true;
+              }
             }
           }
         }
-      } catch (_) {}
+        if (!success) {
+          await clearTokens();
+        }
+      }
+    } catch (_) {}
+
+    _refreshCompleter!.complete(success);
+    _refreshCompleter = null;
+    return success;
+  }
+
+  static Future<Map<String, dynamic>> _executeRequest(
+    String method,
+    String path, {
+    Map<String, dynamic>? body,
+    bool auth = true,
+  }) async {
+    final uri = Uri.parse('$baseUrl$path');
+
+    Future<http.Response> makeCall() {
+      final headers = _headers(auth: auth);
+      switch (method.toUpperCase()) {
+        case 'GET':
+          return http.get(uri, headers: headers).timeout(defaultTimeout);
+        case 'POST':
+          return http.post(uri, headers: headers, body: body != null ? jsonEncode(body) : null).timeout(defaultTimeout);
+        case 'PUT':
+          return http.put(uri, headers: headers, body: body != null ? jsonEncode(body) : null).timeout(defaultTimeout);
+        case 'DELETE':
+          return http.delete(uri, headers: headers).timeout(defaultTimeout);
+        default:
+          return http.get(uri, headers: headers).timeout(defaultTimeout);
+      }
     }
 
-    await clearTokens();
-    return false;
+    try {
+      final res = await makeCall();
+      if (res.statusCode == 401 && auth) {
+        final refreshed = await _tryRefresh();
+        if (refreshed) {
+          final retryRes = await makeCall();
+          final text = retryRes.body.trim();
+          if (text.startsWith('{') || text.startsWith('[')) {
+            return jsonDecode(text);
+          }
+          return {'success': false, 'message': 'Invalid response format'};
+        }
+      }
+
+      final text = res.body.trim();
+      if (text.startsWith('{') || text.startsWith('[')) {
+        return jsonDecode(text);
+      }
+      return {'success': false, 'message': 'Invalid server response (${res.statusCode})'};
+    } catch (e) {
+      return {'success': false, 'message': 'Network timeout or connection error'};
+    }
   }
 
   static Future<Map<String, dynamic>> get(String path) async {
-    final res = await http.get(
-      Uri.parse('$baseUrl$path'),
-      headers: _headers(),
-    );
-    final data = await _handleResponse(res);
-    if (data.containsKey('_retry')) {
-      final retry = await http.get(Uri.parse('$baseUrl$path'), headers: _headers());
-      try {
-        return jsonDecode(retry.body);
-      } catch (_) {
-        return {'success': false};
-      }
-    }
-    return data;
+    return await _executeRequest('GET', path);
   }
 
   static Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) async {
-    final res = await http.post(
-      Uri.parse('$baseUrl$path'),
-      headers: _headers(),
-      body: jsonEncode(body),
-    );
-    final data = await _handleResponse(res);
-    if (data.containsKey('_retry')) {
-      final retry = await http.post(
-        Uri.parse('$baseUrl$path'),
-        headers: _headers(),
-        body: jsonEncode(body),
-      );
-      try {
-        return jsonDecode(retry.body);
-      } catch (_) {
-        return {'success': false};
-      }
-    }
-    return data;
+    return await _executeRequest('POST', path, body: body);
   }
 
   static Future<Map<String, dynamic>> put(String path, [Map<String, dynamic>? body]) async {
-    final res = await http.put(
-      Uri.parse('$baseUrl$path'),
-      headers: _headers(),
-      body: body != null ? jsonEncode(body) : null,
-    );
-    final data = await _handleResponse(res);
-    if (data.containsKey('_retry')) {
-      final retry = await http.put(
-        Uri.parse('$baseUrl$path'),
-        headers: _headers(),
-        body: body != null ? jsonEncode(body) : null,
-      );
-      try {
-        return jsonDecode(retry.body);
-      } catch (_) {
-        return {'success': false};
-      }
-    }
-    return data;
+    return await _executeRequest('PUT', path, body: body);
   }
 
   static Future<Map<String, dynamic>> delete(String path) async {
-    final res = await http.delete(
-      Uri.parse('$baseUrl$path'),
-      headers: _headers(),
-    );
-    final data = await _handleResponse(res);
-    if (data.containsKey('_retry')) {
-      final retry = await http.delete(
-        Uri.parse('$baseUrl$path'),
-        headers: _headers(),
-      );
-      try {
-        return jsonDecode(retry.body);
-      } catch (_) {
-        return {'success': false};
-      }
-    }
-    return data;
+    return await _executeRequest('DELETE', path);
   }
 
   static Future<Map<String, dynamic>> register(String name, String email, String password, {String? referralCode}) async {
@@ -214,7 +199,7 @@ class ApiService {
         'password': password,
         if (referralCode != null && referralCode.isNotEmpty) 'referral_code': referralCode
       }),
-    );
+    ).timeout(defaultTimeout);
     return jsonDecode(res.body);
   }
 
@@ -223,7 +208,7 @@ class ApiService {
       Uri.parse('$baseUrl/auth/login'),
       headers: _headers(auth: false),
       body: jsonEncode({'email': email, 'password': password}),
-    );
+    ).timeout(defaultTimeout);
     return jsonDecode(res.body);
   }
 
@@ -258,4 +243,3 @@ class ApiService {
     return await post('/notifications/register-token', {'token': token});
   }
 }
-

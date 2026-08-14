@@ -25,7 +25,7 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final res = await ApiService.get('/auth/me');
-      if (res['success'] == true) {
+      if (res['success'] == true && res['data'] != null) {
         _user = res['data'];
         _isLoggedIn = true;
         notifyListeners();
@@ -33,7 +33,6 @@ class AuthProvider extends ChangeNotifier {
       }
     } catch (_) {}
 
-    await ApiService.clearTokens();
     return false;
   }
 
@@ -48,9 +47,9 @@ class AuthProvider extends ChangeNotifier {
         _user = res['data']['user'];
         _isLoggedIn = true;
         await ApiService.setTokens(
-          res['data']['accessToken'] ?? '',
-          res['data']['refreshToken'] ?? '',
-          res['data']['backupRefreshToken'],
+          res['data']['accessToken'],
+          res['data']['refreshToken'],
+          backupRefresh: res['data']['backupRefreshToken'],
         );
         await FirebaseConfig.registerToken();
         _isLoading = false;
@@ -79,9 +78,9 @@ class AuthProvider extends ChangeNotifier {
         _user = res['data']['user'];
         _isLoggedIn = true;
         await ApiService.setTokens(
-          res['data']['accessToken'] ?? '',
-          res['data']['refreshToken'] ?? '',
-          res['data']['backupRefreshToken'],
+          res['data']['accessToken'],
+          res['data']['refreshToken'],
+          backupRefresh: res['data']['backupRefreshToken'],
         );
         await FirebaseConfig.registerToken();
         _isLoading = false;
@@ -102,7 +101,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> refreshUser() async {
     try {
       final res = await ApiService.get('/auth/me');
-      if (res['success'] == true) {
+      if (res['success'] == true && res['data'] != null) {
         _user = res['data'];
         notifyListeners();
       }
@@ -112,7 +111,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> fetchProfile() async {
     try {
       final res = await ApiService.get('/auth/profile');
-      if (res['success'] == true) {
+      if (res['success'] == true && res['data'] != null) {
         _user = res['data'];
         notifyListeners();
       }
@@ -139,4 +138,3 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
-
