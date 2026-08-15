@@ -20,11 +20,30 @@ class CustomerDetailsScreen extends StatefulWidget {
 
 class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   late Customer _customer;
+  List<Map<String, dynamic>> _transactions = [];
+  bool _isLoadingTransactions = false;
 
   @override
   void initState() {
     super.initState();
     _customer = widget.customer;
+    _loadTransactions();
+  }
+
+  void _loadTransactions() async {
+    setState(() => _isLoadingTransactions = true);
+    final auth = context.read<AuthProvider>();
+    if (auth.apiService.baseUrl.isNotEmpty) {
+      final txs = await auth.apiService.getCustomerTransactions(_customer.id);
+      if (mounted) {
+        setState(() {
+          _transactions = txs;
+          _isLoadingTransactions = false;
+        });
+      }
+    } else {
+      if (mounted) setState(() => _isLoadingTransactions = false);
+    }
   }
 
   void _giveCredit() {
@@ -73,6 +92,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 setState(() {
                   _customer.dueAmount = _customer.dueAmount + amt;
                 });
+                _loadTransactions();
                 if (ctx.mounted) {
                   Navigator.pop(ctx);
                 }
@@ -137,6 +157,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 setState(() {
                   _customer.dueAmount = (_customer.dueAmount - amt) < 0 ? 0 : _customer.dueAmount - amt;
                 });
+                _loadTransactions();
                 if (ctx.mounted) {
                   Navigator.pop(ctx);
                 }
@@ -216,9 +237,37 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   ),
                   if (_customer.address.isNotEmpty) ...[
                     const SizedBox(height: 4),
-                    Text(
-                      _customer.address,
-                      style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textMuted),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.location_on_rounded, size: 14, color: AppColors.textMuted),
+                        const SizedBox(width: 4),
+                        Text(
+                          _customer.address,
+                          style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textMuted),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (_customer.aadhaarNumber.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.forestMint.withAlpha(25),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.badge_rounded, size: 13, color: AppColors.forestMint),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Aadhaar: ${_customer.aadhaarNumber}',
+                            style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.forestMint),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
 
@@ -331,19 +380,71 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'RECENT TRANSACTIONS',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Kirana Supplies Order', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                      Text('₹450', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                      Text(
+                        'RECENT TRANSACTIONS',
+                        style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
+                      ),
+                      if (_isLoadingTransactions)
+                        const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.terracotta)),
                     ],
                   ),
-                  Text('Recent • Paid via Cash / Khata', style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted)),
+                  const SizedBox(height: 12),
+                  if (_transactions.isEmpty && !_isLoadingTransactions)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Center(
+                        child: Text(
+                          'No transactions recorded yet for this customer.',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textMuted),
+                        ),
+                      ),
+                    )
+                  else
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _transactions.length,
+                      separatorBuilder: (_, __) => Divider(color: AppColors.borderSubtle, height: 16),
+                      itemBuilder: (ctx, i) {
+                        final tx = _transactions[i];
+                        final isCredit = tx['type'] == 'credit';
+                        final isPayment = tx['type'] == 'payment';
+                        final amount = (tx['amount'] as num?)?.toDouble() ?? 0.0;
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    tx['title'] ?? 'Transaction',
+                                    style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    tx['subtitle'] ?? (tx['payment_mode'] ?? 'Khata'),
+                                    style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              '${isCredit ? "+" : isPayment ? "-" : ""}₹${amount.toStringAsFixed(0)}',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: isCredit ? AppColors.chaiGold : (isPayment ? AppColors.forestMint : AppColors.textPrimary),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                 ],
               ),
             ),

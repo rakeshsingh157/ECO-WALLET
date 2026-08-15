@@ -19,11 +19,30 @@ class SupplierDetailsScreen extends StatefulWidget {
 
 class _SupplierDetailsScreenState extends State<SupplierDetailsScreen> {
   late Supplier _supplier;
+  List<Map<String, dynamic>> _purchases = [];
+  bool _isLoadingPurchases = false;
 
   @override
   void initState() {
     super.initState();
     _supplier = widget.supplier;
+    _loadPurchases();
+  }
+
+  void _loadPurchases() async {
+    setState(() => _isLoadingPurchases = true);
+    final auth = context.read<AuthProvider>();
+    if (auth.apiService.baseUrl.isNotEmpty) {
+      final res = await auth.apiService.getSupplierPurchases(_supplier.id);
+      if (mounted) {
+        setState(() {
+          _purchases = res;
+          _isLoadingPurchases = false;
+        });
+      }
+    } else {
+      if (mounted) setState(() => _isLoadingPurchases = false);
+    }
   }
 
   void _recordPaymentToSupplier() {
@@ -219,19 +238,70 @@ class _SupplierDetailsScreenState extends State<SupplierDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'PURCHASE INVOICE HISTORY',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Stock Inward #PO-982', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                      Text('₹8,400', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                      Text(
+                        'PURCHASE INVOICE HISTORY',
+                        style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
+                      ),
+                      if (_isLoadingPurchases)
+                        const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.terracotta)),
                     ],
                   ),
-                  Text('3 days ago • Kirana groceries batch', style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted)),
+                  const SizedBox(height: 12),
+                  if (_purchases.isEmpty && !_isLoadingPurchases)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Center(
+                        child: Text(
+                          'No purchase orders recorded yet from this supplier.',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textMuted),
+                        ),
+                      ),
+                    )
+                  else
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _purchases.length,
+                      separatorBuilder: (_, __) => Divider(color: AppColors.borderSubtle, height: 16),
+                      itemBuilder: (ctx, i) {
+                        final p = _purchases[i];
+                        final amount = (p['total_amount'] as num?)?.toDouble() ?? 0.0;
+                        final invoice = p['invoice_number'] ?? 'PO-${p['id'] ?? ''}';
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Purchase Inward #$invoice',
+                                    style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    p['notes'] ?? 'Stock Supply',
+                                    style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              '₹${amount.toStringAsFixed(0)}',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                 ],
               ),
             ),

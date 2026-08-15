@@ -175,5 +175,28 @@ router.post("/:id/pay", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+router.get("/:id/purchases", async (req, res) => {
+  try {
+    const purchases = await SupplierPurchase.find({ supplier_id: req.params.id })
+      .sort({ date: -1 })
+      .limit(50)
+      .lean();
+
+    const sanitized = purchases.map((p) => ({
+      id: p.purchase_id,
+      invoice_number: p.invoice_number || p.purchase_id,
+      total_amount: p.total_amount,
+      amount_paid: p.amount_paid,
+      pending_amount: p.pending_amount,
+      items_count: (p.items || []).length,
+      notes: p.notes || "Inward stock supply",
+      date: p.date || p.createdAt,
+    }));
+
+    res.json({ success: true, count: sanitized.length, data: sanitized });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message, data: [] });
+  }
+});
 
 module.exports = router;

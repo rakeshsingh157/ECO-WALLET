@@ -46,6 +46,8 @@ class _KhataScreenState extends State<KhataScreen> {
     final amountCtrl = TextEditingController();
     final nameCtrl = TextEditingController();
     final phoneCtrl = TextEditingController();
+    final addressCtrl = TextEditingController();
+    final aadhaarCtrl = TextEditingController();
     bool isNewCustomer = customerProvider.customers.isEmpty;
 
     showModalBottomSheet(
@@ -63,125 +65,149 @@ class _KhataScreenState extends State<KhataScreen> {
             right: 20,
             top: 20,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    ctx.tr('add_credit_entry'),
-                    style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-
-              if (customerProvider.customers.isNotEmpty)
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    ChoiceChip(
-                      label: Text('Existing Customer', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
-                      selected: !isNewCustomer,
-                      selectedColor: AppColors.terracotta,
-                      labelStyle: TextStyle(color: !isNewCustomer ? Colors.white : AppColors.textPrimary),
-                      onSelected: (val) => setModalState(() => isNewCustomer = false),
+                    Text(
+                      ctx.tr('add_credit_entry'),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                     ),
-                    const SizedBox(width: 8),
-                    ChoiceChip(
-                      label: Text('+ New Customer', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
-                      selected: isNewCustomer,
-                      selectedColor: AppColors.terracotta,
-                      labelStyle: TextStyle(color: isNewCustomer ? Colors.white : AppColors.textPrimary),
-                      onSelected: (val) => setModalState(() => isNewCustomer = true),
+                    IconButton(
+                      icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
+                      onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
                 ),
-              const SizedBox(height: 12),
-
-              if (!isNewCustomer && customerProvider.customers.isNotEmpty) ...[
-                DropdownButtonFormField<Customer>(
-                  initialValue: selectedCustomer,
-                  decoration: InputDecoration(
-                    labelText: ctx.tr('select_customer'),
-                    prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta),
-                  ),
-                  items: customerProvider.customers
-                      .map((c) => DropdownMenuItem(
-                            value: c,
-                            child: Text('${c.name} (${c.phone})', style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary)),
-                          ))
-                      .toList(),
-                  onChanged: (v) => setModalState(() => selectedCustomer = v),
-                ),
-              ] else ...[
-                TextField(
-                  controller: nameCtrl,
-                  style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-                  decoration: InputDecoration(
-                    labelText: 'Customer Name *',
-                    prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta),
-                  ),
-                ),
                 const SizedBox(height: 10),
-                TextField(
-                  controller: phoneCtrl,
-                  keyboardType: TextInputType.phone,
-                  style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-                  decoration: InputDecoration(
-                    labelText: 'Customer Mobile *',
-                    prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta),
+
+                if (customerProvider.customers.isNotEmpty)
+                  Row(
+                    children: [
+                      ChoiceChip(
+                        label: Text('Existing Customer', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
+                        selected: !isNewCustomer,
+                        selectedColor: AppColors.terracotta,
+                        labelStyle: TextStyle(color: !isNewCustomer ? Colors.white : AppColors.textPrimary),
+                        onSelected: (val) => setModalState(() => isNewCustomer = false),
+                      ),
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: Text('+ New Customer', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
+                        selected: isNewCustomer,
+                        selectedColor: AppColors.terracotta,
+                        labelStyle: TextStyle(color: isNewCustomer ? Colors.white : AppColors.textPrimary),
+                        onSelected: (val) => setModalState(() => isNewCustomer = true),
+                      ),
+                    ],
                   ),
+                const SizedBox(height: 12),
+
+                if (!isNewCustomer && customerProvider.customers.isNotEmpty) ...[
+                  DropdownButtonFormField<Customer>(
+                    initialValue: selectedCustomer,
+                    decoration: InputDecoration(
+                      labelText: ctx.tr('select_customer'),
+                      prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta),
+                    ),
+                    items: customerProvider.customers
+                        .map((c) => DropdownMenuItem(
+                              value: c,
+                              child: Text('${c.name} (${c.phone})', style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary)),
+                            ))
+                        .toList(),
+                    onChanged: (v) => setModalState(() => selectedCustomer = v),
+                  ),
+                ] else ...[
+                  TextField(
+                    controller: nameCtrl,
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                    decoration: InputDecoration(
+                      labelText: ctx.tr('customer_name'),
+                      prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                    decoration: InputDecoration(
+                      labelText: ctx.tr('customer_phone'),
+                      prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: addressCtrl,
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                    decoration: InputDecoration(
+                      labelText: ctx.tr('customer_address_optional'),
+                      prefixIcon: Icon(Icons.location_on_rounded, color: AppColors.textSecondary),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: aadhaarCtrl,
+                    keyboardType: TextInputType.number,
+                    maxLength: 12,
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                    decoration: InputDecoration(
+                      labelText: ctx.tr('customer_aadhaar_optional'),
+                      counterText: '',
+                      prefixIcon: Icon(Icons.badge_rounded, color: AppColors.forestMint),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+
+                TextField(
+                  controller: amountCtrl,
+                  keyboardType: TextInputType.number,
+                  style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  decoration: InputDecoration(labelText: '${ctx.tr('khata_credit')} (₹) *', prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.chaiGold)),
                 ),
-              ],
-              const SizedBox(height: 12),
 
-              TextField(
-                controller: amountCtrl,
-                keyboardType: TextInputType.number,
-                style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                decoration: InputDecoration(labelText: '${ctx.tr('khata_credit')} (₹) *', prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.chaiGold)),
-              ),
+                const SizedBox(height: 20),
 
-              const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                      if (amt <= 0) return;
 
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
-                    if (amt <= 0) return;
+                      final auth = context.read<AuthProvider>();
 
-                    final auth = context.read<AuthProvider>();
-
-                    if (isNewCustomer) {
-                      final n = nameCtrl.text.trim();
-                      final p = phoneCtrl.text.trim();
-                      if (n.isNotEmpty && p.isNotEmpty) {
-                        final newCust = Customer(
-                          id: 'cust_${DateTime.now().millisecondsSinceEpoch}',
-                          name: n,
-                          phone: p,
-                          dueAmount: amt,
-                        );
-                        await customerProvider.addCustomer(auth.apiService, newCust);
-                        await customerProvider.addCredit(auth.apiService, newCust.id, amt);
+                      if (isNewCustomer) {
+                        final n = nameCtrl.text.trim();
+                        final p = phoneCtrl.text.trim();
+                        if (n.isNotEmpty && p.isNotEmpty) {
+                          final newCust = Customer(
+                            id: 'cust_${DateTime.now().millisecondsSinceEpoch}',
+                            name: n,
+                            phone: p,
+                            address: addressCtrl.text.trim(),
+                            aadhaarNumber: aadhaarCtrl.text.trim(),
+                            dueAmount: amt,
+                          );
+                          await customerProvider.addCustomer(auth.apiService, newCust);
+                          await customerProvider.addCredit(auth.apiService, newCust.id, amt);
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                          }
+                        }
+                      } else if (selectedCustomer != null) {
+                        await customerProvider.addCredit(auth.apiService, selectedCustomer!.id, amt);
                         if (ctx.mounted) {
                           Navigator.pop(ctx);
                         }
                       }
-                    } else if (selectedCustomer != null) {
-                      await customerProvider.addCredit(auth.apiService, selectedCustomer!.id, amt);
-                      if (ctx.mounted) {
-                        Navigator.pop(ctx);
-                      }
-                    }
-                  },
+                    },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.terracotta,
                     foregroundColor: Colors.white,

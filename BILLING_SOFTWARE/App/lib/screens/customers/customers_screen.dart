@@ -44,6 +44,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
     final nameCtrl = TextEditingController();
     final phoneCtrl = TextEditingController();
     final addressCtrl = TextEditingController();
+    final aadhaarCtrl = TextEditingController();
 
     showModalBottomSheet(
       context: context,
@@ -59,73 +60,88 @@ class _CustomersScreenState extends State<CustomersScreen> {
           right: 20,
           top: 20,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  ctx.tr('add_customer'),
-                  style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-                ),
-                IconButton(
-                  icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-
-            TextField(
-              controller: nameCtrl,
-              style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-              decoration: InputDecoration(labelText: ctx.tr('customer_name'), prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta)),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: phoneCtrl,
-              keyboardType: TextInputType.phone,
-              style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-              decoration: InputDecoration(labelText: ctx.tr('customer_phone'), prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta)),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: addressCtrl,
-              style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-              decoration: InputDecoration(labelText: ctx.tr('customer_address'), prefixIcon: Icon(Icons.location_on_rounded, color: AppColors.textSecondary)),
-            ),
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () async {
-                  if (nameCtrl.text.trim().isNotEmpty && phoneCtrl.text.trim().isNotEmpty) {
-                    final auth = context.read<AuthProvider>();
-                    final newCustomer = Customer(
-                      id: 'cust_${DateTime.now().millisecondsSinceEpoch}',
-                      name: nameCtrl.text.trim(),
-                      phone: phoneCtrl.text.trim(),
-                      address: addressCtrl.text.trim(),
-                    );
-                    await context.read<CustomerProvider>().addCustomer(auth.apiService, newCustomer);
-                    if (ctx.mounted) {
-                      Navigator.pop(ctx);
-                    }
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.terracotta,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: Text(ctx.tr('save_customer')),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    ctx.tr('add_customer'),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 14),
+
+              TextField(
+                controller: nameCtrl,
+                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                decoration: InputDecoration(labelText: ctx.tr('customer_name'), prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: phoneCtrl,
+                keyboardType: TextInputType.phone,
+                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: ctx.tr('customer_phone'), prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: addressCtrl,
+                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: ctx.tr('customer_address_optional'), prefixIcon: Icon(Icons.location_on_rounded, color: AppColors.textSecondary)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: aadhaarCtrl,
+                keyboardType: TextInputType.number,
+                maxLength: 12,
+                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                decoration: InputDecoration(
+                  labelText: ctx.tr('customer_aadhaar_optional'),
+                  counterText: '',
+                  prefixIcon: Icon(Icons.badge_rounded, color: AppColors.forestMint),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (nameCtrl.text.trim().isNotEmpty && phoneCtrl.text.trim().isNotEmpty) {
+                      final auth = context.read<AuthProvider>();
+                      final newCustomer = Customer(
+                        id: 'cust_${DateTime.now().millisecondsSinceEpoch}',
+                        name: nameCtrl.text.trim(),
+                        phone: phoneCtrl.text.trim(),
+                        address: addressCtrl.text.trim(),
+                        aadhaarNumber: aadhaarCtrl.text.trim(),
+                      );
+                      await context.read<CustomerProvider>().addCustomer(auth.apiService, newCustomer);
+                      if (ctx.mounted) {
+                        Navigator.pop(ctx);
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.terracotta,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text(ctx.tr('save_customer')),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

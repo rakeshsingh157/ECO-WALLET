@@ -220,8 +220,9 @@ class ApiService {
             id: c["customer_id"] ?? c["id"] ?? c["_id"] ?? "c_${DateTime.now().millisecondsSinceEpoch}",
             name: c["name"] ?? "Customer",
             phone: c["phone"] ?? "",
-            email: c["email"],
+            email: c["email"] ?? "",
             address: c["address"] ?? "",
+            aadhaarNumber: c["aadhaar_number"] ?? c["aadhaarNumber"] ?? "",
             dueAmount: (c["due_amount"] ?? c["dueAmount"] as num?)?.toDouble() ?? 0.0,
             totalSpent: (c["total_spent"] ?? c["totalSpent"] as num?)?.toDouble() ?? 0.0,
             totalOrders: (c["total_orders"] ?? c["totalOrders"] as num?)?.toInt() ?? 0,
@@ -246,6 +247,7 @@ class ApiService {
           "phone": customer.phone,
           "email": customer.email,
           "address": customer.address,
+          "aadhaar_number": customer.aadhaarNumber,
           "due_amount": customer.dueAmount,
         }),
       ).timeout(requestTimeout);
@@ -253,6 +255,22 @@ class ApiService {
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (_) {
       return false;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getCustomerTransactions(String customerId) async {
+    final url = Uri.parse("$_cleanBase/customers/$customerId/transactions");
+    try {
+      final response = await http.get(url, headers: _headers).timeout(requestTimeout);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true && data["data"] is List) {
+          return List<Map<String, dynamic>>.from(data["data"]);
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
     }
   }
 
@@ -286,8 +304,7 @@ class ApiService {
     }
   }
 
-  // ==================== SUPPLIERS & VENDORS ====================
-
+ 
   Future<List<Supplier>> getSuppliers() async {
     final url = Uri.parse("$_cleanBase/suppliers");
     try {
@@ -352,8 +369,23 @@ class ApiService {
     }
   }
 
-  // ==================== EXPENSES ====================
+  Future<List<Map<String, dynamic>>> getSupplierPurchases(String supplierId) async {
+    final url = Uri.parse("$_cleanBase/suppliers/$supplierId/purchases");
+    try {
+      final response = await http.get(url, headers: _headers).timeout(requestTimeout);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true && data["data"] is List) {
+          return List<Map<String, dynamic>>.from(data["data"]);
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
 
+ 
   Future<List<Expense>> getExpenses({String? period, String? category}) async {
     final queryParams = <String, String>{};
     if (period != null) queryParams["period"] = period;
