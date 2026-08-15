@@ -13,6 +13,7 @@ import '../../providers/theme_provider.dart';
 import '../../models/bill.dart';
 import '../../models/customer.dart';
 import '../customers/customer_picker_screen.dart';
+import '../settings/shop_profile_screen.dart';
 import 'bill_success_screen.dart';
 
 class PaymentScreen extends StatefulWidget {
@@ -140,6 +141,35 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     if (_selectedMode == PaymentMode.ecoWallet) {
       _autoStartEcoPayment();
+    } else if (_selectedMode == PaymentMode.upi) {
+      if (auth.upiId.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Please upload or set up your Store UPI QR first in Settings.'),
+            backgroundColor: AppColors.chaiGold,
+            action: SnackBarAction(
+              label: 'CONFIGURE',
+              textColor: Colors.black,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ShopProfileScreen()),
+                );
+              },
+            ),
+          ),
+        );
+        return;
+      }
+      final bill = billProvider.completeManualBill(
+        PaymentMode.upi,
+        customerName: _selectedCustomer?.name,
+        apiService: apiService,
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => BillSuccessScreen(bill: bill)),
+      );
     } else if (_selectedMode == PaymentMode.pending) {
       if (_selectedCustomer != null) {
         context.read<CustomerProvider>().addCredit(apiService, _selectedCustomer!.id, billProvider.currentTotal);
@@ -624,95 +654,159 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ],
 
             if (_selectedMode == PaymentMode.upi) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: AppColors.info.withAlpha(90), width: 1.5),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'SCAN TO PAY VIA ANY UPI APP',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.info),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Google Pay • PhonePe • Paytm • BHIM',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
-                    ),
-                    const SizedBox(height: 14),
-
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
+              if (auth.upiId.trim().isEmpty) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: AppColors.chaiGold.withAlpha(100), width: 1.5),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withAlpha(30),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
+                          color: AppColors.chaiGold.withAlpha(30),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.qr_code_scanner_rounded, size: 30, color: AppColors.chaiGold),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        'STORE UPI QR NOT CONFIGURED',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0,
+                          color: AppColors.chaiGold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Please upload or scan your store UPI QR code in Settings before using this feature.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const ShopProfileScreen()),
+                          );
+                        },
+                        icon: const Icon(Icons.qr_code_2_rounded, size: 16),
+                        label: const Text('SETUP STORE UPI QR NOW'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.chaiGold,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ] else ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: AppColors.info.withAlpha(90), width: 1.5),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'SCAN TO PAY VIA ANY UPI APP',
+                        style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.info),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Google Pay • PhonePe • Paytm • BHIM',
+                        style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
+                      ),
+                      const SizedBox(height: 14),
+
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(30),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: QrImageView(
+                            data: 'upi://pay?pa=${Uri.encodeComponent(auth.upiId.trim())}&pn=${Uri.encodeComponent(auth.shopName.isNotEmpty ? auth.shopName : "Dukaan Dost")}&am=${total.toStringAsFixed(2)}&cu=INR&tn=Store%20Bill',
+                            version: QrVersions.auto,
+                            size: 190.0,
+                            backgroundColor: Colors.white,
+                            dataModuleStyle: const QrDataModuleStyle(
+                              dataModuleShape: QrDataModuleShape.square,
+                              color: Colors.black,
+                            ),
+                            eyeStyle: const QrEyeStyle(
+                              eyeShape: QrEyeShape.square,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _qrSecondsRemaining > 30 ? AppColors.info.withAlpha(25) : AppColors.error.withAlpha(25),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: _qrSecondsRemaining > 30 ? AppColors.info.withAlpha(90) : AppColors.error.withAlpha(90),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.timer_outlined,
+                              size: 16,
+                              color: _qrSecondsRemaining > 30 ? AppColors.info : AppColors.error,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _qrSecondsRemaining > 0
+                                  ? 'Dynamic UPI Expires in ${_formatTimer(_qrSecondsRemaining)}'
+                                  : 'UPI QR Expired',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: _qrSecondsRemaining > 30 ? AppColors.info : AppColors.error,
+                              ),
                             ),
                           ],
                         ),
-                        child: QrImageView(
-                          data: 'upi://pay?pa=${Uri.encodeComponent(auth.upiId.isNotEmpty ? auth.upiId : (auth.mobileNumber.isNotEmpty ? "${auth.mobileNumber}@upi" : "merchant@upi"))}&pn=${Uri.encodeComponent(auth.shopName.isNotEmpty ? auth.shopName : "Dukaan Dost")}&am=${total.toStringAsFixed(2)}&cu=INR&tn=Store%20Bill',
-                          version: QrVersions.auto,
-                          size: 190.0,
-                          backgroundColor: Colors.white,
-                          dataModuleStyle: const QrDataModuleStyle(
-                            dataModuleShape: QrDataModuleShape.square,
-                            color: Colors.black,
-                          ),
-                          eyeStyle: const QrEyeStyle(
-                            eyeShape: QrEyeShape.square,
-                            color: Colors.black,
-                          ),
-                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: _qrSecondsRemaining > 30 ? AppColors.info.withAlpha(25) : AppColors.error.withAlpha(25),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: _qrSecondsRemaining > 30 ? AppColors.info.withAlpha(90) : AppColors.error.withAlpha(90),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.timer_outlined,
-                            size: 16,
-                            color: _qrSecondsRemaining > 30 ? AppColors.info : AppColors.error,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _qrSecondsRemaining > 0
-                                ? 'Dynamic UPI Expires in ${_formatTimer(_qrSecondsRemaining)}'
-                                : 'UPI QR Expired',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                              color: _qrSecondsRemaining > 30 ? AppColors.info : AppColors.error,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
+              ],
             ],
 
             Container(

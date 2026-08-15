@@ -109,6 +109,15 @@ class SettingsScreen extends StatelessWidget {
                   Divider(color: AppColors.borderSubtle, height: 20),
                   _buildNavRow(
                     context,
+                    icon: Icons.qr_code_2_rounded,
+                    title: 'Store UPI & QR Code',
+                    subtitle: auth.upiId.isNotEmpty ? auth.upiId : 'Scan standee or set UPI ID for bill QR',
+                    color: AppColors.info,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShopProfileScreen())),
+                  ),
+                  Divider(color: AppColors.borderSubtle, height: 20),
+                  _buildNavRow(
+                    context,
                     icon: Icons.groups_rounded,
                     title: context.tr('staff_pins'),
                     subtitle: context.tr('staff_pins_sub'),
