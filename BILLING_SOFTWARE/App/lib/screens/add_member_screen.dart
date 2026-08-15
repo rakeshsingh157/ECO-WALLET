@@ -5,6 +5,7 @@ import '../core/theme.dart';
 import '../core/constants.dart';
 import '../core/api_service.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 
 class ShopMember {
   final String id;
@@ -208,6 +209,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(

@@ -6,6 +6,7 @@ import '../../core/localization.dart';
 import '../../models/product.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
 
 class EditProductScreen extends StatefulWidget {
   final Product product;
@@ -64,6 +65,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
       stock: int.tryParse(_stockCtrl.text.trim()) ?? widget.product.stock,
       unit: _selectedUnit,
       barcode: _barcodeCtrl.text.trim().isNotEmpty ? _barcodeCtrl.text.trim() : null,
+      icon: widget.product.icon,
     );
 
     final success = await productProvider.updateProduct(
@@ -96,6 +98,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final categories = context.watch<ProductProvider>().categories.where((c) => c != 'All').toList();
 
     return Scaffold(

@@ -8,6 +8,7 @@ import '../../providers/bill_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/customer_provider.dart';
 import '../../providers/locale_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../models/bill.dart';
 import '../pos/pos_screen.dart';
 import '../inventory/add_product_screen.dart';
@@ -62,6 +63,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final auth = context.watch<AuthProvider>();
     final billProvider = context.watch<BillProvider>();
     final productProvider = context.watch<ProductProvider>();

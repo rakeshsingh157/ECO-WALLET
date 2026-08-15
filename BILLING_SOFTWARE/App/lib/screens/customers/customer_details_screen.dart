@@ -7,6 +7,7 @@ import '../../core/localization.dart';
 import '../../models/customer.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/customer_provider.dart';
+import '../../providers/theme_provider.dart';
 
 class CustomerDetailsScreen extends StatefulWidget {
   final Customer customer;
@@ -24,6 +25,70 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   void initState() {
     super.initState();
     _customer = widget.customer;
+  }
+
+  void _giveCredit() {
+    final amountCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Add Credit / Khata Entry',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Giving goods on credit (Udhar) to ${_customer.name}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
+            const SizedBox(height: 8),
+            Text(
+              'Current Balance: ₹${_customer.dueAmount.toStringAsFixed(0)}',
+              style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.chaiGold),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: amountCtrl,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              decoration: InputDecoration(labelText: 'Credit Amount (₹) *', prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.terracotta)),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+              if (amt > 0) {
+                final auth = context.read<AuthProvider>();
+                await context.read<CustomerProvider>().addCredit(auth.apiService, _customer.id, amt);
+                setState(() {
+                  _customer.dueAmount = _customer.dueAmount + amt;
+                });
+                if (ctx.mounted) {
+                  Navigator.pop(ctx);
+                }
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Added ₹${amt.toStringAsFixed(0)} credit for ${_customer.name}'), backgroundColor: AppColors.success),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.terracotta, foregroundColor: Colors.white),
+            child: const Text('SAVE KHATA ENTRY'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _recordPayment() {
@@ -97,6 +162,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
@@ -201,42 +267,58 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
             const SizedBox(height: 20),
 
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _giveCredit,
+                    icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
+                    label: const Text('ADD KHATA DUE'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 50),
+                      backgroundColor: AppColors.terracotta,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _recordPayment,
+                    icon: const Icon(Icons.payments_rounded, size: 18),
+                    label: Text(context.tr('collect_due')),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 50),
+                      backgroundColor: AppColors.forestMint,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
             if (_customer.dueAmount > 0) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _sendWhatsAppReminder,
-                      icon: Icon(Icons.send_rounded, size: 18, color: AppColors.forestMint),
-                      label: Text(
-                        context.tr('reminder'),
-                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.forestMint),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
-                        side: BorderSide(color: AppColors.forestMint),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _sendWhatsAppReminder,
+                  icon: Icon(Icons.send_rounded, size: 18, color: AppColors.forestMint),
+                  label: Text(
+                    'SEND PAYMENT REMINDER',
+                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.forestMint),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _recordPayment,
-                      icon: const Icon(Icons.payments_rounded, size: 18),
-                      label: Text(context.tr('collect_due')),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
-                        backgroundColor: AppColors.forestMint,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    side: BorderSide(color: AppColors.forestMint),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                ],
+                ),
               ),
-              const SizedBox(height: 20),
             ],
+            const SizedBox(height: 20),
 
             Container(
               width: double.infinity,

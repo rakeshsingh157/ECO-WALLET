@@ -23,9 +23,7 @@ class ExpenseProvider with ChangeNotifier {
     notifyListeners();
 
     final remote = await apiService.getExpenses(period: period, category: category);
-    if (remote.isNotEmpty) {
-      _expenses = remote;
-    }
+    _expenses = remote;
     _isLoading = false;
     notifyListeners();
   }

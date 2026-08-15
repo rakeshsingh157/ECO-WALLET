@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/localization.dart';
 import '../../providers/product_provider.dart';
+import '../../providers/theme_provider.dart';
 import 'add_product_screen.dart';
 import 'edit_product_screen.dart';
 import 'product_details_screen.dart';
@@ -28,6 +29,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final productProvider = context.watch<ProductProvider>();
     final products = productProvider.products;
     final lowStockCount = productProvider.lowStockProducts.length;

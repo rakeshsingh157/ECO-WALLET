@@ -6,6 +6,7 @@ import '../../core/localization.dart';
 import '../../models/customer.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/customer_provider.dart';
+import '../../providers/theme_provider.dart';
 import 'customer_details_screen.dart';
 
 class KhataScreen extends StatefulWidget {
@@ -43,6 +44,9 @@ class _KhataScreenState extends State<KhataScreen> {
     final customerProvider = context.read<CustomerProvider>();
     Customer? selectedCustomer = customerProvider.customers.isNotEmpty ? customerProvider.customers.first : null;
     final amountCtrl = TextEditingController();
+    final nameCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    bool isNewCustomer = customerProvider.customers.isEmpty;
 
     showModalBottomSheet(
       context: context,
@@ -76,9 +80,31 @@ class _KhataScreenState extends State<KhataScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
 
               if (customerProvider.customers.isNotEmpty)
+                Row(
+                  children: [
+                    ChoiceChip(
+                      label: Text('Existing Customer', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
+                      selected: !isNewCustomer,
+                      selectedColor: AppColors.terracotta,
+                      labelStyle: TextStyle(color: !isNewCustomer ? Colors.white : AppColors.textPrimary),
+                      onSelected: (val) => setModalState(() => isNewCustomer = false),
+                    ),
+                    const SizedBox(width: 8),
+                    ChoiceChip(
+                      label: Text('+ New Customer', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
+                      selected: isNewCustomer,
+                      selectedColor: AppColors.terracotta,
+                      labelStyle: TextStyle(color: isNewCustomer ? Colors.white : AppColors.textPrimary),
+                      onSelected: (val) => setModalState(() => isNewCustomer = true),
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 12),
+
+              if (!isNewCustomer && customerProvider.customers.isNotEmpty) ...[
                 DropdownButtonFormField<Customer>(
                   initialValue: selectedCustomer,
                   decoration: InputDecoration(
@@ -92,15 +118,27 @@ class _KhataScreenState extends State<KhataScreen> {
                           ))
                       .toList(),
                   onChanged: (v) => setModalState(() => selectedCustomer = v),
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    'No customers found. Please add a customer first.',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.error),
+                ),
+              ] else ...[
+                TextField(
+                  controller: nameCtrl,
+                  style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                  decoration: InputDecoration(
+                    labelText: 'Customer Name *',
+                    prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta),
                   ),
                 ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                  decoration: InputDecoration(
+                    labelText: 'Customer Mobile *',
+                    prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta),
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
 
               TextField(
@@ -117,8 +155,27 @@ class _KhataScreenState extends State<KhataScreen> {
                 child: ElevatedButton(
                   onPressed: () async {
                     final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
-                    if (selectedCustomer != null && amt > 0) {
-                      final auth = context.read<AuthProvider>();
+                    if (amt <= 0) return;
+
+                    final auth = context.read<AuthProvider>();
+
+                    if (isNewCustomer) {
+                      final n = nameCtrl.text.trim();
+                      final p = phoneCtrl.text.trim();
+                      if (n.isNotEmpty && p.isNotEmpty) {
+                        final newCust = Customer(
+                          id: 'cust_${DateTime.now().millisecondsSinceEpoch}',
+                          name: n,
+                          phone: p,
+                          dueAmount: amt,
+                        );
+                        await customerProvider.addCustomer(auth.apiService, newCust);
+                        await customerProvider.addCredit(auth.apiService, newCust.id, amt);
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                        }
+                      }
+                    } else if (selectedCustomer != null) {
                       await customerProvider.addCredit(auth.apiService, selectedCustomer!.id, amt);
                       if (ctx.mounted) {
                         Navigator.pop(ctx);
@@ -131,7 +188,7 @@ class _KhataScreenState extends State<KhataScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text(ctx.tr('khata_book')),
+                  child: const Text('RECORD KHATA CREDIT'),
                 ),
               ),
             ],
@@ -143,6 +200,7 @@ class _KhataScreenState extends State<KhataScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final customerProvider = context.watch<CustomerProvider>();
     final allCustomers = customerProvider.customers;
     final khataCustomers = allCustomers.where((c) => c.dueAmount > 0).toList();
@@ -344,6 +402,13 @@ class _KhataScreenState extends State<KhataScreen> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showAddCreditModal,
+        backgroundColor: AppColors.terracotta,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add_rounded, size: 20),
+        label: const Text('GIVE CREDIT / KHATA', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
       ),
     );
   }

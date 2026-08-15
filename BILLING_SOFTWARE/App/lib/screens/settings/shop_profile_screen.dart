@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/localization.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
 
 class ShopProfileScreen extends StatefulWidget {
   const ShopProfileScreen({super.key});
@@ -26,8 +27,8 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
     _shopNameCtrl = TextEditingController(text: auth.shopName);
     _ownerNameCtrl = TextEditingController(text: auth.ownerName);
     _mobileCtrl = TextEditingController(text: auth.mobileNumber);
-    _gstinCtrl = TextEditingController(text: '29AAAAA0000A1Z5');
-    _addressCtrl = TextEditingController(text: 'Main Market, City Center, Hubli');
+    _gstinCtrl = TextEditingController(text: auth.gstin);
+    _addressCtrl = TextEditingController(text: auth.address);
   }
 
   @override
@@ -40,15 +41,31 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
     super.dispose();
   }
 
-  void _saveProfile() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: const Text('Shop profile updated successfully!'), backgroundColor: AppColors.success),
+  void _saveProfile() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final auth = context.read<AuthProvider>();
+    final success = await auth.updateProfile(
+      shopName: _shopNameCtrl.text.trim(),
+      ownerName: _ownerNameCtrl.text.trim(),
+      mobileNumber: _mobileCtrl.text.trim(),
+      gstin: _gstinCtrl.text.trim(),
+      address: _addressCtrl.text.trim(),
     );
-    Navigator.pop(context);
+
+    if (mounted) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(success ? 'Shop profile updated successfully!' : 'Failed to update profile'),
+          backgroundColor: success ? AppColors.success : AppColors.error,
+        ),
+      );
+      Navigator.pop(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(

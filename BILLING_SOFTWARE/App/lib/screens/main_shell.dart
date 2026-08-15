@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../core/theme.dart';
+import '../providers/theme_provider.dart';
 import '../providers/bill_provider.dart';
 import '../providers/locale_provider.dart';
 import 'dashboard/dashboard_screen.dart';
@@ -20,24 +21,25 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = const [
-    DashboardScreen(),
-    ProductsScreen(),
-    PosScreen(),
-    ReportsScreen(),
-    SettingsScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final cartCount = context.watch<BillProvider>().itemCount;
     final localeProvider = context.watch<LocaleProvider>();
+
+    final screens = [
+      const DashboardScreen(),
+      const ProductsScreen(),
+      const PosScreen(),
+      const ReportsScreen(),
+      const SettingsScreen(),
+    ];
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: screens,
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(

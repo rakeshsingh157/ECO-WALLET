@@ -6,6 +6,7 @@ import '../../core/localization.dart';
 import '../../models/customer.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/customer_provider.dart';
+import '../../providers/theme_provider.dart';
 import 'customer_details_screen.dart';
 
 class CustomersScreen extends StatefulWidget {
@@ -132,6 +133,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final customerProvider = context.watch<CustomerProvider>();
     final customers = customerProvider.customers;
 

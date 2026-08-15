@@ -6,6 +6,7 @@ import '../../core/localization.dart';
 import '../../models/supplier.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/supplier_provider.dart';
+import '../../providers/theme_provider.dart';
 
 class SupplierDetailsScreen extends StatefulWidget {
   final Supplier supplier;
@@ -91,6 +92,7 @@ class _SupplierDetailsScreenState extends State<SupplierDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(

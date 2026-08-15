@@ -3,12 +3,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../providers/product_provider.dart';
+import '../../providers/theme_provider.dart';
 
 class ExpiryAlertsScreen extends StatelessWidget {
   const ExpiryAlertsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final productProvider = context.watch<ProductProvider>();
     final allProducts = productProvider.products;
 

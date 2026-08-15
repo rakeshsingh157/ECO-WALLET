@@ -6,6 +6,7 @@ import '../../core/localization.dart';
 import '../../models/product.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
 
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({super.key});
@@ -48,8 +49,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
       name: _nameCtrl.text.trim(),
       price: double.tryParse(_priceCtrl.text.trim()) ?? 0.0,
       category: _selectedCategory,
-      stock: int.tryParse(_stockCtrl.text.trim()) ?? 0,
       unit: _selectedUnit,
+      stock: int.tryParse(_stockCtrl.text.trim()) ?? 0,
       barcode: _barcodeCtrl.text.trim().isNotEmpty ? _barcodeCtrl.text.trim() : null,
     );
 
@@ -65,7 +66,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Product added to inventory!'),
+            content: Text('${_nameCtrl.text.trim()} added to inventory!'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -83,6 +84,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final categories = context.watch<ProductProvider>().categories.where((c) => c != 'All').toList();
 
     return Scaffold(

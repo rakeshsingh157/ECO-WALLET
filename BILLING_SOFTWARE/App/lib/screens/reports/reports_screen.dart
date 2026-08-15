@@ -8,6 +8,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/bill_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/expense_provider.dart';
+import '../../providers/theme_provider.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -51,6 +52,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final billProvider = context.watch<BillProvider>();
     final productProvider = context.watch<ProductProvider>();
     final expenseProvider = context.watch<ExpenseProvider>();

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Customer = require("../models/Customer");
 const KhataLedger = require("../models/KhataLedger");
+const Bill = require("../models/Bill");
 
 router.get("/", async (req, res) => {
   try {
@@ -39,6 +40,7 @@ router.get("/", async (req, res) => {
       name: c.name,
       phone: c.phone,
       address: c.address || "",
+      aadhaar_number: c.aadhaar_number || "",
       due_amount: c.due_amount || 0,
       total_spent: c.total_spent || 0,
       total_orders: c.total_orders || 0,
@@ -80,6 +82,7 @@ router.get("/:id", async (req, res) => {
         name: customer.name,
         phone: customer.phone,
         address: customer.address || "",
+        aadhaar_number: customer.aadhaar_number || "",
         due_amount: customer.due_amount || 0,
         total_spent: customer.total_spent || 0,
         total_orders: customer.total_orders || 0,
@@ -131,6 +134,7 @@ router.post("/", async (req, res) => {
         name: customer.name,
         phone: customer.phone,
         address: customer.address || "",
+        aadhaar_number: customer.aadhaar_number || "",
         due_amount: customer.due_amount || 0,
       },
     });
@@ -148,31 +152,28 @@ router.post("/:id/credit", async (req, res) => {
       return res.status(400).json({ success: false, message: "Valid credit amount is required" });
     }
 
-    const customer = await Customer.findOneAndUpdate(
-      {
-        $or: [
-          { customer_id: req.params.id },
-          { phone: req.params.id },
-          ...(req.params.id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: req.params.id }] : []),
-        ],
-      },
-      {
-        $inc: { due_amount: creditAmount, total_spent: creditAmount, total_orders: 1 },
-        $set: { last_transaction: new Date() },
-      },
-      { new: true }
-    );
+    const customer = await Customer.findOne({
+      $or: [
+        { customer_id: req.params.id },
+        { phone: req.params.id },
+        ...(req.params.id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: req.params.id }] : []),
+      ],
+    });
 
     if (!customer) {
       return res.status(404).json({ success: false, message: "Customer not found" });
     }
+
+    customer.due_amount = (customer.due_amount || 0) + creditAmount;
+    customer.last_transaction = new Date();
+    await customer.save();
 
     await KhataLedger.create({
       customer_id: customer.customer_id,
       type: "credit",
       amount: creditAmount,
       bill_id: bill_id || null,
-      note: note || "Khata credit order",
+      note: note || "Khata credit",
       date: new Date(),
     });
 
@@ -242,6 +243,56 @@ router.get("/:id/ledger", async (req, res) => {
     res.json({ success: true, count: ledger.length, data: ledger });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get("/:id/transactions", async (req, res) => {
+  try {
+    const customer = await Customer.findOne({
+      $or: [
+        { customer_id: req.params.id },
+        { phone: req.params.id },
+        ...(req.params.id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: req.params.id }] : []),
+      ],
+    });
+
+    const custId = customer ? customer.customer_id : req.params.id;
+    const phone = customer ? customer.phone : req.params.id;
+
+    const [ledgerEntries, bills] = await Promise.all([
+      KhataLedger.find({ customer_id: custId }).sort({ date: -1 }).limit(50).lean(),
+      Bill.find({ $or: [{ khata_customer_id: custId }, { customer_phone: phone }] }).sort({ createdAt: -1 }).limit(50).lean()
+    ]);
+
+    const combined = [];
+    for (const b of bills) {
+      combined.push({
+        id: b.bill_id,
+        type: "bill",
+        title: `Store Bill #${b.bill_id.substring(0, b.bill_id.length > 8 ? 8 : b.bill_id.length).toUpperCase()}`,
+        subtitle: `${b.items.length} items • ${b.payment_mode ? b.payment_mode.toUpperCase() : 'PAID'}`,
+        amount: b.total_amount,
+        payment_mode: b.payment_mode,
+        date: b.createdAt ? new Date(b.createdAt).toISOString() : new Date().toISOString(),
+      });
+    }
+    for (const l of ledgerEntries) {
+      combined.push({
+        id: l._id.toString(),
+        type: l.type,
+        title: l.type === "credit" ? "Khata Credit (Udhar)" : "Payment Received",
+        subtitle: l.note || (l.type === "credit" ? "Store goods credit" : "Khata settlement"),
+        amount: l.amount,
+        payment_mode: l.type === "credit" ? "Khata" : "Cash / Payment",
+        date: l.date ? new Date(l.date).toISOString() : (l.createdAt ? new Date(l.createdAt).toISOString() : new Date().toISOString()),
+      });
+    }
+
+    combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    res.json({ success: true, count: combined.length, data: combined });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message, data: [] });
   }
 });
 

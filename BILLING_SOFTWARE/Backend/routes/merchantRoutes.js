@@ -304,7 +304,141 @@ router.post("/onboard", async (req, res) => {
         business_name: merchant.business_name,
         owner_name: merchant.owner_name,
         mobile_number: merchant.mobile_number,
+        gstin: merchant.gstin || "",
+        address: merchant.address || "",
       },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.get("/profile", async (req, res) => {
+  try {
+    const rawMerchantId = req.headers["x-merchant-id"] || req.headers["x-api-key"] || req.query.merchant_id || "mch_store";
+    const cleanDigits = String(rawMerchantId).replace(/\D/g, "");
+
+    let merchant = await Merchant.findOne({
+      $or: [
+        { merchant_id: rawMerchantId },
+        { user_id: rawMerchantId },
+        ...(cleanDigits.length >= 10 ? [{ mobile_number: cleanDigits }, { merchant_id: `mch_${cleanDigits}` }] : [])
+      ]
+    });
+
+    if (!merchant && cleanDigits.length >= 10) {
+      merchant = await Merchant.findOne({ mobile_number: cleanDigits });
+    }
+
+    if (!merchant) {
+      merchant = await Merchant.findOne().sort({ createdAt: -1 });
+    }
+
+    if (!merchant) {
+      return res.json({
+        success: true,
+        merchant: {
+          merchant_id: "mch_default",
+          business_name: "",
+          owner_name: "",
+          mobile_number: "",
+          gstin: "",
+          address: "",
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      merchant: {
+        merchant_id: merchant.merchant_id,
+        user_id: merchant.user_id,
+        business_name: merchant.business_name,
+        owner_name: merchant.owner_name,
+        mobile_number: merchant.mobile_number,
+        gstin: merchant.gstin || "",
+        address: merchant.address || "",
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.post("/update-profile", async (req, res) => {
+  try {
+    const { shop_name, owner_name, mobile_number, gstin, address, merchant_id } = req.body;
+    const phone = mobile_number ? mobile_number.trim() : "";
+    const cleanDigits = phone.replace(/\D/g, "");
+    const mchId = merchant_id || (cleanDigits.length >= 10 ? `mch_${cleanDigits}` : "mch_default");
+
+    let merchant = await Merchant.findOne({
+      $or: [
+        { merchant_id: mchId },
+        ...(cleanDigits.length >= 10 ? [{ mobile_number: cleanDigits }, { merchant_id: `mch_${cleanDigits}` }] : [])
+      ]
+    });
+
+    if (!merchant) {
+      merchant = await Merchant.findOne().sort({ createdAt: -1 });
+    }
+
+    if (!merchant) {
+      merchant = new Merchant({
+        merchant_id: mchId,
+        user_id: mchId,
+        business_name: shop_name || "Store",
+        owner_name: owner_name || "Shopkeeper",
+        mobile_number: phone,
+        gstin: gstin || "",
+        address: address || "",
+      });
+    } else {
+      if (shop_name) merchant.business_name = shop_name.trim();
+      if (owner_name) merchant.owner_name = owner_name.trim();
+      if (phone) merchant.mobile_number = phone;
+      if (gstin !== undefined) merchant.gstin = gstin.trim();
+      if (address !== undefined) merchant.address = address.trim();
+    }
+
+    await merchant.save();
+
+    let user = await User.findOne({ $or: [{ user_id: merchant.user_id }, { phone: merchant.mobile_number }] });
+    if (user) {
+      if (owner_name) user.name = owner_name.trim();
+      if (phone) user.phone = phone;
+      await user.save();
+    }
+
+    await syncToEcoWalletDB(
+      {
+        user_id: merchant.user_id,
+        name: merchant.owner_name,
+        phone: merchant.mobile_number,
+      },
+      {
+        merchant_id: merchant.merchant_id,
+        user_id: merchant.user_id,
+        business_name: merchant.business_name,
+        owner_name: merchant.owner_name,
+        mobile_number: merchant.mobile_number,
+        gstin: merchant.gstin,
+        address: merchant.address,
+      }
+    );
+
+    res.json({
+      success: true,
+      message: "Store business profile updated successfully",
+      merchant: {
+        merchant_id: merchant.merchant_id,
+        user_id: merchant.user_id,
+        business_name: merchant.business_name,
+        owner_name: merchant.owner_name,
+        mobile_number: merchant.mobile_number,
+        gstin: merchant.gstin || "",
+        address: merchant.address || "",
+      }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

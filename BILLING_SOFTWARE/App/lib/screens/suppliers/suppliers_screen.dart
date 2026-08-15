@@ -6,6 +6,7 @@ import '../../core/localization.dart';
 import '../../models/supplier.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/supplier_provider.dart';
+import '../../providers/theme_provider.dart';
 import 'supplier_details_screen.dart';
 
 class SuppliersScreen extends StatefulWidget {
@@ -140,6 +141,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final supplierProvider = context.watch<SupplierProvider>();
     final suppliers = supplierProvider.suppliers;
     final totalPayables = supplierProvider.totalPendingPayable;

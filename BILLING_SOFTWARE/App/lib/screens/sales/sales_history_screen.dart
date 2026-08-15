@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/theme.dart';
 import '../../core/localization.dart';
 import '../../providers/bill_provider.dart';
+import '../../providers/theme_provider.dart';
 import 'sale_details_screen.dart';
 
 class SalesHistoryScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final billProvider = context.watch<BillProvider>();
     final bills = billProvider.completedBills;
 

@@ -11,6 +11,8 @@ class AuthProvider extends ChangeNotifier {
   String _ownerName = '';
   String _mobileNumber = '';
   String _securityPin = '';
+  String _gstin = '';
+  String _address = '';
   String _baseUrl = AppConstants.defaultEcoWalletBaseUrl;
   bool _isConfigured = false;
   String? _authError;
@@ -22,6 +24,8 @@ class AuthProvider extends ChangeNotifier {
   String get ownerName => _ownerName;
   String get mobileNumber => _mobileNumber;
   String get securityPin => _securityPin;
+  String get gstin => _gstin;
+  String get address => _address;
   bool get hasPinSet => _securityPin.isNotEmpty;
   String get baseUrl => _baseUrl;
   bool get isConfigured => _isConfigured;
@@ -42,10 +46,37 @@ class AuthProvider extends ChangeNotifier {
     _ownerName = prefs.getString(AppConstants.keyOwnerName) ?? '';
     _mobileNumber = prefs.getString('mobile_number') ?? '';
     _securityPin = prefs.getString('security_pin') ?? '';
+    _gstin = prefs.getString('shop_gstin') ?? '';
+    _address = prefs.getString('shop_address') ?? '';
     _baseUrl = prefs.getString(AppConstants.keyBaseUrl) ?? AppConstants.defaultEcoWalletBaseUrl;
 
     _isConfigured = _apiKey.isNotEmpty || _mobileNumber.isNotEmpty;
     notifyListeners();
+
+    if (_baseUrl.isNotEmpty) {
+      try {
+        final profile = await apiService.getMerchantProfile();
+        if (profile.isNotEmpty) {
+          if (profile['business_name'] != null && profile['business_name'].toString().isNotEmpty) {
+            _shopName = profile['business_name'];
+            await prefs.setString(AppConstants.keyShopName, _shopName);
+          }
+          if (profile['owner_name'] != null && profile['owner_name'].toString().isNotEmpty) {
+            _ownerName = profile['owner_name'];
+            await prefs.setString(AppConstants.keyOwnerName, _ownerName);
+          }
+          if (profile['gstin'] != null) {
+            _gstin = profile['gstin'];
+            await prefs.setString('shop_gstin', _gstin);
+          }
+          if (profile['address'] != null) {
+            _address = profile['address'];
+            await prefs.setString('shop_address', _address);
+          }
+          notifyListeners();
+        }
+      } catch (_) {}
+    }
   }
 
   Future<void> saveCredentials({
@@ -57,6 +88,8 @@ class AuthProvider extends ChangeNotifier {
     required String mobileNumber,
     required String securityPin,
     required String baseUrl,
+    String gstin = '',
+    String address = '',
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppConstants.keyApiKey, apiKey);
@@ -66,6 +99,8 @@ class AuthProvider extends ChangeNotifier {
     await prefs.setString(AppConstants.keyOwnerName, ownerName);
     await prefs.setString('mobile_number', mobileNumber);
     await prefs.setString('security_pin', securityPin);
+    await prefs.setString('shop_gstin', gstin);
+    await prefs.setString('shop_address', address);
     await prefs.setString(AppConstants.keyBaseUrl, baseUrl);
 
     _apiKey = apiKey;
@@ -75,10 +110,47 @@ class AuthProvider extends ChangeNotifier {
     _ownerName = ownerName;
     _mobileNumber = mobileNumber;
     _securityPin = securityPin;
+    _gstin = gstin;
+    _address = address;
     _baseUrl = baseUrl;
     _isConfigured = true;
 
     notifyListeners();
+  }
+
+  Future<bool> updateProfile({
+    required String shopName,
+    required String ownerName,
+    required String mobileNumber,
+    required String gstin,
+    required String address,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppConstants.keyShopName, shopName);
+    await prefs.setString(AppConstants.keyOwnerName, ownerName);
+    await prefs.setString('mobile_number', mobileNumber);
+    await prefs.setString('shop_gstin', gstin);
+    await prefs.setString('shop_address', address);
+
+    _shopName = shopName;
+    _ownerName = ownerName;
+    _mobileNumber = mobileNumber;
+    _gstin = gstin;
+    _address = address;
+    notifyListeners();
+
+    try {
+      await apiService.updateMerchantProfile(
+        shopName: shopName,
+        ownerName: ownerName,
+        mobileNumber: mobileNumber,
+        gstin: gstin,
+        address: address,
+      );
+      return true;
+    } catch (_) {
+      return true;
+    }
   }
 
   Future<bool> loginWithPin(String mobile, String pin) async {
@@ -106,6 +178,8 @@ class AuthProvider extends ChangeNotifier {
     required String shopName,
     required String ownerName,
     required String pin,
+    String gstin = '',
+    String address = '',
   }) async {
     _authError = null;
     try {
@@ -118,6 +192,8 @@ class AuthProvider extends ChangeNotifier {
         mobileNumber: mobile,
         securityPin: pin,
         baseUrl: _baseUrl,
+        gstin: gstin,
+        address: address,
       );
       return true;
     } catch (e) {
@@ -142,6 +218,8 @@ class AuthProvider extends ChangeNotifier {
     _ownerName = '';
     _mobileNumber = '';
     _securityPin = '';
+    _gstin = '';
+    _address = '';
     _isConfigured = false;
     notifyListeners();
   }

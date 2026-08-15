@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/localization.dart';
 import '../../providers/bill_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../widgets/bill_item_tile.dart';
 import 'payment_screen.dart';
 
@@ -12,6 +13,7 @@ class CartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final billProvider = context.watch<BillProvider>();
 
     return Scaffold(

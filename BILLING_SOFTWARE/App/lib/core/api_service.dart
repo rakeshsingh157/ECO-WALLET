@@ -666,4 +666,50 @@ class ApiService {
       };
     }
   }
+
+  Future<Map<String, dynamic>> getMerchantProfile() async {
+    final url = Uri.parse("$_cleanBase/merchant/profile");
+    try {
+      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true && data["merchant"] != null) {
+          return data["merchant"];
+        }
+      }
+      return {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<Map<String, dynamic>> updateMerchantProfile({
+    required String shopName,
+    required String ownerName,
+    required String mobileNumber,
+    required String gstin,
+    required String address,
+  }) async {
+    final url = Uri.parse("$_cleanBase/merchant/update-profile");
+    try {
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          "shop_name": shopName,
+          "owner_name": ownerName,
+          "mobile_number": mobileNumber,
+          "gstin": gstin,
+          "address": address,
+        }),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return {"success": false, "message": "Failed with status ${response.statusCode}"};
+    } catch (e) {
+      return {"success": false, "message": e.toString()};
+    }
+  }
 }

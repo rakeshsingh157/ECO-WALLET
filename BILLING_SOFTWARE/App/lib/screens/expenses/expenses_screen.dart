@@ -7,6 +7,7 @@ import '../../core/localization.dart';
 import '../../models/expense.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/expense_provider.dart';
+import '../../providers/theme_provider.dart';
 
 class ExpensesScreen extends StatefulWidget {
   const ExpensesScreen({super.key});
@@ -146,6 +147,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final expenseProvider = context.watch<ExpenseProvider>();
     final expenses = expenseProvider.expenses;
     final todayTotal = expenseProvider.todayExpenseTotal;

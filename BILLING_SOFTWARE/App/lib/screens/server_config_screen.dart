@@ -6,6 +6,7 @@ import 'dart:convert';
 import '../core/theme.dart';
 import '../core/constants.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 
 class ServerConfigScreen extends StatefulWidget {
   const ServerConfigScreen({super.key});
@@ -28,7 +29,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
     _baseUrlCtrl = TextEditingController(
       text: auth.baseUrl.isNotEmpty ? auth.baseUrl : AppConstants.defaultEcoWalletBaseUrl,
     );
-    _apiKeyCtrl = TextEditingController(text: auth.apiKey);
+    _apiKeyCtrl = TextEditingController(text: auth.apiKey.isNotEmpty ? auth.apiKey : 'merchant_live_demo_123');
   }
 
   @override
@@ -44,8 +45,9 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
       _testResult = null;
     });
 
-    final targetUrl = _baseUrlCtrl.text.trim();
-    final healthUri = Uri.parse(targetUrl.endsWith('/api') ? '$targetUrl/health' : '$targetUrl/api/health');
+    final base = _baseUrlCtrl.text.trim();
+    final cleanBase = base.endsWith('/api') ? base : '$base/api';
+    final healthUri = Uri.parse('$cleanBase/health');
 
     try {
       final response = await http.get(healthUri).timeout(const Duration(seconds: 5));
@@ -100,6 +102,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(

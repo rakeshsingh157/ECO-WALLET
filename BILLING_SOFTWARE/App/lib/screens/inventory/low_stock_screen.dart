@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../providers/product_provider.dart';
+import '../../providers/theme_provider.dart';
 import 'edit_product_screen.dart';
 
 class LowStockScreen extends StatelessWidget {
@@ -10,6 +11,7 @@ class LowStockScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final productProvider = context.watch<ProductProvider>();
     final lowStockItems = productProvider.lowStockProducts;
 

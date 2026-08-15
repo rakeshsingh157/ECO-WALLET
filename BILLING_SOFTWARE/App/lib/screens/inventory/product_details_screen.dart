@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../core/theme.dart';
 import '../../core/localization.dart';
 import '../../models/product.dart';
+import '../../providers/theme_provider.dart';
 import 'edit_product_screen.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
@@ -26,6 +28,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final isLowStock = _product.stock <= 5;
     final isOutOfStock = _product.stock <= 0;
 

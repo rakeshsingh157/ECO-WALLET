@@ -29,6 +29,16 @@ const merchantSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    gstin: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    address: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     webhook_url: {
       type: String,
       trim: true,

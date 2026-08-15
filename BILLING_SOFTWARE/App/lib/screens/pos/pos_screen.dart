@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../../core/localization.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/bill_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../widgets/product_grid_item.dart';
 import 'cart_screen.dart';
 
@@ -26,6 +27,7 @@ class _PosScreenState extends State<PosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final productProvider = context.watch<ProductProvider>();
     final billProvider = context.watch<BillProvider>();
 
