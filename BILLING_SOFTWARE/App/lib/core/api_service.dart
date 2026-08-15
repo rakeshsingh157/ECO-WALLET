@@ -721,6 +721,7 @@ class ApiService {
     required String mobileNumber,
     required String gstin,
     required String address,
+    String? upiId,
   }) async {
     final url = Uri.parse("$_cleanBase/merchant/update-profile");
     try {
@@ -733,6 +734,7 @@ class ApiService {
           "mobile_number": mobileNumber,
           "gstin": gstin,
           "address": address,
+          "upi_id": upiId ?? "",
         }),
       ).timeout(const Duration(seconds: 10));
 

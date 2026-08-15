@@ -13,6 +13,7 @@ class AuthProvider extends ChangeNotifier {
   String _securityPin = '';
   String _gstin = '';
   String _address = '';
+  String _upiId = '';
   String _baseUrl = AppConstants.defaultEcoWalletBaseUrl;
   bool _isConfigured = false;
   String? _authError;
@@ -26,6 +27,7 @@ class AuthProvider extends ChangeNotifier {
   String get securityPin => _securityPin;
   String get gstin => _gstin;
   String get address => _address;
+  String get upiId => _upiId;
   bool get hasPinSet => _securityPin.isNotEmpty;
   String get baseUrl => _baseUrl;
   bool get isConfigured => _isConfigured;
@@ -48,6 +50,7 @@ class AuthProvider extends ChangeNotifier {
     _securityPin = prefs.getString('security_pin') ?? '';
     _gstin = prefs.getString('shop_gstin') ?? '';
     _address = prefs.getString('shop_address') ?? '';
+    _upiId = prefs.getString('shop_upi_id') ?? '';
     _baseUrl = prefs.getString(AppConstants.keyBaseUrl) ?? AppConstants.defaultEcoWalletBaseUrl;
 
     _isConfigured = _apiKey.isNotEmpty || _mobileNumber.isNotEmpty;
@@ -73,6 +76,10 @@ class AuthProvider extends ChangeNotifier {
             _address = profile['address'];
             await prefs.setString('shop_address', _address);
           }
+          if (profile['upi_id'] != null) {
+            _upiId = profile['upi_id'];
+            await prefs.setString('shop_upi_id', _upiId);
+          }
           notifyListeners();
         }
       } catch (_) {}
@@ -90,6 +97,7 @@ class AuthProvider extends ChangeNotifier {
     required String baseUrl,
     String gstin = '',
     String address = '',
+    String upiId = '',
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppConstants.keyApiKey, apiKey);
@@ -101,6 +109,7 @@ class AuthProvider extends ChangeNotifier {
     await prefs.setString('security_pin', securityPin);
     await prefs.setString('shop_gstin', gstin);
     await prefs.setString('shop_address', address);
+    await prefs.setString('shop_upi_id', upiId);
     await prefs.setString(AppConstants.keyBaseUrl, baseUrl);
 
     _apiKey = apiKey;
@@ -112,9 +121,9 @@ class AuthProvider extends ChangeNotifier {
     _securityPin = securityPin;
     _gstin = gstin;
     _address = address;
+    _upiId = upiId;
     _baseUrl = baseUrl;
     _isConfigured = true;
-
     notifyListeners();
   }
 
@@ -124,6 +133,7 @@ class AuthProvider extends ChangeNotifier {
     required String mobileNumber,
     required String gstin,
     required String address,
+    String upiId = '',
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppConstants.keyShopName, shopName);
@@ -131,12 +141,14 @@ class AuthProvider extends ChangeNotifier {
     await prefs.setString('mobile_number', mobileNumber);
     await prefs.setString('shop_gstin', gstin);
     await prefs.setString('shop_address', address);
+    await prefs.setString('shop_upi_id', upiId);
 
     _shopName = shopName;
     _ownerName = ownerName;
     _mobileNumber = mobileNumber;
     _gstin = gstin;
     _address = address;
+    _upiId = upiId;
     notifyListeners();
 
     try {
@@ -146,6 +158,7 @@ class AuthProvider extends ChangeNotifier {
         mobileNumber: mobileNumber,
         gstin: gstin,
         address: address,
+        upiId: upiId,
       );
       return true;
     } catch (_) {

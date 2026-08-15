@@ -344,6 +344,7 @@ router.get("/profile", async (req, res) => {
           mobile_number: "",
           gstin: "",
           address: "",
+          upi_id: "",
         }
       });
     }
@@ -358,6 +359,7 @@ router.get("/profile", async (req, res) => {
         mobile_number: merchant.mobile_number,
         gstin: merchant.gstin || "",
         address: merchant.address || "",
+        upi_id: merchant.upi_id || "",
       }
     });
   } catch (error) {
@@ -367,7 +369,7 @@ router.get("/profile", async (req, res) => {
 
 router.post("/update-profile", async (req, res) => {
   try {
-    const { shop_name, owner_name, mobile_number, gstin, address, merchant_id } = req.body;
+    const { shop_name, owner_name, mobile_number, gstin, address, upi_id, merchant_id } = req.body;
     const phone = mobile_number ? mobile_number.trim() : "";
     const cleanDigits = phone.replace(/\D/g, "");
     const mchId = merchant_id || (cleanDigits.length >= 10 ? `mch_${cleanDigits}` : "mch_default");
@@ -392,6 +394,7 @@ router.post("/update-profile", async (req, res) => {
         mobile_number: phone,
         gstin: gstin || "",
         address: address || "",
+        upi_id: upi_id || "",
       });
     } else {
       if (shop_name) merchant.business_name = shop_name.trim();
@@ -399,6 +402,7 @@ router.post("/update-profile", async (req, res) => {
       if (phone) merchant.mobile_number = phone;
       if (gstin !== undefined) merchant.gstin = gstin.trim();
       if (address !== undefined) merchant.address = address.trim();
+      if (upi_id !== undefined) merchant.upi_id = upi_id.trim();
     }
 
     await merchant.save();
@@ -424,6 +428,7 @@ router.post("/update-profile", async (req, res) => {
         mobile_number: merchant.mobile_number,
         gstin: merchant.gstin,
         address: merchant.address,
+        upi_id: merchant.upi_id,
       }
     );
 
@@ -438,6 +443,7 @@ router.post("/update-profile", async (req, res) => {
         mobile_number: merchant.mobile_number,
         gstin: merchant.gstin || "",
         address: merchant.address || "",
+        upi_id: merchant.upi_id || "",
       }
     });
   } catch (error) {

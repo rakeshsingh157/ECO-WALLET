@@ -39,6 +39,11 @@ const merchantSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    upi_id: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     webhook_url: {
       type: String,
       trim: true,

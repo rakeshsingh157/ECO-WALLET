@@ -19,6 +19,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
   late TextEditingController _mobileCtrl;
   late TextEditingController _gstinCtrl;
   late TextEditingController _addressCtrl;
+  late TextEditingController _upiIdCtrl;
 
   @override
   void initState() {
@@ -29,6 +30,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
     _mobileCtrl = TextEditingController(text: auth.mobileNumber);
     _gstinCtrl = TextEditingController(text: auth.gstin);
     _addressCtrl = TextEditingController(text: auth.address);
+    _upiIdCtrl = TextEditingController(text: auth.upiId);
   }
 
   @override
@@ -38,6 +40,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
     _mobileCtrl.dispose();
     _gstinCtrl.dispose();
     _addressCtrl.dispose();
+    _upiIdCtrl.dispose();
     super.dispose();
   }
 
@@ -50,6 +53,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
       mobileNumber: _mobileCtrl.text.trim(),
       gstin: _gstinCtrl.text.trim(),
       address: _addressCtrl.text.trim(),
+      upiId: _upiIdCtrl.text.trim(),
     );
 
     if (mounted) {
@@ -119,6 +123,17 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                     decoration: InputDecoration(
                       labelText: 'Registered Mobile Number',
                       prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _upiIdCtrl,
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                    decoration: InputDecoration(
+                      labelText: 'Store UPI VPA / ID (e.g. yourname@upi)',
+                      prefixIcon: Icon(Icons.qr_code_rounded, color: AppColors.info),
+                      helperText: 'Used to generate dynamic UPI QR with exact bill amount',
+                      helperStyle: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppColors.textMuted),
                     ),
                   ),
                   const SizedBox(height: 14),
