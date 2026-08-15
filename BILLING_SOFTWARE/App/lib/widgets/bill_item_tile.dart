@@ -18,12 +18,12 @@ class BillItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.darkCardLight.withOpacity(0.6),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.glassBorder.withOpacity(0.3)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderSubtle),
       ),
       child: Row(
         children: [
@@ -33,61 +33,72 @@ class BillItemTile extends StatelessWidget {
               children: [
                 Text(
                   item.product.name,
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   '₹${item.product.price.toStringAsFixed(0)} / ${item.product.unit}',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 12,
-                    color: AppColors.textMuted,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
             ),
           ),
 
-          // Quantity Counter Controls
-          Row(
-            children: [
-              IconButton(
-                onPressed: onRemove,
-                icon: const Icon(Icons.remove_circle_outline_rounded, color: AppColors.warmCoral, size: 22),
-                constraints: const BoxConstraints(),
-                padding: EdgeInsets.zero,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text(
-                  '${item.quantity}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceElevated,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.borderSubtle),
+            ),
+            child: Row(
+              children: [
+                InkWell(
+                  onTap: onRemove,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(Icons.remove_rounded, color: AppColors.error, size: 18),
                   ),
                 ),
-              ),
-              IconButton(
-                onPressed: onAdd,
-                icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.success, size: 22),
-                constraints: const BoxConstraints(),
-                padding: EdgeInsets.zero,
-              ),
-            ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    '${item.quantity}',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                InkWell(
+                  onTap: onAdd,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(Icons.add_rounded, color: AppColors.terracotta, size: 18),
+                  ),
+                ),
+              ],
+            ),
           ),
 
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
 
-          // Total price
           Text(
             '₹${item.totalPrice.toStringAsFixed(0)}',
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.plusJakartaSans(
               fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.warmPeach,
+              fontWeight: FontWeight.w800,
+              color: AppColors.terracotta,
             ),
           ),
         ],

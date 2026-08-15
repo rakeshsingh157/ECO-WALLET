@@ -2,25 +2,84 @@ const express = require("express");
 const router = express.Router();
 const Bill = require("../models/Bill");
 const Product = require("../models/Product");
+const Customer = require("../models/Customer");
 
 router.get("/", async (req, res) => {
   try {
-    const bills = await Bill.find().sort({ createdAt: -1 }).limit(100);
-    
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+    const { period, payment_mode, search, limit, page } = req.query;
+    const query = {};
 
-    const todayBills = bills.filter(b => new Date(b.createdAt) >= startOfToday);
-    const todaySales = todayBills.reduce((sum, b) => sum + (Number(b.total_amount) || 0), 0);
-    const totalSales = bills.reduce((sum, b) => sum + (Number(b.total_amount) || 0), 0);
+    if (payment_mode) {
+      query.payment_mode = payment_mode;
+    }
+
+    const now = new Date();
+    if (period === "today") {
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      query.createdAt = { $gte: startOfDay };
+    } else if (period === "this_week") {
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+      const startOfWeek = new Date(now.setDate(diff));
+      startOfWeek.setHours(0, 0, 0, 0);
+      query.createdAt = { $gte: startOfWeek };
+    } else if (period === "this_month") {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      query.createdAt = { $gte: startOfMonth };
+    }
+
+    if (search && search.trim().length > 0) {
+      const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      query.$or = [
+        { bill_id: { $regex: escaped, $options: "i" } },
+        { customer_name: { $regex: escaped, $options: "i" } },
+        { customer_phone: { $regex: escaped, $options: "i" } },
+      ];
+    }
+
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(500, Math.max(1, parseInt(limit) || 100));
+    const skip = (pageNum - 1) * limitNum;
+
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const [bills, totalCount, todayBillsAgg, totalSalesAgg] = await Promise.all([
+      Bill.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Bill.countDocuments(query),
+      Bill.aggregate([
+        { $match: { createdAt: { $gte: startOfToday }, status: "completed" } },
+        { $group: { _id: null, total: { $sum: "$total_amount" }, count: { $sum: 1 } } },
+      ]),
+      Bill.aggregate([
+        { $match: { status: "completed" } },
+        { $group: { _id: null, total: { $sum: "$total_amount" } } },
+      ]),
+    ]);
+
+    const todaySales = todayBillsAgg.length > 0 ? todayBillsAgg[0].total : 0;
+    const todayBillCount = todayBillsAgg.length > 0 ? todayBillsAgg[0].count : 0;
+    const totalSales = totalSalesAgg.length > 0 ? totalSalesAgg[0].total : 0;
+
+    const sanitized = bills.map((b) => ({
+      ...b,
+      id: b.bill_id || b._id,
+      billId: b.bill_id || b._id,
+    }));
 
     res.json({
       success: true,
       todaySales,
-      todayBillCount: todayBills.length,
+      todayBillCount,
       totalSales,
-      totalBillCount: bills.length,
-      data: bills,
+      totalBillCount: totalCount,
+      count: sanitized.length,
+      page: pageNum,
+      totalPages: Math.ceil(totalCount / limitNum),
+      data: sanitized,
     });
   } catch (error) {
     res.status(500).json({ success: false, todaySales: 0, todayBillCount: 0, data: [], error: error.message });
@@ -38,11 +97,12 @@ router.post("/", async (req, res) => {
     const billId = bill_id || `BILL_${Date.now()}`;
     const billData = {
       bill_id: billId,
-      items: items.map(item => ({
+      items: items.map((item) => ({
         product_id: item.product_id || item.id || `p_${Date.now()}`,
         name: item.name || "Item",
         price: Number(item.price) || 0,
         quantity: Number(item.quantity) || 1,
+        unit: item.unit || "pcs",
       })),
       total_amount: Number(total_amount) || 0,
       payment_mode: payment_mode || "cash",
@@ -58,102 +118,75 @@ router.post("/", async (req, res) => {
       { upsert: true, new: true }
     );
 
-    for (const item of savedBill.items) {
-      if (item.product_id) {
-        try {
-          const prod = await Product.findOne({ product_id: item.product_id });
-          if (prod) {
-            const nextStock = Math.max(0, (prod.stock || 0) - item.quantity);
-            await Product.updateOne({ product_id: item.product_id }, { $set: { stock: nextStock } });
-          }
-        } catch (stockErr) {
-          console.warn("[WARN] Stock decrement notice:", item.product_id);
-        }
-      }
+    const bulkOps = savedBill.items
+      .filter((i) => i.product_id)
+      .map((item) => ({
+        updateOne: {
+          filter: { product_id: item.product_id },
+          update: { $inc: { stock: -item.quantity } },
+        },
+      }));
+
+    if (bulkOps.length > 0) {
+      await Product.bulkWrite(bulkOps);
+      await Product.updateMany({ stock: { $lt: 0 } }, { $set: { stock: 0 } });
     }
 
-    console.log(`[INFO] Bill recorded: #${savedBill.bill_id}`);
-    res.status(201).json({ success: true, data: savedBill });
+    if (customer_phone && customer_phone.trim().length >= 10) {
+      await Customer.findOneAndUpdate(
+        { phone: customer_phone.trim() },
+        {
+          $setOnInsert: { customer_id: `cust_${Date.now()}` },
+          $set: {
+            name: customer_name || "Customer",
+            last_transaction: new Date(),
+          },
+          $inc: {
+            total_spent: Number(total_amount) || 0,
+            total_orders: 1,
+            due_amount: payment_mode === "pending" ? Number(total_amount) || 0 : 0,
+          },
+        },
+        { upsert: true }
+      );
+    }
+
+    res.status(201).json({
+      success: true,
+      data: {
+        ...savedBill.toObject(),
+        id: savedBill.bill_id,
+        billId: savedBill.bill_id,
+      },
+    });
   } catch (error) {
-    console.error("[ERROR] Bill recording failed:", error.message);
     res.status(400).json({ success: false, error: error.message });
   }
 });
 
-router.get("/invoice/:bill_id", async (req, res) => {
-  const billId = req.params.bill_id;
+router.get("/:id", async (req, res) => {
   try {
-    const bill = await Bill.findOne({ bill_id: billId });
-    const shopName = req.query.shop_name || "Dukaan Dost Store";
-    const totalAmount = bill ? bill.total_amount : 0;
-    const paymentMode = bill ? (bill.payment_mode || "CASH").toUpperCase() : "PAID";
-    const dateStr = bill ? new Date(bill.createdAt).toLocaleString("en-IN") : new Date().toLocaleString("en-IN");
-    
-    let itemsHtml = "";
-    if (bill && bill.items && bill.items.length > 0) {
-      itemsHtml = bill.items.map(item => `
-        <tr style="border-bottom: 1px solid #334155;">
-          <td style="padding: 8px 0; color: #F8FAFC;">${item.name}</td>
-          <td style="padding: 8px 0; text-align: center; color: #94A3B8;">${item.quantity}</td>
-          <td style="padding: 8px 0; text-align: right; color: #F8FAFC;">₹${(item.price * item.quantity).toFixed(2)}</td>
-        </tr>
-      `).join("");
-    } else {
-      itemsHtml = `<tr><td colspan="3" style="padding: 10px 0; text-align: center; color: #94A3B8;">General Purchase</td></tr>`;
+    const bill = await Bill.findOne({
+      $or: [
+        { bill_id: req.params.id },
+        ...(req.params.id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: req.params.id }] : []),
+      ],
+    }).lean();
+
+    if (!bill) {
+      return res.status(404).json({ success: false, message: "Bill not found" });
     }
 
-    res.send(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Tax Invoice #${billId}</title>
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0F172A; color: #F8FAFC; padding: 20px; margin: 0; }
-          .card { max-width: 440px; margin: 20px auto; background: #1E293B; border-radius: 20px; padding: 24px; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-          .header { text-align: center; border-bottom: 1px solid #334155; padding-bottom: 16px; margin-bottom: 16px; }
-          .title { font-size: 22px; font-weight: bold; color: #FF8C75; margin-bottom: 4px; }
-          .badge { background: #10B981; color: #fff; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block; margin-top: 6px; letter-spacing: 0.5px; }
-          .table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
-          .total-box { background: rgba(255, 140, 117, 0.1); border: 1px solid rgba(255, 140, 117, 0.3); border-radius: 12px; padding: 14px; margin: 16px 0; display: flex; justify-content: space-between; align-items: center; }
-          .total-label { font-size: 14px; color: #94A3B8; }
-          .total-val { font-size: 24px; font-weight: 800; color: #FF8C75; }
-          .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #64748B; line-height: 1.5; }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <div class="header">
-            <div class="title">${shopName}</div>
-            <div style="color: #94A3B8; font-size: 12px;">Tax Invoice #${billId}</div>
-            <div class="badge">${paymentMode}</div>
-            <div style="color: #64748B; font-size: 11px; margin-top: 6px;">${dateStr}</div>
-          </div>
-          <table class="table">
-            <thead>
-              <tr style="border-bottom: 1px solid #475569; color: #94A3B8;">
-                <th style="text-align: left; padding-bottom: 6px;">Item</th>
-                <th style="text-align: center; padding-bottom: 6px;">Qty</th>
-                <th style="text-align: right; padding-bottom: 6px;">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${itemsHtml}
-            </tbody>
-          </table>
-          <div class="total-box">
-            <span class="total-label">Grand Total</span>
-            <span class="total-val">₹${Number(totalAmount).toFixed(2)}</span>
-          </div>
-          <p style="text-align:center; font-size: 12px; color: #94A3B8; margin: 10px 0;">Thank you for shopping with us!</p>
-          <div class="footer">Powered by Dukaan Dost Billing & POS</div>
-        </div>
-      </body>
-      </html>
-    `);
+    res.json({
+      success: true,
+      data: {
+        ...bill,
+        id: bill.bill_id,
+        billId: bill.bill_id,
+      },
+    });
   } catch (error) {
-    res.status(500).send("Error generating invoice: " + error.message);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

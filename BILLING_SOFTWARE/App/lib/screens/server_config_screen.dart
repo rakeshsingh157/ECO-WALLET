@@ -89,8 +89,8 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Backend API URL updated successfully!'),
+        SnackBar(
+          content: const Text('Backend API URL updated successfully!'),
           backgroundColor: AppColors.success,
         ),
       );
@@ -101,10 +101,16 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          'Backend Server Config',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+          'SERVER CONFIGURATION',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.5,
+            color: AppColors.textPrimary,
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -113,20 +119,22 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Info Header Card
-            GlassCard(
-              padding: const EdgeInsets.all(20),
-              borderRadius: 22,
-              color: AppColors.darkCard.withValues(alpha: 0.95),
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderSubtle),
+              ),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.warmCoral.withValues(alpha: 0.15),
+                      color: AppColors.secondaryContainer,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.dns_rounded, color: AppColors.warmCoral, size: 28),
+                    child: Icon(Icons.dns_rounded, color: AppColors.forestMint, size: 22),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -134,12 +142,13 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'API Endpoint Settings',
-                          style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                          'Backend Endpoint Host',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                         ),
+                        const SizedBox(height: 2),
                         Text(
-                          'Change base URL to connect to your custom local or cloud server.',
-                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted),
+                          'Connect terminal to local or remote microservice.',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -148,67 +157,51 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            // Quick Preset Buttons
             Text(
-              'Quick Presets',
-              style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              'QUICK PRESETS',
+              style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 10),
 
-            Column(
+            Row(
               children: [
-                OutlinedButton.icon(
-                  onPressed: () => setState(() => _baseUrlCtrl.text = 'https://eco-wallet.onrender.com/api'),
-                  icon: const Icon(Icons.cloud_done_rounded, color: AppColors.success, size: 18),
-                  label: Text('Render Live Cloud (eco-wallet.onrender.com)', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.success)),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 44),
-                    side: const BorderSide(color: AppColors.success),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => setState(() => _baseUrlCtrl.text = 'http://10.0.2.2:5001/api'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: BorderSide(color: AppColors.borderSubtle),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text('Android Emulator', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.forestMint)),
                   ),
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => setState(() => _baseUrlCtrl.text = 'http://10.0.2.2:5001/api'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          side: const BorderSide(color: AppColors.warmCoral),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: Text('Android Emulator', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.warmCoral)),
-                      ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => setState(() => _baseUrlCtrl.text = 'http://localhost:5001/api'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: BorderSide(color: AppColors.borderSubtle),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => setState(() => _baseUrlCtrl.text = 'http://localhost:5001/api'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          side: const BorderSide(color: AppColors.warmPeach),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: Text('Desktop Local', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.warmPeach)),
-                      ),
-                    ),
-                  ],
+                    child: Text('Desktop Local', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.warmNavy)),
+                  ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            // Input Fields Form
             TextFormField(
               controller: _baseUrlCtrl,
-              decoration: const InputDecoration(
+              style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+              decoration: InputDecoration(
                 labelText: 'Backend API Base URL',
                 hintText: 'http://10.0.2.2:5001/api',
-                prefixIcon: Icon(Icons.link_rounded, color: AppColors.warmCoral),
+                prefixIcon: Icon(Icons.link_rounded, color: AppColors.forestMint),
               ),
             ),
 
@@ -216,38 +209,38 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
 
             TextFormField(
               controller: _apiKeyCtrl,
-              decoration: const InputDecoration(
+              style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+              decoration: InputDecoration(
                 labelText: 'ECO Merchant API Key',
-                hintText: 'mch_live_key_xyz',
-                prefixIcon: Icon(Icons.key_rounded, color: AppColors.warmCoral),
+                hintText: 'key_mch_...',
+                prefixIcon: Icon(Icons.key_rounded, color: AppColors.terracotta),
               ),
             ),
 
             const SizedBox(height: 20),
 
-            // Test Connection Button & Result
             OutlinedButton.icon(
               onPressed: _isTesting ? null : _testConnection,
               icon: _isTesting
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.warmPeach))
-                  : const Icon(Icons.wifi_find_rounded, color: AppColors.warmPeach),
+                  ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.forestMint))
+                  : Icon(Icons.wifi_find_rounded, color: AppColors.forestMint, size: 18),
               label: Text(
-                _isTesting ? 'Testing Endpoint...' : 'Test Server Connection',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: AppColors.warmPeach),
+                _isTesting ? 'Testing Connectivity...' : 'TEST HOST CONNECTIVITY',
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.forestMint),
               ),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 50),
-                side: const BorderSide(color: AppColors.warmPeach),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                side: BorderSide(color: AppColors.forestMint),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
 
             if (_testResult != null) ...[
               const SizedBox(height: 14),
               Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: (_isSuccess ? AppColors.success : AppColors.error).withValues(alpha: 0.15),
+                  color: (_isSuccess ? AppColors.success : AppColors.error).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: _isSuccess ? AppColors.success : AppColors.error),
                 ),
@@ -258,7 +251,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
                     Expanded(
                       child: Text(
                         _testResult!,
-                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _isSuccess ? AppColors.success : AppColors.error),
+                        style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: _isSuccess ? AppColors.success : AppColors.error),
                       ),
                     ),
                   ],
@@ -266,14 +259,23 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
               ),
             ],
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 24),
 
-            // Save Configuration Button
-            GradientButton(
-              text: 'Save Endpoint Config',
-              icon: Icons.save_rounded,
-              onPressed: _saveConfig,
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _saveConfig,
+                icon: const Icon(Icons.save_rounded, size: 18),
+                label: const Text('SAVE SERVER CONFIGURATION'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.terracotta,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),

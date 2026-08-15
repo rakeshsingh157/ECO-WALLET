@@ -14,6 +14,8 @@ class Bill {
   String? ecoTransactionId;
   String? customerName;
 
+  String get id => billId;
+
   Bill({
     required this.billId,
     required this.items,

@@ -1,13 +1,16 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/product.dart';
+import '../models/customer.dart';
+import '../models/supplier.dart';
+import '../models/expense.dart';
+import '../models/notification_item.dart';
 
 class ApiService {
   final String baseUrl;
   final String apiKey;
 
-  // 5 Minutes timeout to accommodate Render cloud cold-starts and spinning up
-  static const Duration requestTimeout = Duration(minutes: 5);
+  static const Duration requestTimeout = Duration(seconds: 15);
 
   ApiService({
     required this.baseUrl,
@@ -23,7 +26,6 @@ class ApiService {
 
   // ==================== AUTHENTICATION ====================
 
-  /// Sign Up New Merchant Store
   Future<Map<String, dynamic>> signupMerchant({
     required String mobileNumber,
     required String shopName,
@@ -43,14 +45,12 @@ class ApiService {
         }),
       ).timeout(requestTimeout);
 
-      final data = jsonDecode(response.body);
-      return data;
+      return jsonDecode(response.body);
     } catch (e) {
-      return {"success": false, "message": "Connection timeout or error: ${e.toString()}"};
+      return {"success": false, "message": "Connection error: ${e.toString()}"};
     }
   }
 
-  /// Login Existing Merchant
   Future<Map<String, dynamic>> loginMerchant({
     required String mobileNumber,
     required String securityPin,
@@ -66,16 +66,14 @@ class ApiService {
         }),
       ).timeout(requestTimeout);
 
-      final data = jsonDecode(response.body);
-      return data;
+      return jsonDecode(response.body);
     } catch (e) {
-      return {"success": false, "message": "Connection timeout or error: ${e.toString()}"};
+      return {"success": false, "message": "Connection error: ${e.toString()}"};
     }
   }
 
   // ==================== PRODUCTS / INVENTORY ====================
 
-  /// Fetch all products from MongoDB Atlas
   Future<List<Product>> getProducts() async {
     final url = Uri.parse("$_cleanBase/products");
     try {
@@ -91,6 +89,7 @@ class ApiService {
             unit: p["unit"] ?? "pcs",
             stock: (p["stock"] as num?)?.toInt() ?? 10,
             icon: p["icon"] ?? "box",
+            barcode: p["barcode"],
           )).toList();
         }
       }
@@ -100,7 +99,6 @@ class ApiService {
     }
   }
 
-  /// Add new product to MongoDB Atlas
   Future<bool> addProduct(Product product) async {
     final url = Uri.parse("$_cleanBase/products");
     try {
@@ -115,6 +113,7 @@ class ApiService {
           "unit": product.unit,
           "stock": product.stock,
           "icon": product.icon,
+          "barcode": product.barcode,
         }),
       ).timeout(requestTimeout);
 
@@ -124,7 +123,28 @@ class ApiService {
     }
   }
 
-  /// Delete product from MongoDB Atlas
+  Future<bool> updateProduct(Product product) async {
+    final url = Uri.parse("$_cleanBase/products/${product.id}");
+    try {
+      final response = await http.put(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          "name": product.name,
+          "price": product.price,
+          "category": product.category,
+          "unit": product.unit,
+          "stock": product.stock,
+          "barcode": product.barcode,
+        }),
+      ).timeout(requestTimeout);
+
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<bool> deleteProduct(String productId) async {
     final url = Uri.parse("$_cleanBase/products/$productId");
     try {
@@ -137,7 +157,6 @@ class ApiService {
 
   // ==================== BILLS / SALES ====================
 
-  /// Fetch all bills and sales summary from MongoDB Atlas
   Future<Map<String, dynamic>> getBills() async {
     final url = Uri.parse("$_cleanBase/bills");
     try {
@@ -151,7 +170,6 @@ class ApiService {
     }
   }
 
-  /// Save completed bill to MongoDB Atlas
   Future<bool> saveBill({
     required String billId,
     required List<dynamic> items,
@@ -189,11 +207,233 @@ class ApiService {
     }
   }
 
-  // ==================== KHATA BOOK ====================
+  // ==================== CUSTOMERS CRM ====================
 
-  /// Fetch Khata customers from MongoDB Atlas
-  Future<List<Map<String, dynamic>>> getKhataCustomers() async {
-    final url = Uri.parse("$_cleanBase/khata");
+  Future<List<Customer>> getCustomers() async {
+    final url = Uri.parse("$_cleanBase/customers");
+    try {
+      final response = await http.get(url, headers: _headers).timeout(requestTimeout);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true && data["data"] is List) {
+          return (data["data"] as List).map((c) => Customer(
+            id: c["customer_id"] ?? c["id"] ?? c["_id"] ?? "c_${DateTime.now().millisecondsSinceEpoch}",
+            name: c["name"] ?? "Customer",
+            phone: c["phone"] ?? "",
+            email: c["email"],
+            address: c["address"] ?? "",
+            dueAmount: (c["due_amount"] ?? c["dueAmount"] as num?)?.toDouble() ?? 0.0,
+            totalSpent: (c["total_spent"] ?? c["totalSpent"] as num?)?.toDouble() ?? 0.0,
+            totalOrders: (c["total_orders"] ?? c["totalOrders"] as num?)?.toInt() ?? 0,
+          )).toList();
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<bool> addCustomer(Customer customer) async {
+    final url = Uri.parse("$_cleanBase/customers");
+    try {
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          "customer_id": customer.id,
+          "name": customer.name,
+          "phone": customer.phone,
+          "email": customer.email,
+          "address": customer.address,
+          "due_amount": customer.dueAmount,
+        }),
+      ).timeout(requestTimeout);
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> recordCustomerPayment(String customerId, double amount) async {
+    final url = Uri.parse("$_cleanBase/customers/$customerId/payment");
+    try {
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({"amount": amount}),
+      ).timeout(requestTimeout);
+
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> addCustomerCredit(String customerId, double amount) async {
+    final url = Uri.parse("$_cleanBase/customers/$customerId/credit");
+    try {
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({"amount": amount}),
+      ).timeout(requestTimeout);
+
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ==================== SUPPLIERS & VENDORS ====================
+
+  Future<List<Supplier>> getSuppliers() async {
+    final url = Uri.parse("$_cleanBase/suppliers");
+    try {
+      final response = await http.get(url, headers: _headers).timeout(requestTimeout);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true && data["data"] is List) {
+          return (data["data"] as List).map((s) => Supplier(
+            id: s["supplier_id"] ?? s["id"] ?? s["_id"] ?? "sup_${DateTime.now().millisecondsSinceEpoch}",
+            name: s["name"] ?? "Vendor",
+            companyName: s["company_name"] ?? s["companyName"] ?? "Distributor",
+            phone: s["phone"] ?? "",
+            email: s["email"],
+            address: s["address"] ?? "",
+            gstin: s["gstin"] ?? "",
+            pendingPayment: (s["pending_payment"] ?? s["pendingPayment"] as num?)?.toDouble() ?? 0.0,
+            ordersSupplied: (s["orders_supplied"] ?? s["ordersSupplied"] as num?)?.toInt() ?? 0,
+          )).toList();
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<bool> addSupplier(Supplier supplier) async {
+    final url = Uri.parse("$_cleanBase/suppliers");
+    try {
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          "supplier_id": supplier.id,
+          "name": supplier.name,
+          "company_name": supplier.companyName,
+          "phone": supplier.phone,
+          "email": supplier.email,
+          "address": supplier.address,
+          "gstin": supplier.gstin,
+        }),
+      ).timeout(requestTimeout);
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> recordSupplierPayment(String supplierId, double amount) async {
+    final url = Uri.parse("$_cleanBase/suppliers/$supplierId/pay");
+    try {
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({"amount": amount}),
+      ).timeout(requestTimeout);
+
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ==================== EXPENSES ====================
+
+  Future<List<Expense>> getExpenses({String? period, String? category}) async {
+    final queryParams = <String, String>{};
+    if (period != null) queryParams["period"] = period;
+    if (category != null) queryParams["category"] = category;
+
+    final uri = Uri.parse("$_cleanBase/expenses").replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+    try {
+      final response = await http.get(uri, headers: _headers).timeout(requestTimeout);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true && data["data"] is List) {
+          return (data["data"] as List).map((e) => Expense(
+            id: e["expense_id"] ?? e["id"] ?? e["_id"] ?? "exp_${DateTime.now().millisecondsSinceEpoch}",
+            title: e["title"] ?? "Expense",
+            amount: (e["amount"] as num?)?.toDouble() ?? 0.0,
+            category: e["category"] ?? "Utilities",
+            paymentMode: e["payment_mode"] ?? e["paymentMode"] ?? "Cash",
+            notes: e["notes"] ?? "",
+            date: e["date"] != null ? DateTime.parse(e["date"]) : DateTime.now(),
+          )).toList();
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<bool> addExpense(Expense expense) async {
+    final url = Uri.parse("$_cleanBase/expenses");
+    try {
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          "expense_id": expense.id,
+          "title": expense.title,
+          "amount": expense.amount,
+          "category": expense.category,
+          "payment_mode": expense.paymentMode,
+          "notes": expense.notes,
+        }),
+      ).timeout(requestTimeout);
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteExpense(String expenseId) async {
+    final url = Uri.parse("$_cleanBase/expenses/$expenseId");
+    try {
+      final response = await http.delete(url, headers: _headers).timeout(requestTimeout);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ==================== REPORTS & SUMMARY ====================
+
+  Future<Map<String, dynamic>> getReportSummary() async {
+    final url = Uri.parse("$_cleanBase/reports/summary");
+    try {
+      final response = await http.get(url, headers: _headers).timeout(requestTimeout);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true && data["data"] != null) {
+          return data["data"];
+        }
+      }
+      return {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getTopProducts() async {
+    final url = Uri.parse("$_cleanBase/reports/top-products");
     try {
       final response = await http.get(url, headers: _headers).timeout(requestTimeout);
       if (response.statusCode == 200) {
@@ -208,62 +448,99 @@ class ApiService {
     }
   }
 
-  /// Add new Khata customer to MongoDB Atlas
-  Future<bool> addKhataCustomer({
-    required String customerId,
-    required String name,
-    required String phone,
-    String? address,
-    String? aadhaarNumber,
-    double dueAmount = 0.0,
-  }) async {
-    final url = Uri.parse("$_cleanBase/khata");
-    try {
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: jsonEncode({
-          "customer_id": customerId,
-          "name": name,
-          "phone": phone,
-          "address": address,
-          "aadhaar_number": aadhaarNumber,
-          "due_amount": dueAmount,
-        }),
-      ).timeout(requestTimeout);
+  // ==================== NOTIFICATIONS ====================
 
-      return response.statusCode == 200 || response.statusCode == 201;
+  Future<List<NotificationItem>> getNotifications() async {
+    final url = Uri.parse("$_cleanBase/notifications");
+    try {
+      final response = await http.get(url, headers: _headers).timeout(requestTimeout);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true && data["data"] is List) {
+          return (data["data"] as List).map((n) => NotificationItem(
+            id: n["id"] ?? n["notification_id"] ?? "notif_${DateTime.now().millisecondsSinceEpoch}",
+            title: n["title"] ?? "Alert",
+            message: n["message"] ?? "",
+            type: n["type"] ?? "info",
+            isRead: n["isRead"] ?? n["is_read"] ?? false,
+            timestamp: n["createdAt"] != null ? DateTime.parse(n["createdAt"]) : DateTime.now(),
+          )).toList();
+        }
+      }
+      return [];
     } catch (_) {
-      return false;
+      return [];
     }
   }
 
-  /// Record Khata transaction (credit/payment)
-  Future<bool> recordKhataTransaction({
-    required String customerId,
-    required String type,
-    required double amount,
-  }) async {
-    final url = Uri.parse("$_cleanBase/khata/$customerId/transaction");
+  Future<bool> markNotificationRead(String id) async {
+    final url = Uri.parse("$_cleanBase/notifications/$id/read");
     try {
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: jsonEncode({
-          "type": type,
-          "amount": amount,
-        }),
-      ).timeout(requestTimeout);
-
+      final response = await http.post(url, headers: _headers).timeout(requestTimeout);
       return response.statusCode == 200;
     } catch (_) {
       return false;
     }
   }
 
+  Future<bool> markAllNotificationsRead() async {
+    final url = Uri.parse("$_cleanBase/notifications/read-all");
+    try {
+      final response = await http.post(url, headers: _headers).timeout(requestTimeout);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ==================== BACKUP & RESTORE ====================
+
+  Future<Map<String, dynamic>> exportBackup() async {
+    final url = Uri.parse("$_cleanBase/backup/export");
+    try {
+      final response = await http.get(url, headers: _headers).timeout(requestTimeout);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return {"success": false, "message": "Failed to export backup"};
+    } catch (e) {
+      return {"success": false, "message": e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> cloudSync() async {
+    final url = Uri.parse("$_cleanBase/backup/cloud-sync");
+    try {
+      final response = await http.post(url, headers: _headers).timeout(requestTimeout);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return {"success": false, "message": "Cloud sync failed"};
+    } catch (e) {
+      return {"success": false, "message": e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> restoreBackup(Map<String, dynamic> backup) async {
+    final url = Uri.parse("$_cleanBase/backup/restore");
+    try {
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({"backup": backup}),
+      ).timeout(requestTimeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return {"success": false, "message": "Failed to restore database"};
+    } catch (e) {
+      return {"success": false, "message": e.toString()};
+    }
+  }
+
   // ==================== STAFF MEMBERS ====================
 
-  /// Fetch staff members from MongoDB Atlas
   Future<List<Map<String, dynamic>>> getStaffMembers() async {
     final url = Uri.parse("$_cleanBase/staff");
     try {
@@ -280,7 +557,6 @@ class ApiService {
     }
   }
 
-  /// Add staff member to MongoDB Atlas
   Future<bool> addStaffMember({
     required String memberId,
     required String name,
@@ -308,9 +584,18 @@ class ApiService {
     }
   }
 
+  Future<bool> deleteStaffMember(String memberId) async {
+    final url = Uri.parse("$_cleanBase/staff/$memberId");
+    try {
+      final response = await http.delete(url, headers: _headers).timeout(requestTimeout);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   // ==================== MERCHANT PAYMENTS ====================
 
-  /// Create payment request directly on ECO Wallet merchant backend API
   Future<Map<String, dynamic>> createPayment({
     required String orderId,
     required double amount,
@@ -355,7 +640,6 @@ class ApiService {
     }
   }
 
-  /// Poll status of a merchant payment directly from backend API
   Future<Map<String, dynamic>> checkPaymentStatus(String paymentId) async {
     final url = Uri.parse("$_cleanBase/merchant/payment/$paymentId/status");
     try {

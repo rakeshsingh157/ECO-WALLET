@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../core/theme.dart';
 import '../providers/bill_provider.dart';
-import 'dashboard_screen.dart';
-import 'create_bill_screen.dart';
-import 'settings_screen.dart';
+import '../providers/locale_provider.dart';
+import 'dashboard/dashboard_screen.dart';
+import 'inventory/products_screen.dart';
+import 'pos/pos_screen.dart';
+import 'reports/reports_screen.dart';
+import 'settings/settings_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -18,58 +22,118 @@ class _MainShellState extends State<MainShell> {
 
   final List<Widget> _screens = const [
     DashboardScreen(),
-    CreateBillScreen(),
+    ProductsScreen(),
+    PosScreen(),
+    ReportsScreen(),
     SettingsScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     final cartCount = context.watch<BillProvider>().itemCount;
+    final localeProvider = context.watch<LocaleProvider>();
 
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppColors.darkSurface.withOpacity(0.95),
-          boxShadow: [
+          color: AppColors.surface,
+          border: Border(top: BorderSide(color: AppColors.borderSubtle)),
+          boxShadow: const [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 16,
-              offset: const Offset(0, -4),
+              color: Color(0x06000000),
+              blurRadius: 10,
+              offset: Offset(0, -2),
             ),
           ],
         ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
-          items: [
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded),
-              activeIcon: Icon(Icons.home_rounded, color: AppColors.warmCoral),
-              label: 'Home',
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(
+                  index: 0,
+                  icon: Icons.storefront_outlined,
+                  activeIcon: Icons.storefront_rounded,
+                  label: localeProvider.tr('home'),
+                ),
+                _buildNavItem(
+                  index: 1,
+                  icon: Icons.inventory_2_outlined,
+                  activeIcon: Icons.inventory_2_rounded,
+                  label: localeProvider.tr('inventory'),
+                ),
+                _buildNavItem(
+                  index: 2,
+                  icon: Icons.point_of_sale_outlined,
+                  activeIcon: Icons.point_of_sale_rounded,
+                  label: localeProvider.tr('billing'),
+                  badgeCount: cartCount,
+                ),
+                _buildNavItem(
+                  index: 3,
+                  icon: Icons.insights_outlined,
+                  activeIcon: Icons.insights_rounded,
+                  label: localeProvider.tr('reports'),
+                ),
+                _buildNavItem(
+                  index: 4,
+                  icon: Icons.menu_rounded,
+                  activeIcon: Icons.menu_open_rounded,
+                  label: localeProvider.tr('more'),
+                ),
+              ],
             ),
-            BottomNavigationBarItem(
-              icon: Badge(
-                isLabelVisible: cartCount > 0,
-                label: Text('$cartCount'),
-                backgroundColor: AppColors.warmCoral,
-                child: const Icon(Icons.receipt_long_rounded),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required int index,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    int badgeCount = 0,
+  }) {
+    final isSelected = _currentIndex == index;
+
+    return InkWell(
+      onTap: () => setState(() => _currentIndex = index),
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Badge(
+              isLabelVisible: badgeCount > 0,
+              label: Text(
+                '$badgeCount',
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
               ),
-              activeIcon: Badge(
-                isLabelVisible: cartCount > 0,
-                label: Text('$cartCount'),
-                backgroundColor: AppColors.warmCoral,
-                child: const Icon(Icons.receipt_long_rounded, color: AppColors.warmCoral),
+              backgroundColor: AppColors.terracotta,
+              child: Icon(
+                isSelected ? activeIcon : icon,
+                size: 22,
+                color: isSelected ? AppColors.terracotta : AppColors.textSecondary,
               ),
-              label: 'Create Bill',
             ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.settings_rounded),
-              activeIcon: Icon(Icons.settings_rounded, color: AppColors.warmCoral),
-              label: 'Settings',
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? AppColors.terracotta : AppColors.textSecondary,
+              ),
             ),
           ],
         ),

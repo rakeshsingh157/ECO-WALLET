@@ -3,9 +3,10 @@ class Product {
   final String name;
   final double price;
   final String category;
-  final String unit; // kg, pack, pcs, L
+  final String unit;
   final int stock;
   final String icon;
+  final String? barcode;
 
   Product({
     required this.id,
@@ -14,7 +15,8 @@ class Product {
     required this.category,
     required this.unit,
     required this.stock,
-    required this.icon,
+    this.icon = 'box',
+    this.barcode,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class Product {
       unit: json['unit'] ?? 'pcs',
       stock: parsedStock < 0 ? 0 : parsedStock,
       icon: json['icon'] ?? 'box',
+      barcode: json['barcode'] ?? json['sku'],
     );
   }
 
@@ -40,6 +43,7 @@ class Product {
       'unit': unit,
       'stock': stock,
       'icon': icon,
+      'barcode': barcode,
     };
   }
 }

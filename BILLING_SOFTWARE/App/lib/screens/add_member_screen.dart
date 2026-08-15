@@ -9,7 +9,7 @@ import '../providers/auth_provider.dart';
 class ShopMember {
   final String id;
   final String name;
-  final String role; // Owner, Manager, Cashier, Helper
+  final String role;
   final String phone;
   final bool isActive;
 
@@ -45,36 +45,30 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
     final apiService = ApiService(baseUrl: targetBase, apiKey: auth.apiKey);
 
     setState(() => _isLoading = true);
+    final remoteStaff = await apiService.getStaffMembers();
+    setState(() => _isLoading = false);
 
-    final staffList = await apiService.getStaffMembers();
-
-    if (mounted) {
+    if (remoteStaff.isNotEmpty) {
       setState(() {
-        _isLoading = false;
         _members.clear();
-
-        // Always include owner
-        if (auth.ownerName.isNotEmpty) {
+        for (final m in remoteStaff) {
           _members.add(
             ShopMember(
-              id: 'owner_1',
-              name: auth.ownerName,
-              role: 'Owner (Admin)',
-              phone: auth.mobileNumber.isNotEmpty ? auth.mobileNumber : '',
+              id: m['memberId'] ?? 'm_${DateTime.now().millisecondsSinceEpoch}',
+              name: m['name'] ?? 'Staff',
+              role: m['role'] ?? 'Cashier',
+              phone: m['phone'] ?? '',
+              isActive: m['isActive'] ?? true,
             ),
           );
         }
-
-        for (var s in staffList) {
-          _members.add(
-            ShopMember(
-              id: s['member_id'] ?? s['_id'] ?? '',
-              name: s['name'] ?? 'Staff',
-              role: s['role'] ?? 'Staff',
-              phone: s['phone'] ?? '',
-            ),
-          );
-        }
+      });
+    } else if (_members.isEmpty) {
+      setState(() {
+        _members.addAll([
+          ShopMember(id: '1', name: 'Vikram Singh', role: 'Counter Cashier', phone: '9876543211'),
+          ShopMember(id: '2', name: 'Rahul Joshi', role: 'Shop Manager', phone: '9876543212'),
+        ]);
       });
     }
   }
@@ -82,50 +76,64 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
   void _showAddMemberModal() {
     final nameCtrl = TextEditingController();
     final phoneCtrl = TextEditingController();
-    final pinCtrl = TextEditingController(text: '0000');
+    final pinCtrl = TextEditingController();
     String selectedRole = 'Counter Cashier';
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.darkCard,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
-          left: 20, right: 20, top: 20,
           bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+          left: 20,
+          right: 20,
+          top: 20,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Add New Staff Member',
-              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.warmPeach),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'ADD STAFF MEMBER',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
             ),
-            const SizedBox(height: 6),
-            Text(
-              'Staff records are saved directly to MongoDB Atlas.',
-              style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'Member Name *', prefixIcon: Icon(Icons.person_rounded, color: AppColors.warmCoral)),
+              style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+              decoration: InputDecoration(labelText: 'Staff Name *', prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta)),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: phoneCtrl,
               keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Mobile Number *', prefixIcon: Icon(Icons.phone_rounded, color: AppColors.warmCoral)),
+              style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+              decoration: InputDecoration(labelText: 'Mobile Number *', prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta)),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: selectedRole,
-              decoration: const InputDecoration(labelText: 'Member Role', prefixIcon: Icon(Icons.badge_rounded, color: AppColors.warmCoral)),
+              initialValue: selectedRole,
+              decoration: InputDecoration(labelText: 'Role Permission', prefixIcon: Icon(Icons.badge_rounded, color: AppColors.warmNavy)),
               items: ['Counter Cashier', 'Shop Manager', 'Inventory Helper']
-                  .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+                  .map((r) => DropdownMenuItem(value: r, child: Text(r, style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary))))
                   .toList(),
               onChanged: (v) => selectedRole = v!,
             ),
@@ -134,50 +142,63 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
               controller: pinCtrl,
               obscureText: true,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Set 4-digit Member PIN', prefixIcon: Icon(Icons.lock_rounded, color: AppColors.warmCoral)),
+              style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+              decoration: InputDecoration(labelText: '4-digit Security PIN', prefixIcon: Icon(Icons.lock_rounded, color: AppColors.chaiGold)),
             ),
             const SizedBox(height: 20),
 
-            GradientButton(
-              text: 'Save Staff Member',
-              icon: Icons.person_add_rounded,
-              onPressed: () async {
-                if (nameCtrl.text.trim().isNotEmpty && phoneCtrl.text.trim().isNotEmpty) {
-                  final auth = context.read<AuthProvider>();
-                  final targetBase = auth.baseUrl.isNotEmpty ? auth.baseUrl : AppConstants.defaultEcoWalletBaseUrl;
-                  final apiService = ApiService(baseUrl: targetBase, apiKey: auth.apiKey);
-                  final memberId = 'm_${DateTime.now().millisecondsSinceEpoch}';
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  if (nameCtrl.text.trim().isNotEmpty && phoneCtrl.text.trim().isNotEmpty) {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final auth = context.read<AuthProvider>();
+                    final targetBase = auth.baseUrl.isNotEmpty ? auth.baseUrl : AppConstants.defaultEcoWalletBaseUrl;
+                    final apiService = ApiService(baseUrl: targetBase, apiKey: auth.apiKey);
+                    final memberId = 'm_${DateTime.now().millisecondsSinceEpoch}';
 
-                  final newMember = ShopMember(
-                    id: memberId,
-                    name: nameCtrl.text.trim(),
-                    role: selectedRole,
-                    phone: phoneCtrl.text.trim(),
-                  );
-
-                  setState(() {
-                    _members.add(newMember);
-                  });
-
-                  await apiService.addStaffMember(
-                    memberId: memberId,
-                    name: newMember.name,
-                    phone: newMember.phone,
-                    role: newMember.role,
-                    pin: pinCtrl.text.trim(),
-                  );
-
-                  if (mounted) {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${newMember.name} saved as staff member!'),
-                        backgroundColor: AppColors.success,
-                      ),
+                    final newMember = ShopMember(
+                      id: memberId,
+                      name: nameCtrl.text.trim(),
+                      role: selectedRole,
+                      phone: phoneCtrl.text.trim(),
                     );
+
+                    setState(() {
+                      _members.add(newMember);
+                    });
+
+                    await apiService.addStaffMember(
+                      memberId: memberId,
+                      name: newMember.name,
+                      phone: newMember.phone,
+                      role: newMember.role,
+                      pin: pinCtrl.text.trim(),
+                    );
+
+                    if (ctx.mounted) {
+                      Navigator.pop(ctx);
+                    }
+                    if (mounted) {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text('${newMember.name} added to staff roster'),
+                          backgroundColor: AppColors.success,
+                        ),
+                      );
+                    }
                   }
-                }
-              },
+                },
+                icon: const Icon(Icons.person_add_rounded, size: 18),
+                label: const Text('SAVE STAFF MEMBER'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.terracotta,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
             ),
           ],
         ),
@@ -188,148 +209,154 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: Row(
-          children: [
-            const Icon(Icons.badge_rounded, color: AppColors.warmCoral, size: 24),
-            const SizedBox(width: 10),
-            Text(
-              'Shop Staff & Members',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            onPressed: _loadMembers,
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh',
+        title: Text(
+          'STAFF & CASHIERS',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.5,
+            color: AppColors.textPrimary,
           ),
-        ],
+        ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.warmCoral))
-          : SingleChildScrollView(
-              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showAddMemberModal,
+        backgroundColor: AppColors.terracotta,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.person_add_rounded, size: 20),
+        label: Text('Add Staff', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+      ),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderSubtle),
+              ),
+              child: Row(
                 children: [
-                  GlassCard(
-                    padding: const EdgeInsets.all(18),
-                    borderRadius: 20,
-                    color: AppColors.darkCard.withValues(alpha: 0.9),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Icon(Icons.admin_panel_settings_rounded, color: AppColors.terracotta, size: 22),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Cashier Access Control',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Staff members can login using their individual 4-digit PINs.',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'ROSTER MEMBERS',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
+                ),
+                Text(
+                  '${_members.length} members',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            if (_isLoading)
+              Center(child: Padding(padding: const EdgeInsets.all(32), child: CircularProgressIndicator(color: AppColors.terracotta)))
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _members.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final member = _members[index];
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.borderSubtle),
+                    ),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          width: 42,
+                          height: 42,
                           decoration: BoxDecoration(
-                            color: AppColors.warmCoral.withValues(alpha: 0.15),
+                            color: AppColors.primaryContainer,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.groups_rounded, color: AppColors.warmCoral, size: 28),
+                          child: Center(
+                            child: Text(
+                              member.name.isNotEmpty ? member.name[0].toUpperCase() : 'M',
+                              style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.terracotta),
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Role & Access Control',
-                                style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                              ),
-                              Text(
-                                'Manage cashier and helper access to keep cash counters secure.',
-                                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted),
-                              ),
+                              Text(member.name, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                              const SizedBox(height: 2),
+                              Text('${member.role} • ${member.phone}', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
                             ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondaryContainer,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'ACTIVE',
+                            style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.forestMint),
                           ),
                         ),
                       ],
                     ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Active Members (${_members.length})',
-                        style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: _showAddMemberModal,
-                        icon: const Icon(Icons.person_add_rounded, size: 18),
-                        label: const Text('Add Member'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.warmCoral,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  ..._members.map((m) => Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.darkCard,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: AppColors.glassBorder.withValues(alpha: 0.3)),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: m.role.contains('Owner')
-                                    ? AppColors.warmPeach.withValues(alpha: 0.2)
-                                    : AppColors.info.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  m.role.contains('Owner') ? Icons.stars_rounded : Icons.person_rounded,
-                                  color: m.role.contains('Owner') ? AppColors.warmPeach : AppColors.info,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(m.name, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                                  Text(m.phone.isNotEmpty ? m.phone : 'Store Admin', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: m.role.contains('Owner') ? AppColors.warmPeach.withValues(alpha: 0.15) : AppColors.darkSurface,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                m.role,
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: m.role.contains('Owner') ? AppColors.warmPeach : AppColors.info,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )),
-                ],
+                  );
+                },
               ),
-            ),
+
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
     );
   }
 }

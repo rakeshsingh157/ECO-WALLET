@@ -4,28 +4,107 @@ const Product = require("../models/Product");
 
 router.get("/", async (req, res) => {
   try {
-    await Product.updateMany({ stock: { $lt: 0 } }, { $set: { stock: 0 } });
-    const products = await Product.find().sort({ createdAt: -1 });
-    const sanitized = products.map(p => {
-      const doc = p.toObject ? p.toObject() : p;
-      if (doc.stock < 0) doc.stock = 0;
-      return doc;
+    const { category, search, barcode, limit, page } = req.query;
+    const query = {};
+
+    if (category && category !== "All") {
+      query.category = category;
+    }
+
+    if (barcode) {
+      query.barcode = barcode;
+    }
+
+    if (search && search.trim().length > 0) {
+      const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      query.$or = [
+        { name: { $regex: escaped, $options: "i" } },
+        { barcode: { $regex: escaped, $options: "i" } },
+        { category: { $regex: escaped, $options: "i" } },
+      ];
+    }
+
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(500, Math.max(1, parseInt(limit) || 100));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [products, totalCount] = await Promise.all([
+      Product.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Product.countDocuments(query),
+    ]);
+
+    const sanitized = products.map((p) => {
+      if (p.stock < 0) p.stock = 0;
+      return {
+        ...p,
+        id: p.product_id || p._id,
+      };
     });
-    res.json({ success: true, count: sanitized.length, data: sanitized });
+
+    res.json({
+      success: true,
+      count: sanitized.length,
+      total: totalCount,
+      page: pageNum,
+      totalPages: Math.ceil(totalCount / limitNum),
+      data: sanitized,
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message, data: [] });
   }
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/barcode/:code", async (req, res) => {
   try {
     const product = await Product.findOne({
-      $or: [{ product_id: req.params.id }, { _id: req.params.id.match(/^[0-9a-fA-F]{24}$/) ? req.params.id : null }],
+      $or: [{ barcode: req.params.code }, { product_id: req.params.code }],
+    }).lean();
+
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product with barcode not found" });
+    }
+
+    res.json({ success: true, data: { ...product, id: product.product_id || product._id } });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get("/low-stock", async (req, res) => {
+  try {
+    const products = await Product.find({ stock: { $lte: 5 } })
+      .sort({ stock: 1 })
+      .limit(100)
+      .lean();
+
+    res.json({
+      success: true,
+      count: products.length,
+      data: products.map((p) => ({ ...p, id: p.product_id || p._id })),
     });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get("/:id", async (req, res) => {
+  try {
+    const query = {
+      $or: [
+        { product_id: req.params.id },
+        { barcode: req.params.id },
+        ...(req.params.id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: req.params.id }] : []),
+      ],
+    };
+    const product = await Product.findOne(query).lean();
     if (!product) {
       return res.status(404).json({ success: false, message: "Product not found" });
     }
-    res.json({ success: true, data: product });
+    res.json({ success: true, data: { ...product, id: product.product_id || product._id } });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -33,7 +112,7 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { name, price, category, unit, stock, icon, product_id } = req.body;
+    const { name, price, category, unit, stock, icon, barcode, product_id } = req.body;
 
     if (!name || name.trim().length === 0) {
       return res.status(400).json({ success: false, message: "Product name is required" });
@@ -42,31 +121,38 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ success: false, message: "Valid product price is required" });
     }
 
-    const productId = product_id || `p_${Date.now()}`;
-    const newProduct = new Product({
+    const productId = product_id || `prod_${Date.now()}`;
+    const productData = {
       product_id: productId,
       name: name.trim(),
       price: Number(price),
-      category: category || "General",
+      category: category || "Groceries",
       unit: unit || "pcs",
-      stock: Number(stock) !== undefined && !isNaN(Number(stock)) ? Number(stock) : 10,
+      stock: Number(stock) >= 0 ? Number(stock) : 0,
       icon: icon || "box",
-    });
+      barcode: barcode ? String(barcode).trim() : null,
+    };
 
-    await newProduct.save();
-    console.log(`[INFO] Product added: ${newProduct.name}`);
-    res.status(201).json({ success: true, data: newProduct });
+    const product = await Product.findOneAndUpdate(
+      { product_id: productId },
+      { $set: productData },
+      { upsert: true, new: true }
+    );
+
+    res.status(201).json({ success: true, data: { ...product.toObject(), id: product.product_id } });
   } catch (error) {
-    console.error("[ERROR] Failed to add product:", error.message);
     res.status(400).json({ success: false, error: error.message });
   }
 });
 
 router.put("/:id", async (req, res) => {
   try {
-    const { name, price, category, unit, stock, icon } = req.body;
+    const { name, price, category, unit, stock, icon, barcode } = req.body;
     const query = {
-      $or: [{ product_id: req.params.id }, { _id: req.params.id.match(/^[0-9a-fA-F]{24}$/) ? req.params.id : null }],
+      $or: [
+        { product_id: req.params.id },
+        ...(req.params.id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: req.params.id }] : []),
+      ],
     };
 
     const updateFields = {};
@@ -74,14 +160,15 @@ router.put("/:id", async (req, res) => {
     if (price !== undefined) updateFields.price = Number(price);
     if (category) updateFields.category = category;
     if (unit) updateFields.unit = unit;
-    if (stock !== undefined) updateFields.stock = Number(stock);
+    if (stock !== undefined) updateFields.stock = Math.max(0, Number(stock));
     if (icon) updateFields.icon = icon;
+    if (barcode !== undefined) updateFields.barcode = barcode ? String(barcode).trim() : null;
 
     const updatedProduct = await Product.findOneAndUpdate(query, { $set: updateFields }, { new: true });
     if (!updatedProduct) {
       return res.status(404).json({ success: false, message: "Product not found" });
     }
-    res.json({ success: true, data: updatedProduct });
+    res.json({ success: true, data: { ...updatedProduct.toObject(), id: updatedProduct.product_id } });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
   }
@@ -90,7 +177,10 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   try {
     const query = {
-      $or: [{ product_id: req.params.id }, { _id: req.params.id.match(/^[0-9a-fA-F]{24}$/) ? req.params.id : null }],
+      $or: [
+        { product_id: req.params.id },
+        ...(req.params.id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: req.params.id }] : []),
+      ],
     };
     const deleted = await Product.findOneAndDelete(query);
     if (!deleted) {

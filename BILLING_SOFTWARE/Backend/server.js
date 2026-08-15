@@ -19,9 +19,15 @@ const activePayments = new Map();
 
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/bills", require("./routes/billRoutes"));
+app.use("/api/customers", require("./routes/customerRoutes"));
 app.use("/api/khata", require("./routes/khataRoutes"));
+app.use("/api/suppliers", require("./routes/supplierRoutes"));
+app.use("/api/expenses", require("./routes/expenseRoutes"));
+app.use("/api/reports", require("./routes/reportRoutes"));
+app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/staff", require("./routes/staffRoutes"));
 app.use("/api/merchant", require("./routes/merchantRoutes"));
+app.use("/api/backup", require("./routes/backupRoutes"));
 
 app.post("/api/merchant/create-payment", async (req, res) => {
   const { order_id, amount, description, shop_name, owner_name } = req.body;
@@ -341,13 +347,13 @@ async function renderInvoiceHtml(req, res) {
           body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0F172A; color: #F8FAFC; padding: 20px; margin: 0; }
           .card { max-width: 440px; margin: 20px auto; background: #1E293B; border-radius: 20px; padding: 24px; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
           .header { text-align: center; border-bottom: 1px solid #334155; padding-bottom: 16px; margin-bottom: 16px; }
-          .title { font-size: 22px; font-weight: bold; color: #FF8C75; margin-bottom: 4px; }
-          .badge { background: #10B981; color: #fff; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block; margin-top: 6px; letter-spacing: 0.5px; }
+          .title { font-size: 22px; font-weight: bold; color: #E8592A; margin-bottom: 4px; }
+          .badge { background: #1E824C; color: #fff; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block; margin-top: 6px; letter-spacing: 0.5px; }
           .customer-row { font-size: 12px; color: #94A3B8; margin-top: 8px; }
           .table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
-          .total-box { background: rgba(255, 140, 117, 0.1); border: 1px solid rgba(255, 140, 117, 0.3); border-radius: 12px; padding: 14px; margin: 16px 0; display: flex; justify-content: space-between; align-items: center; }
+          .total-box { background: rgba(232, 89, 42, 0.1); border: 1px solid rgba(232, 89, 42, 0.3); border-radius: 12px; padding: 14px; margin: 16px 0; display: flex; justify-content: space-between; align-items: center; }
           .total-label { font-size: 14px; color: #94A3B8; }
-          .total-val { font-size: 24px; font-weight: 800; color: #FF8C75; }
+          .total-val { font-size: 24px; font-weight: 800; color: #E8592A; }
           .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #64748B; line-height: 1.5; }
         </style>
       </head>

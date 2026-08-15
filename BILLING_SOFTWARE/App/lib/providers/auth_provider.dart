@@ -13,6 +13,7 @@ class AuthProvider extends ChangeNotifier {
   String _securityPin = '';
   String _baseUrl = AppConstants.defaultEcoWalletBaseUrl;
   bool _isConfigured = false;
+  String? _authError;
 
   String get apiKey => _apiKey;
   String get webhookSecret => _webhookSecret;
@@ -24,6 +25,7 @@ class AuthProvider extends ChangeNotifier {
   bool get hasPinSet => _securityPin.isNotEmpty;
   String get baseUrl => _baseUrl;
   bool get isConfigured => _isConfigured;
+  String? get authError => _authError;
 
   ApiService get apiService => ApiService(baseUrl: _baseUrl, apiKey: _apiKey);
 
@@ -41,7 +43,7 @@ class AuthProvider extends ChangeNotifier {
     _mobileNumber = prefs.getString('mobile_number') ?? '';
     _securityPin = prefs.getString('security_pin') ?? '';
     _baseUrl = prefs.getString(AppConstants.keyBaseUrl) ?? AppConstants.defaultEcoWalletBaseUrl;
-    
+
     _isConfigured = _apiKey.isNotEmpty || _mobileNumber.isNotEmpty;
     notifyListeners();
   }
@@ -77,6 +79,52 @@ class AuthProvider extends ChangeNotifier {
     _isConfigured = true;
 
     notifyListeners();
+  }
+
+  Future<bool> loginWithPin(String mobile, String pin) async {
+    _authError = null;
+    if (_mobileNumber.isNotEmpty && _mobileNumber != mobile) {
+      _authError = 'Mobile number does not match registered account';
+      notifyListeners();
+      return false;
+    }
+    if (_securityPin.isNotEmpty && _securityPin != pin) {
+      _authError = 'Incorrect security PIN';
+      notifyListeners();
+      return false;
+    }
+
+    _mobileNumber = mobile;
+    _securityPin = pin;
+    _isConfigured = true;
+    notifyListeners();
+    return true;
+  }
+
+  Future<bool> registerMerchant({
+    required String mobile,
+    required String shopName,
+    required String ownerName,
+    required String pin,
+  }) async {
+    _authError = null;
+    try {
+      await saveCredentials(
+        apiKey: 'eco_key_${DateTime.now().millisecondsSinceEpoch}',
+        webhookSecret: 'whsec_${DateTime.now().millisecondsSinceEpoch}',
+        merchantId: 'mch_$mobile',
+        shopName: shopName,
+        ownerName: ownerName,
+        mobileNumber: mobile,
+        securityPin: pin,
+        baseUrl: _baseUrl,
+      );
+      return true;
+    } catch (e) {
+      _authError = e.toString();
+      notifyListeners();
+      return false;
+    }
   }
 
   bool verifyPin(String enteredPin) {
