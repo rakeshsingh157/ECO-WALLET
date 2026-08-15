@@ -246,7 +246,7 @@ class _SupplierDetailsScreenState extends State<SupplierDetailsScreen> {
                         style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
                       ),
                       if (_isLoadingPurchases)
-                        const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.terracotta)),
+                        SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.terracotta)),
                     ],
                   ),
                   const SizedBox(height: 12),

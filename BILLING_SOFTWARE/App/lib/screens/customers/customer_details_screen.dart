@@ -388,7 +388,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
                       ),
                       if (_isLoadingTransactions)
-                        const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.terracotta)),
+                        SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.terracotta)),
                     ],
                   ),
                   const SizedBox(height: 12),

@@ -221,8 +221,9 @@ class _KhataScreenState extends State<KhataScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
