@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/theme.dart';
 import '../../core/localization.dart';
 import '../../models/product.dart';
@@ -47,6 +48,78 @@ class _EditProductScreenState extends State<EditProductScreen> {
     _stockCtrl.dispose();
     _barcodeCtrl.dispose();
     super.dispose();
+  }
+
+  void _scanBarcode() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SizedBox(
+        height: 480,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'SCAN PRODUCT BARCODE / QR',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: MobileScanner(
+                  onDetect: (capture) {
+                    final List<Barcode> barcodes = capture.barcodes;
+                    for (final barcode in barcodes) {
+                      final rawValue = barcode.rawValue;
+                      if (rawValue != null && rawValue.isNotEmpty) {
+                        setState(() {
+                          _barcodeCtrl.text = rawValue.trim();
+                        });
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Scanned Code: ${rawValue.trim()}'),
+                            backgroundColor: AppColors.success,
+                          ),
+                        );
+                        break;
+                      }
+                    }
+                  },
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Point camera at product barcode or QR code',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _saveChanges() async {
@@ -105,7 +178,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          context.tr('update_product').toUpperCase(),
+          context.tr('edit_product').toUpperCase(),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -207,10 +280,16 @@ class _EditProductScreenState extends State<EditProductScreen> {
 
                     TextFormField(
                       controller: _barcodeCtrl,
-                      style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                      style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                       decoration: InputDecoration(
                         labelText: context.tr('barcode'),
-                        prefixIcon: Icon(Icons.qr_code_scanner_rounded, color: AppColors.textSecondary),
+                        hintText: 'Scan or type EAN / UPC / QR',
+                        prefixIcon: Icon(Icons.qr_code_2_rounded, color: AppColors.textSecondary),
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.qr_code_scanner_rounded, color: AppColors.terracotta),
+                          tooltip: 'Scan Barcode with Camera',
+                          onPressed: _scanBarcode,
+                        ),
                       ),
                     ),
                   ],
@@ -229,8 +308,8 @@ class _EditProductScreenState extends State<EditProductScreen> {
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : const Icon(Icons.save_rounded, size: 18),
-                  label: Text(_isLoading ? 'SAVING...' : context.tr('update_product')),
+                      : const Icon(Icons.check_circle_rounded, size: 18),
+                  label: Text(_isLoading ? 'SAVING...' : 'SAVE CHANGES'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.terracotta,
                     foregroundColor: Colors.white,

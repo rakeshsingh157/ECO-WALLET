@@ -28,6 +28,19 @@ class ProductProvider extends ChangeNotifier {
   String get selectedCategory => _selectedCategory;
   String get searchQuery => _searchQuery;
 
+  Product? findProductByBarcode(String code) {
+    final clean = code.trim().toLowerCase();
+    for (final p in _products) {
+      if (p.barcode != null && p.barcode!.trim().toLowerCase() == clean) {
+        return p;
+      }
+      if (p.id.trim().toLowerCase() == clean) {
+        return p;
+      }
+    }
+    return null;
+  }
+
   void setSearchQuery(String q) {
     _searchQuery = q;
     notifyListeners();

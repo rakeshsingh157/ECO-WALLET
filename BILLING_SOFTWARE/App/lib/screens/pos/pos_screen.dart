@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/theme.dart';
 import '../../core/localization.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/bill_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/product_grid_item.dart';
+import '../inventory/add_product_screen.dart';
 import 'cart_screen.dart';
 
 class PosScreen extends StatefulWidget {
@@ -23,6 +25,202 @@ class _PosScreenState extends State<PosScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _openBarcodeScanner() {
+    String? lastScannedCode;
+    DateTime? lastScanTime;
+    String? lastAddedMessage;
+    bool isSuccess = true;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.black,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          final billProvider = context.watch<BillProvider>();
+          final productProvider = context.read<ProductProvider>();
+
+          return SizedBox(
+            height: MediaQuery.of(context).size.height * 0.85,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'BARCODE / QR SCANNER',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                          Text(
+                            'Cart: ₹${billProvider.currentTotal.toStringAsFixed(0)} (${billProvider.itemCount} items)',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              color: AppColors.terracotta,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          if (billProvider.currentItems.isNotEmpty)
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(sheetContext);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const CartScreen()),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.terracotta,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              child: const Text('View Cart'),
+                            ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded, color: Colors.white),
+                            onPressed: () => Navigator.pop(sheetContext),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                if (lastAddedMessage != null)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isSuccess ? AppColors.forestMint.withAlpha(40) : AppColors.error.withAlpha(40),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isSuccess ? AppColors.forestMint : AppColors.error,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isSuccess ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
+                          size: 18,
+                          color: isSuccess ? AppColors.forestMint : AppColors.error,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            lastAddedMessage!,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                Expanded(
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      MobileScanner(
+                        onDetect: (capture) {
+                          final List<Barcode> barcodes = capture.barcodes;
+                          for (final barcode in barcodes) {
+                            final rawValue = barcode.rawValue;
+                            if (rawValue != null && rawValue.isNotEmpty) {
+                              final now = DateTime.now();
+                              if (lastScannedCode == rawValue &&
+                                  lastScanTime != null &&
+                                  now.difference(lastScanTime!).inMilliseconds < 1500) {
+                                continue;
+                              }
+
+                              lastScannedCode = rawValue;
+                              lastScanTime = now;
+
+                              final product = productProvider.findProductByBarcode(rawValue);
+                              if (product != null) {
+                                billProvider.addItem(product);
+                                setSheetState(() {
+                                  isSuccess = true;
+                                  lastAddedMessage = 'Added 1x ${product.name} (₹${product.price.toStringAsFixed(0)}) to cart';
+                                });
+                              } else {
+                                setSheetState(() {
+                                  isSuccess = false;
+                                  lastAddedMessage = 'No product with barcode "$rawValue" found';
+                                });
+                              }
+                              break;
+                            }
+                          }
+                        },
+                      ),
+
+                      Container(
+                        width: 250,
+                        height: 250,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppColors.terracotta, width: 2.5),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Align barcode / QR inside frame to auto-add',
+                        style: GoogleFonts.plusJakartaSans(fontSize: 11, color: Colors.white70),
+                      ),
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AddProductScreen()),
+                          );
+                        },
+                        icon: const Icon(Icons.add_rounded, size: 16),
+                        label: const Text('Add New Product'),
+                        style: TextButton.styleFrom(foregroundColor: AppColors.chaiGold),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -44,6 +242,11 @@ class _PosScreenState extends State<PosScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            icon: Icon(Icons.qr_code_scanner_rounded, color: AppColors.terracotta),
+            onPressed: _openBarcodeScanner,
+            tooltip: 'Scan Barcode / QR',
+          ),
           if (billProvider.currentItems.isNotEmpty)
             IconButton(
               icon: Icon(Icons.delete_sweep_rounded, color: AppColors.error),
@@ -63,15 +266,24 @@ class _PosScreenState extends State<PosScreen> {
               decoration: InputDecoration(
                 hintText: context.tr('search_placeholder'),
                 prefixIcon: Icon(Icons.search_rounded, color: AppColors.terracotta),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_searchController.text.isNotEmpty)
+                      IconButton(
                         icon: Icon(Icons.clear_rounded, size: 18, color: AppColors.textSecondary),
                         onPressed: () {
                           _searchController.clear();
                           productProvider.setSearchQuery('');
                         },
-                      )
-                    : null,
+                      ),
+                    IconButton(
+                      icon: Icon(Icons.qr_code_scanner_rounded, size: 20, color: AppColors.terracotta),
+                      onPressed: _openBarcodeScanner,
+                      tooltip: 'Scan Barcode',
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -126,6 +338,16 @@ class _PosScreenState extends State<PosScreen> {
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton.icon(
+                          onPressed: _openBarcodeScanner,
+                          icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
+                          label: const Text('SCAN BARCODE TO ADD'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.terracotta,
+                            foregroundColor: Colors.white,
                           ),
                         ),
                       ],
