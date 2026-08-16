@@ -7,7 +7,6 @@ import '../../models/product.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
-
 import '../../widgets/camera_scanner_modal.dart';
 
 class EditProductScreen extends StatefulWidget {
@@ -23,11 +22,13 @@ class _EditProductScreenState extends State<EditProductScreen> {
   late TextEditingController _nameCtrl;
   late TextEditingController _priceCtrl;
   late TextEditingController _stockCtrl;
+  late TextEditingController _lowStockCtrl;
   late TextEditingController _barcodeCtrl;
 
   late String _selectedCategory;
   late String _selectedUnit;
   bool _isLoading = false;
+  bool _isDeleting = false;
 
   final List<String> _units = ['pcs', 'kg', 'g', 'ltr', 'ml', 'pack', 'box', 'dozen'];
 
@@ -37,6 +38,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
     _nameCtrl = TextEditingController(text: widget.product.name);
     _priceCtrl = TextEditingController(text: widget.product.price.toStringAsFixed(0));
     _stockCtrl = TextEditingController(text: widget.product.stock.toString());
+    _lowStockCtrl = TextEditingController(text: widget.product.lowStockAlert.toString());
     _barcodeCtrl = TextEditingController(text: widget.product.barcode ?? '');
     _selectedCategory = widget.product.category;
     _selectedUnit = widget.product.unit;
@@ -47,6 +49,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
     _nameCtrl.dispose();
     _priceCtrl.dispose();
     _stockCtrl.dispose();
+    _lowStockCtrl.dispose();
     _barcodeCtrl.dispose();
     super.dispose();
   }
@@ -79,15 +82,17 @@ class _EditProductScreenState extends State<EditProductScreen> {
     final auth = context.read<AuthProvider>();
     final productProvider = context.read<ProductProvider>();
 
-    final updatedProduct = Product(
-      id: widget.product.id,
+    final parsedStock = int.tryParse(_stockCtrl.text.trim()) ?? widget.product.stock;
+    final parsedAlert = int.tryParse(_lowStockCtrl.text.trim()) ?? widget.product.lowStockAlert;
+
+    final updatedProduct = widget.product.copyWith(
       name: _nameCtrl.text.trim(),
       price: double.tryParse(_priceCtrl.text.trim()) ?? widget.product.price,
       category: _selectedCategory,
-      stock: int.tryParse(_stockCtrl.text.trim()) ?? widget.product.stock,
+      stock: parsedStock < 0 ? 0 : parsedStock,
+      lowStockAlert: parsedAlert < 0 ? 0 : parsedAlert,
       unit: _selectedUnit,
       barcode: _barcodeCtrl.text.trim().isNotEmpty ? _barcodeCtrl.text.trim() : null,
-      icon: widget.product.icon,
     );
 
     final success = await productProvider.updateProduct(
@@ -118,6 +123,69 @@ class _EditProductScreenState extends State<EditProductScreen> {
     }
   }
 
+  void _confirmDelete() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text(
+          'Delete Product',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+        ),
+        content: Text(
+          'Are you sure you want to permanently delete "${widget.product.name}" from your store inventory? This cannot be undone.',
+          style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(Icons.delete_forever_rounded, size: 18),
+            label: const Text('Delete'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    setState(() => _isDeleting = true);
+
+    final auth = context.read<AuthProvider>();
+    final productProvider = context.read<ProductProvider>();
+
+    final success = await productProvider.removeProduct(
+      auth.baseUrl,
+      auth.apiKey,
+      widget.product.id,
+    );
+
+    setState(() => _isDeleting = false);
+
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${widget.product.name} deleted from inventory'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        Navigator.pop(context, null);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(productProvider.errorMessage ?? 'Failed to delete product'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     context.watch<ThemeProvider>();
@@ -135,6 +203,13 @@ class _EditProductScreenState extends State<EditProductScreen> {
             color: AppColors.textPrimary,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.delete_outline_rounded, color: AppColors.error),
+            tooltip: 'Delete Product',
+            onPressed: (_isLoading || _isDeleting) ? null : _confirmDelete,
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
@@ -177,7 +252,12 @@ class _EditProductScreenState extends State<EditProductScreen> {
                               labelText: context.tr('selling_price'),
                               prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.forestMint),
                             ),
-                            validator: (v) => v == null || v.trim().isEmpty ? 'Enter price' : null,
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Enter price';
+                              final p = double.tryParse(v.trim());
+                              if (p == null || p < 0) return 'Price cannot be negative';
+                              return null;
+                            },
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -214,15 +294,44 @@ class _EditProductScreenState extends State<EditProductScreen> {
 
                     const SizedBox(height: 14),
 
-                    TextFormField(
-                      controller: _stockCtrl,
-                      keyboardType: TextInputType.number,
-                      style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
-                      decoration: InputDecoration(
-                        labelText: context.tr('stock_qty'),
-                        prefixIcon: Icon(Icons.inventory_rounded, color: AppColors.chaiGold),
-                      ),
-                      validator: (v) => v == null || v.trim().isEmpty ? 'Enter stock quantity' : null,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _stockCtrl,
+                            keyboardType: TextInputType.number,
+                            style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                            decoration: InputDecoration(
+                              labelText: context.tr('stock_qty'),
+                              prefixIcon: Icon(Icons.inventory_rounded, color: AppColors.chaiGold),
+                            ),
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Enter stock';
+                              final s = int.tryParse(v.trim());
+                              if (s == null || s < 0) return 'Stock cannot be negative';
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _lowStockCtrl,
+                            keyboardType: TextInputType.number,
+                            style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                            decoration: InputDecoration(
+                              labelText: 'Alert When <=',
+                              prefixIcon: Icon(Icons.warning_amber_rounded, color: AppColors.error),
+                            ),
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Enter alert limit';
+                              final a = int.tryParse(v.trim());
+                              if (a == null || a < 0) return 'Cannot be negative';
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
                     ),
 
                     const SizedBox(height: 14),
@@ -250,7 +359,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _saveChanges,
+                  onPressed: (_isLoading || _isDeleting) ? null : _saveChanges,
                   icon: _isLoading
                       ? const SizedBox(
                           width: 18,
@@ -267,6 +376,33 @@ class _EditProductScreenState extends State<EditProductScreen> {
                   ),
                 ),
               ),
+
+              const SizedBox(height: 12),
+
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: (_isLoading || _isDeleting) ? null : _confirmDelete,
+                  icon: _isDeleting
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.error),
+                        )
+                      : Icon(Icons.delete_forever_rounded, size: 18, color: AppColors.error),
+                  label: Text(
+                    _isDeleting ? 'DELETING...' : 'DELETE PRODUCT',
+                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.error),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    side: BorderSide(color: AppColors.error.withAlpha(128)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 20),
             ],
           ),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/localization.dart';
 import '../../providers/product_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import 'add_product_screen.dart';
 import 'edit_product_screen.dart';
@@ -224,8 +225,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final product = products[index];
-                      final isLow = product.stock <= 5;
-                      final isOut = product.stock <= 0;
+                      final isLow = product.isLowStock;
+                      final isOut = product.isOutOfStock;
 
                       return InkWell(
                         onTap: () => Navigator.push(
@@ -272,7 +273,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                       style: GoogleFonts.plusJakartaSans(
                                         fontSize: 12,
                                         color: isOut ? AppColors.error : (isLow ? AppColors.warning : AppColors.textSecondary),
-                                        fontWeight: (isOut || isLow) ? FontWeight.w600 : FontWeight.w400,
+                                        fontWeight: (isOut || isLow) ? FontWeight.w700 : FontWeight.w400,
                                       ),
                                     ),
                                   ],
@@ -295,13 +296,78 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(width: 6),
-                              IconButton(
-                                icon: Icon(Icons.edit_outlined, size: 18, color: AppColors.textSecondary),
-                                onPressed: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => EditProductScreen(product: product)),
-                                ),
+                              const SizedBox(width: 4),
+                              PopupMenuButton<String>(
+                                icon: Icon(Icons.more_vert_rounded, size: 20, color: AppColors.textSecondary),
+                                onSelected: (val) async {
+                                  if (val == 'edit') {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => EditProductScreen(product: product)),
+                                    );
+                                  } else if (val == 'delete') {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        backgroundColor: AppColors.surface,
+                                        title: Text(
+                                          'Delete Product',
+                                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                                        ),
+                                        content: Text(
+                                          'Are you sure you want to delete "${product.name}" from inventory?',
+                                          style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(ctx, false),
+                                            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () => Navigator.pop(ctx, true),
+                                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
+                                            child: const Text('Delete'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+
+                                    if (confirm == true && context.mounted) {
+                                      final auth = context.read<AuthProvider>();
+                                      await productProvider.removeProduct(auth.baseUrl, auth.apiKey, product.id);
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('${product.name} deleted from inventory'),
+                                            backgroundColor: AppColors.error,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  }
+                                },
+                                itemBuilder: (ctx) => [
+                                  const PopupMenuItem(
+                                    value: 'edit',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.edit_outlined, size: 18),
+                                        SizedBox(width: 8),
+                                        Text('Edit Product'),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.error),
+                                        const SizedBox(width: 8),
+                                        Text('Delete', style: TextStyle(color: AppColors.error)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),

@@ -7,7 +7,6 @@ import '../../models/product.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
-
 import '../../widgets/camera_scanner_modal.dart';
 
 class AddProductScreen extends StatefulWidget {
@@ -22,6 +21,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _nameCtrl = TextEditingController();
   final _priceCtrl = TextEditingController();
   final _stockCtrl = TextEditingController();
+  final _lowStockCtrl = TextEditingController(text: '5');
   final _barcodeCtrl = TextEditingController();
 
   String _selectedCategory = 'Groceries';
@@ -35,8 +35,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _nameCtrl.dispose();
     _priceCtrl.dispose();
     _stockCtrl.dispose();
+    _lowStockCtrl.dispose();
     _barcodeCtrl.dispose();
     super.dispose();
+  }
+
+  void _clearForm() {
+    _nameCtrl.clear();
+    _priceCtrl.clear();
+    _stockCtrl.clear();
+    _lowStockCtrl.text = '5';
+    _barcodeCtrl.clear();
+    setState(() {
+      _selectedCategory = 'Groceries';
+      _selectedUnit = 'pcs';
+    });
   }
 
   void _scanBarcode() async {
@@ -67,13 +80,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
     final auth = context.read<AuthProvider>();
     final productProvider = context.read<ProductProvider>();
 
+    final parsedStock = int.tryParse(_stockCtrl.text.trim()) ?? 0;
+    final parsedAlert = int.tryParse(_lowStockCtrl.text.trim()) ?? 5;
+
     final newProduct = Product(
       id: 'prod_${DateTime.now().millisecondsSinceEpoch}',
       name: _nameCtrl.text.trim(),
       price: double.tryParse(_priceCtrl.text.trim()) ?? 0.0,
       category: _selectedCategory,
       unit: _selectedUnit,
-      stock: int.tryParse(_stockCtrl.text.trim()) ?? 0,
+      stock: parsedStock < 0 ? 0 : parsedStock,
+      lowStockAlert: parsedAlert < 0 ? 0 : parsedAlert,
       barcode: _barcodeCtrl.text.trim().isNotEmpty ? _barcodeCtrl.text.trim() : null,
     );
 
@@ -122,6 +139,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
             color: AppColors.textPrimary,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.restart_alt_rounded),
+            tooltip: 'Clear Form',
+            onPressed: _clearForm,
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
@@ -166,7 +190,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
                               hintText: '0.00',
                               prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.forestMint),
                             ),
-                            validator: (v) => v == null || v.trim().isEmpty ? 'Enter price' : null,
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Enter price';
+                              final numVal = double.tryParse(v.trim());
+                              if (numVal == null || numVal < 0) return 'Price cannot be negative';
+                              return null;
+                            },
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -203,16 +232,46 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
                     const SizedBox(height: 14),
 
-                    TextFormField(
-                      controller: _stockCtrl,
-                      keyboardType: TextInputType.number,
-                      style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
-                      decoration: InputDecoration(
-                        labelText: context.tr('stock_qty'),
-                        hintText: 'e.g. 50',
-                        prefixIcon: Icon(Icons.inventory_rounded, color: AppColors.chaiGold),
-                      ),
-                      validator: (v) => v == null || v.trim().isEmpty ? 'Enter stock quantity' : null,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _stockCtrl,
+                            keyboardType: TextInputType.number,
+                            style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                            decoration: InputDecoration(
+                              labelText: context.tr('stock_qty'),
+                              hintText: 'e.g. 50',
+                              prefixIcon: Icon(Icons.inventory_rounded, color: AppColors.chaiGold),
+                            ),
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Enter stock';
+                              final s = int.tryParse(v.trim());
+                              if (s == null || s < 0) return 'Stock cannot be negative';
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _lowStockCtrl,
+                            keyboardType: TextInputType.number,
+                            style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                            decoration: InputDecoration(
+                              labelText: 'Alert When <=',
+                              hintText: 'e.g. 5',
+                              prefixIcon: Icon(Icons.warning_amber_rounded, color: AppColors.error),
+                            ),
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Enter alert limit';
+                              final alert = int.tryParse(v.trim());
+                              if (alert == null || alert < 0) return 'Cannot be negative';
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
                     ),
 
                     const SizedBox(height: 14),

@@ -88,6 +88,7 @@ class ApiService {
             category: p["category"] ?? "General",
             unit: p["unit"] ?? "pcs",
             stock: (p["stock"] as num?)?.toInt() ?? 10,
+            lowStockAlert: (p["min_stock_alert"] as num?)?.toInt() ?? 5,
             icon: p["icon"] ?? "box",
             barcode: p["barcode"],
           )).toList();
@@ -112,6 +113,7 @@ class ApiService {
           "category": product.category,
           "unit": product.unit,
           "stock": product.stock,
+          "min_stock_alert": product.lowStockAlert,
           "icon": product.icon,
           "barcode": product.barcode,
         }),
@@ -135,6 +137,7 @@ class ApiService {
           "category": product.category,
           "unit": product.unit,
           "stock": product.stock,
+          "min_stock_alert": product.lowStockAlert,
           "barcode": product.barcode,
         }),
       ).timeout(requestTimeout);

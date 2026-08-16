@@ -26,11 +26,23 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     _product = widget.product;
   }
 
+  void _openEditScreen() async {
+    final updated = await Navigator.push<Product?>(
+      context,
+      MaterialPageRoute(builder: (_) => EditProductScreen(product: _product)),
+    );
+    if (updated != null && mounted) {
+      setState(() => _product = updated);
+    } else if (updated == null && mounted) {
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     context.watch<ThemeProvider>();
-    final isLowStock = _product.stock <= 5;
-    final isOutOfStock = _product.stock <= 0;
+    final isLowStock = _product.isLowStock;
+    final isOutOfStock = _product.isOutOfStock;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -47,15 +59,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.edit_outlined, color: AppColors.terracotta),
-            onPressed: () async {
-              final updated = await Navigator.push<Product>(
-                context,
-                MaterialPageRoute(builder: (_) => EditProductScreen(product: _product)),
-              );
-              if (updated != null) {
-                setState(() => _product = updated);
-              }
-            },
+            onPressed: _openEditScreen,
           ),
         ],
       ),
@@ -136,6 +140,22 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: (isOutOfStock ? AppColors.error : (isLowStock ? AppColors.warning : AppColors.forestMint)).withAlpha(25),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Low Stock Alert Threshold: <= ${_product.lowStockAlert} ${_product.unit}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: isOutOfStock ? AppColors.error : (isLowStock ? AppColors.warning : AppColors.forestMint),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -189,15 +209,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () async {
-                  final updated = await Navigator.push<Product>(
-                    context,
-                    MaterialPageRoute(builder: (_) => EditProductScreen(product: _product)),
-                  );
-                  if (updated != null) {
-                    setState(() => _product = updated);
-                  }
-                },
+                onPressed: _openEditScreen,
                 icon: const Icon(Icons.edit_rounded, size: 18),
                 label: Text(context.tr('update_product').toUpperCase()),
                 style: ElevatedButton.styleFrom(

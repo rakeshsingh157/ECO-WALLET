@@ -20,7 +20,7 @@ class ProductProvider extends ChangeNotifier {
   }
 
   List<Product> get allProducts => _products;
-  List<Product> get lowStockProducts => _products.where((p) => p.stock <= 5).toList();
+  List<Product> get lowStockProducts => _products.where((p) => p.isLowStock).toList();
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 

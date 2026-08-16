@@ -76,7 +76,9 @@ router.get("/barcode/:code", async (req, res) => {
 
 router.get("/low-stock", async (req, res) => {
   try {
-    const products = await Product.find({ stock: { $lte: 5 } })
+    const products = await Product.find({
+      $expr: { $lte: ["$stock", { $ifNull: ["$min_stock_alert", 5] }] }
+    })
       .sort({ stock: 1 })
       .limit(100)
       .lean();
@@ -112,7 +114,7 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { name, price, category, unit, stock, icon, barcode, product_id } = req.body;
+    const { name, price, category, unit, stock, min_stock_alert, icon, barcode, product_id } = req.body;
 
     if (!name || name.trim().length === 0) {
       return res.status(400).json({ success: false, message: "Product name is required" });
@@ -129,6 +131,7 @@ router.post("/", async (req, res) => {
       category: category || "Groceries",
       unit: unit || "pcs",
       stock: Number(stock) >= 0 ? Number(stock) : 0,
+      min_stock_alert: min_stock_alert !== undefined ? Math.max(0, Number(min_stock_alert)) : 5,
       icon: icon || "box",
       barcode: barcode ? String(barcode).trim() : null,
     };
@@ -147,7 +150,7 @@ router.post("/", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   try {
-    const { name, price, category, unit, stock, icon, barcode } = req.body;
+    const { name, price, category, unit, stock, min_stock_alert, icon, barcode } = req.body;
     const query = {
       $or: [
         { product_id: req.params.id },
@@ -161,6 +164,7 @@ router.put("/:id", async (req, res) => {
     if (category) updateFields.category = category;
     if (unit) updateFields.unit = unit;
     if (stock !== undefined) updateFields.stock = Math.max(0, Number(stock));
+    if (min_stock_alert !== undefined) updateFields.min_stock_alert = Math.max(0, Number(min_stock_alert));
     if (icon) updateFields.icon = icon;
     if (barcode !== undefined) updateFields.barcode = barcode ? String(barcode).trim() : null;
 
