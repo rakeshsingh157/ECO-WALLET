@@ -169,7 +169,10 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> loginWithPin(String mobile, String pin) async {
     _authError = null;
     try {
-      final response = await apiService.loginMerchant(mobile, pin);
+      final response = await apiService.loginMerchant(
+        mobileNumber: mobile,
+        securityPin: pin,
+      );
       if (response["success"] == true) {
         final m = response["merchant"] ?? {};
         final apiKey = m["api_key"] ?? (m["api_key_hash"] ?? 'key_mch_$mobile');
@@ -201,7 +204,7 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
     } catch (e) {
-      _authError = 'Cannot connect to backend server: $e';
+      _authError = 'Cannot connect to server: $e';
       notifyListeners();
       return false;
     }
@@ -249,7 +252,7 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
     } catch (e) {
-      _authError = 'Cannot connect to backend server: $e';
+      _authError = 'Cannot connect to server: $e';
       notifyListeners();
       return false;
     }
