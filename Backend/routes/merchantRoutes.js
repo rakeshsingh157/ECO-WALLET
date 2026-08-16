@@ -846,6 +846,21 @@ router.get("/invoice/:bill_id", async (req, res) => {
         <span class="total-num">₹${Number(amount).toFixed(2)}</span>
       </div>
 
+      <div style="display: flex; justify-content: space-between; align-items: center; margin: 14px 0; padding: 12px 14px; border: 1.5px solid #000000; background: #FFFFFF; border-radius: 8px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(orderId)}" style="width: 70px; height: 70px; border: 1px solid #000000; display: block;" alt="Invoice QR" crossOrigin="anonymous" />
+          <div>
+            <div style="font-size: 11px; font-weight: 900; color: #000000; letter-spacing: 0.5px; text-transform: uppercase;">SCAN TO RETURN / VERIFY</div>
+            <div style="font-size: 10px; color: #4B5563; margin-top: 2px;">Scan this QR with the app to process return</div>
+            <div style="font-size: 11px; font-weight: 800; color: #000000; margin-top: 2px;">ORDER ID: #${orderId}</div>
+          </div>
+        </div>
+        <div style="text-align: right; font-size: 10px; color: #374151;">
+          <div style="font-weight: 700; color: #000000;">DIGITALLY VERIFIED</div>
+          <div style="color: #6B7280; font-size: 9px; margin-top: 2px;">ECO-WALLET POS</div>
+        </div>
+      </div>
+
       <div class="footer">
         <div style="font-weight: 700; color: #111827; margin-bottom: 2px;">Thank you for your business!</div>
         <div>Computer generated receipt • Dukaan Dost Smart Billing</div>

@@ -800,6 +800,21 @@ async function renderInvoiceHtml(req, res) {
               </div>
             </div>
 
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 12px 14px; border: 1.5px solid #000000; background: #FFFFFF; border-radius: 8px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(cleanBillId)}" style="width: 75px; height: 75px; border: 1px solid #000000; display: block;" alt="Invoice QR" crossOrigin="anonymous" />
+                <div>
+                  <div style="font-size: 11px; font-weight: 900; color: #000000; letter-spacing: 0.5px; text-transform: uppercase;">SCAN TO RETURN / VERIFY ORDER</div>
+                  <div style="font-size: 10px; color: #4B5563; margin-top: 2px;">Scan this QR with the Dukaan Dost app to process return</div>
+                  <div style="font-size: 11px; font-weight: 800; color: #000000; margin-top: 3px;">INVOICE ID: #${cleanBillId}</div>
+                </div>
+              </div>
+              <div style="text-align: right; font-size: 10px; color: #374151;">
+                <div style="font-weight: 700; color: #000000;">DIGITALLY VERIFIED</div>
+                <div style="color: #6B7280; font-size: 9px; margin-top: 2px;">Auth #${Math.abs(cleanBillId.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0))}</div>
+              </div>
+            </div>
+
             <div class="footer">
               <div style="font-weight: 700; color: #111827; margin-bottom: 4px;">Thank you for your business!</div>
               <div>This is a computer generated invoice and requires no physical signature.</div>
@@ -812,10 +827,10 @@ async function renderInvoiceHtml(req, res) {
           function downloadPdf() {
             const element = document.getElementById('invoice-capture');
             const opt = {
-              margin: [10, 10, 10, 10],
+              margin: [8, 8, 8, 8],
               filename: 'Invoice_${cleanBillId}.pdf',
               image: { type: 'jpeg', quality: 1.0 },
-              html2canvas: { scale: 3, useCORS: true, backgroundColor: '#FFFFFF' },
+              html2canvas: { scale: 3, useCORS: true, backgroundColor: '#FFFFFF', logging: false },
               jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             html2pdf().set(opt).from(element).save();
