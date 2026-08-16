@@ -14,6 +14,7 @@ class PdfInvoiceService {
     String? phone,
     String? address,
     String? gstin,
+    String? baseUrl,
   }) async {
     final pdf = pw.Document();
     final font = await PdfGoogleFonts.plusJakartaSansRegular();
@@ -26,7 +27,10 @@ class PdfInvoiceService {
     final displayAddress = (address != null && address.trim().isNotEmpty) ? address.trim() : 'Market Area, Main Road, India';
     final displayOwner = (ownerName != null && ownerName.trim().isNotEmpty) ? ownerName.trim() : 'Store Merchant';
 
-    final invoiceQrPayload = 'INVOICE:${bill.billId}|TOTAL:${bill.totalAmount}|DATE:${bill.timestamp.toIso8601String()}|SHOP:$displayShopName';
+    final cleanBase = (baseUrl != null && baseUrl.trim().isNotEmpty)
+        ? baseUrl.trim().replaceAll(RegExp(r'/api/?$'), '')
+        : 'https://eco-wallet-1.onrender.com';
+    final invoiceQrPayload = '$cleanBase/invoice/${bill.billId}';
 
     pdf.addPage(
       pw.Page(
@@ -342,6 +346,7 @@ class PdfInvoiceService {
     String? phone,
     String? address,
     String? gstin,
+    String? baseUrl,
   }) async {
     final bytes = await generateInvoiceBytes(
       bill,
@@ -350,6 +355,7 @@ class PdfInvoiceService {
       phone: phone,
       address: address,
       gstin: gstin,
+      baseUrl: baseUrl,
     );
 
     await Printing.layoutPdf(
@@ -366,6 +372,7 @@ class PdfInvoiceService {
     String? phone,
     String? address,
     String? gstin,
+    String? baseUrl,
   }) async {
     final bytes = await generateInvoiceBytes(
       bill,
@@ -374,6 +381,7 @@ class PdfInvoiceService {
       phone: phone,
       address: address,
       gstin: gstin,
+      baseUrl: baseUrl,
     );
 
     await Printing.sharePdf(

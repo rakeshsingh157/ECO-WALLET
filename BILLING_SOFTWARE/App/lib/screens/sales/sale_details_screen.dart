@@ -206,7 +206,7 @@ class SaleDetailsScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         QrImageView(
-                          data: 'INVOICE:${bill.id}|TOTAL:${bill.totalAmount}|DATE:${bill.timestamp.toIso8601String()}',
+                          data: '${auth.baseUrl.replaceAll(RegExp(r'/api/?$'), '')}/invoice/${bill.id}',
                           version: QrVersions.auto,
                           size: 110.0,
                           dataModuleStyle: QrDataModuleStyle(
@@ -220,8 +220,8 @@ class SaleDetailsScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Scan to verify & return order',
-                          style: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppColors.textMuted),
+                          'Scan to view & download PDF invoice on browser',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.terracotta),
                         ),
                       ],
                     ),

@@ -482,74 +482,189 @@ async function renderInvoiceHtml(req, res) {
       ],
     });
 
-    const shopName = req.query.shop_name || "Dukaan Dost Store";
+    let merchant = null;
+    if (bill && bill.merchant_id) {
+      merchant = await Merchant.findOne({
+        $or: [{ merchant_id: bill.merchant_id }, { user_id: bill.merchant_id }]
+      });
+    }
+
+    const shopName = req.query.shop_name || (merchant ? merchant.business_name : "Dukaan Dost Retail Store");
+    const shopPhone = merchant ? (merchant.mobile_number || merchant.phone) : "+91 98765 43210";
+    const shopAddress = merchant && merchant.address ? merchant.address : "Market Area, Main Road, India";
+    const shopGstin = merchant && merchant.gstin ? merchant.gstin : "";
     const totalAmount = bill ? bill.total_amount : 0;
+    const refundedAmount = bill && bill.refunded_amount ? bill.refunded_amount : 0;
+    const netAmount = Math.max(0, totalAmount - refundedAmount);
     const paymentMode = bill ? (bill.payment_mode || "CASH").toUpperCase() : "PAID";
     const dateStr = bill ? new Date(bill.createdAt).toLocaleString("en-IN") : new Date().toLocaleString("en-IN");
     const customerName = bill && bill.customer_name ? bill.customer_name : "Counter Customer";
+    const customerPhone = bill && bill.customer_phone ? bill.customer_phone : "";
 
     let itemsHtml = "";
     if (bill && bill.items && bill.items.length > 0) {
-      itemsHtml = bill.items.map(item => `
+      itemsHtml = bill.items.map((item, idx) => {
+        let displayQty = `${item.quantity}`;
+        const unitStr = (item.unit || "pcs").toLowerCase();
+        if (unitStr === "kg" && item.quantity < 1.0) {
+          displayQty = `${Math.round(item.quantity * 1000)} g`;
+        } else if ((unitStr === "ltr" || unitStr === "l") && item.quantity < 1.0) {
+          displayQty = `${Math.round(item.quantity * 1000)} ml`;
+        } else {
+          displayQty = `${item.quantity} ${item.unit || "pcs"}`;
+        }
+        return `
         <tr style="border-bottom: 1px solid #334155;">
-          <td style="padding: 10px 0; color: #F8FAFC; font-weight: 500;">${item.name}</td>
-          <td style="padding: 10px 0; text-align: center; color: #94A3B8;">${item.quantity}</td>
-          <td style="padding: 10px 0; text-align: right; color: #F8FAFC; font-weight: 600;">₹${(item.price * item.quantity).toFixed(2)}</td>
+          <td style="padding: 10px 4px; color: #94A3B8; font-size: 11px;">${idx + 1}</td>
+          <td style="padding: 10px 8px; color: #F8FAFC; font-weight: 600;">${item.name}</td>
+          <td style="padding: 10px 8px; text-align: center; color: #CBD5E1; font-weight: 500;">${displayQty}</td>
+          <td style="padding: 10px 8px; text-align: right; color: #94A3B8;">₹${Number(item.price).toFixed(2)}</td>
+          <td style="padding: 10px 4px; text-align: right; color: #F8FAFC; font-weight: 700;">₹${(item.price * item.quantity).toFixed(2)}</td>
         </tr>
-      `).join("");
+      `;
+      }).join("");
     } else {
-      itemsHtml = `<tr><td colspan="3" style="padding: 14px 0; text-align: center; color: #94A3B8;">General Purchase</td></tr>`;
+      itemsHtml = `<tr><td colspan="5" style="padding: 14px 0; text-align: center; color: #94A3B8;">General Store Purchase</td></tr>`;
     }
 
     res.send(`
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Tax Invoice #${billId}</title>
+        <title>Tax Invoice #${cleanBillId} - ${shopName}</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0F172A; color: #F8FAFC; padding: 20px; margin: 0; }
-          .card { max-width: 440px; margin: 20px auto; background: #1E293B; border-radius: 20px; padding: 24px; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-          .header { text-align: center; border-bottom: 1px solid #334155; padding-bottom: 16px; margin-bottom: 16px; }
-          .title { font-size: 22px; font-weight: bold; color: #E8592A; margin-bottom: 4px; }
-          .badge { background: #1E824C; color: #fff; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block; margin-top: 6px; letter-spacing: 0.5px; }
-          .customer-row { font-size: 12px; color: #94A3B8; margin-top: 8px; }
-          .table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
-          .total-box { background: rgba(232, 89, 42, 0.1); border: 1px solid rgba(232, 89, 42, 0.3); border-radius: 12px; padding: 14px; margin: 16px 0; display: flex; justify-content: space-between; align-items: center; }
-          .total-label { font-size: 14px; color: #94A3B8; }
-          .total-val { font-size: 24px; font-weight: 800; color: #E8592A; }
-          .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #64748B; line-height: 1.5; }
+          * { box-sizing: border-box; }
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #0A0E1A; color: #F8FAFC; padding: 16px; margin: 0; display: flex; flex-direction: column; align-items: center; }
+          .container { max-width: 520px; width: 100%; margin: 10px auto; }
+          .actions { display: flex; gap: 10px; margin-bottom: 16px; width: 100%; max-width: 520px; }
+          .btn { flex: 1; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 14px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: 0.2s; }
+          .btn-download { background: #E8592A; color: #FFFFFF; box-shadow: 0 4px 14px rgba(232, 89, 42, 0.4); }
+          .btn-download:hover { background: #D0481B; }
+          .btn-print { background: #1E293B; color: #F8FAFC; border: 1px solid #334155; }
+          .invoice-card { background: #111827; border-radius: 20px; padding: 24px; border: 1px solid #1F2937; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+          .header { border-bottom: 1px solid #1F2937; padding-bottom: 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; }
+          .shop-title { font-size: 20px; font-weight: 800; color: #E8592A; margin: 0 0 4px 0; }
+          .shop-sub { font-size: 11px; color: #9CA3AF; line-height: 1.4; }
+          .badge { background: #065F46; color: #6EE7B7; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; display: inline-block; }
+          .badge-return { background: #7F1D1D; color: #FCA5A5; }
+          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; font-size: 12px; }
+          .info-label { color: #9CA3AF; font-size: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 2px; }
+          .info-val { color: #F9FAFB; font-weight: 600; }
+          .table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 12px; }
+          .table th { color: #9CA3AF; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #374151; padding: 8px 4px; }
+          .summary-box { background: #1F2937; border-radius: 12px; padding: 14px; margin-top: 16px; border: 1px solid #374151; }
+          .summary-row { display: flex; justify-content: space-between; font-size: 12px; color: #9CA3AF; margin-bottom: 6px; }
+          .summary-total { display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; color: #E8592A; margin-top: 8px; padding-top: 8px; border-top: 1px solid #374151; }
+          .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #6B7280; line-height: 1.5; border-top: 1px solid #1F2937; padding-top: 14px; }
+          @media print {
+            body { background: #FFFFFF; color: #000000; padding: 0; }
+            .actions { display: none !important; }
+            .invoice-card { background: #FFFFFF; color: #000000; border: none; box-shadow: none; padding: 0; }
+            .shop-title { color: #000000; }
+            .info-val, .table td { color: #000000 !important; }
+            .summary-box { background: #F3F4F6; border: 1px solid #E5E7EB; }
+            .summary-total { color: #000000 !important; }
+          }
         </style>
       </head>
       <body>
-        <div class="card">
-          <div class="header">
-            <div class="title">${shopName}</div>
-            <div style="color: #94A3B8; font-size: 12px;">Tax Invoice #${billId}</div>
-            <div class="badge">${paymentMode}</div>
-            <div class="customer-row">Billed to: <strong style="color: #F8FAFC;">${customerName}</strong></div>
-            <div style="color: #64748B; font-size: 11px; margin-top: 6px;">${dateStr}</div>
+        <div class="container">
+          <div class="actions">
+            <button class="btn btn-download" onclick="downloadPdf()">
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              Download PDF Invoice
+            </button>
+            <button class="btn btn-print" onclick="window.print()">
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+              Print
+            </button>
           </div>
-          <table class="table">
-            <thead>
-              <tr style="border-bottom: 1px solid #475569; color: #94A3B8;">
-                <th style="text-align: left; padding-bottom: 6px;">Item</th>
-                <th style="text-align: center; padding-bottom: 6px;">Qty</th>
-                <th style="text-align: right; padding-bottom: 6px;">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${itemsHtml}
-            </tbody>
-          </table>
-          <div class="total-box">
-            <span class="total-label">Grand Total</span>
-            <span class="total-val">₹${Number(totalAmount).toFixed(2)}</span>
+
+          <div class="invoice-card" id="invoice-capture">
+            <div class="header">
+              <div>
+                <h1 class="shop-title">${shopName}</h1>
+                <div class="shop-sub">${shopAddress}</div>
+                <div class="shop-sub">Ph: ${shopPhone}${shopGstin ? ` • GSTIN: ${shopGstin}` : ""}</div>
+              </div>
+              <div style="text-align: right;">
+                <div class="badge ${refundedAmount > 0 ? 'badge-return' : ''}">
+                  ${refundedAmount >= totalAmount ? 'FULL RETURN' : (refundedAmount > 0 ? 'PARTIAL RETURN' : paymentMode)}
+                </div>
+                <div style="font-size: 11px; color: #9CA3AF; margin-top: 6px; font-weight: 700;">#${cleanBillId}</div>
+              </div>
+            </div>
+
+            <div class="info-grid">
+              <div>
+                <div class="info-label">Customer</div>
+                <div class="info-val">${customerName}${customerPhone ? ` (${customerPhone})` : ""}</div>
+              </div>
+              <div style="text-align: right;">
+                <div class="info-label">Date & Time</div>
+                <div class="info-val">${dateStr}</div>
+              </div>
+            </div>
+
+            <table class="table">
+              <thead>
+                <tr>
+                  <th style="text-align: left; width: 24px;">#</th>
+                  <th style="text-align: left;">Item</th>
+                  <th style="text-align: center;">Qty/Wt</th>
+                  <th style="text-align: right;">Rate</th>
+                  <th style="text-align: right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+
+            <div class="summary-box">
+              <div class="summary-row">
+                <span>Subtotal</span>
+                <span>₹${Number(totalAmount).toFixed(2)}</span>
+              </div>
+              <div class="summary-row">
+                <span>GST / Taxes</span>
+                <span>₹0.00 (Inclusive)</span>
+              </div>
+              ${refundedAmount > 0 ? `
+              <div class="summary-row" style="color: #F87171; font-weight: 700;">
+                <span>Total Refunded / Returned</span>
+                <span>-₹${Number(refundedAmount).toFixed(2)}</span>
+              </div>
+              ` : ''}
+              <div class="summary-total">
+                <span>GRAND TOTAL</span>
+                <span>₹${Number(netAmount).toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div class="footer">
+              <p style="margin: 0 0 4px 0; color: #9CA3AF; font-weight: 600;">Thank you for shopping with us!</p>
+              <div>Powered by Dukaan Dost Smart Billing</div>
+            </div>
           </div>
-          <p style="text-align:center; font-size: 12px; color: #94A3B8; margin: 10px 0;">Thank you for shopping with us!</p>
-          <div class="footer">Powered by Dukaan Dost Billing & POS</div>
         </div>
+
+        <script>
+          function downloadPdf() {
+            const element = document.getElementById('invoice-capture');
+            const opt = {
+              margin: 10,
+              filename: 'Invoice_${cleanBillId}.pdf',
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+          }
+        </script>
       </body>
       </html>
     `);

@@ -751,14 +751,28 @@ router.post(
 router.get("/invoice/:bill_id", async (req, res) => {
   try {
     const { bill_id } = req.params;
+    const cleanBillId = bill_id ? bill_id.trim() : "";
     const payment = await MerchantPayment.findOne({
-      $or: [{ payment_id: bill_id }, { order_id: bill_id }]
+      $or: [
+        { payment_id: cleanBillId },
+        { order_id: cleanBillId },
+        { payment_id: `BILL_${cleanBillId}` },
+        { order_id: `BILL_${cleanBillId}` },
+      ]
     }).lean();
 
-    const amount = payment ? payment.amount : 220;
-    const orderId = payment ? payment.order_id : bill_id;
+    let merchant = null;
+    if (payment && payment.merchant_id) {
+      merchant = await Merchant.findOne({ merchant_id: payment.merchant_id }).lean();
+    }
+
+    const shopName = merchant ? merchant.business_name : "Dukaan Dost Retail Store";
+    const shopPhone = merchant ? merchant.mobile_number : "+91 98765 43210";
+    const shopAddress = merchant && merchant.address ? merchant.address : "Market Area, Main Road, India";
+    const amount = payment ? payment.amount : 0;
+    const orderId = payment ? payment.order_id : cleanBillId;
     const payerName = payment ? (payment.payer_name || "Counter Customer") : "Valued Customer";
-    const dateStr = payment && payment.completed_at ? new Date(payment.completed_at).toLocaleString() : new Date().toLocaleString();
+    const dateStr = payment && payment.completed_at ? new Date(payment.completed_at).toLocaleString("en-IN") : new Date().toLocaleString("en-IN");
     const statusStr = payment ? payment.status.toUpperCase() : "COMPLETED";
 
     const htmlContent = `
@@ -767,43 +781,83 @@ router.get("/invoice/:bill_id", async (req, res) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Invoice - ${orderId}</title>
+  <title>Tax Invoice - ${orderId}</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; background: #0F0F23; color: #FFFFFF; margin: 0; padding: 20px; display: flex; justify-content: center; }
-    .card { background: #16213E; border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-    .header { text-align: center; border-bottom: 1px border rgba(255,255,255,0.1); padding-bottom: 16px; margin-bottom: 20px; }
-    .badge { background: #4ADE80; color: #000; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 12px; display: inline-block; margin-top: 8px; }
-    .title { font-size: 20px; font-weight: 800; color: #FFAD85; margin: 0; }
-    .row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; color: #B0B8C8; }
-    .val { font-weight: 700; color: #FFFFFF; }
-    .total-box { background: rgba(255,173,133,0.1); border-radius: 12px; padding: 16px; text-align: center; margin: 20px 0; }
-    .total-num { font-size: 32px; font-weight: 800; color: #FFAD85; }
-    .btn { display: block; width: 100%; padding: 14px; background: linear-gradient(135deg, #FFAD85, #E8446D); color: #FFF; text-align: center; text-decoration: none; border-radius: 14px; font-weight: 700; border: none; cursor: pointer; margin-top: 16px; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0A0E1A; color: #F8FAFC; margin: 0; padding: 16px; display: flex; flex-direction: column; align-items: center; }
+    .container { max-width: 480px; width: 100%; margin: 10px auto; }
+    .actions { display: flex; gap: 10px; margin-bottom: 16px; width: 100%; max-width: 480px; }
+    .btn { flex: 1; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 14px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+    .btn-download { background: #E8592A; color: #FFFFFF; }
+    .btn-print { background: #1E293B; color: #F8FAFC; border: 1px solid #334155; }
+    .card { background: #111827; border: 1px solid #1F2937; border-radius: 20px; padding: 24px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+    .header { border-bottom: 1px solid #1F2937; padding-bottom: 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .title { font-size: 20px; font-weight: 800; color: #E8592A; margin: 0 0 4px 0; }
+    .badge { background: #065F46; color: #6EE7B7; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 8px; display: inline-block; }
+    .row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px; color: #9CA3AF; }
+    .val { font-weight: 600; color: #F9FAFB; }
+    .total-box { background: #1F2937; border: 1px solid #374151; border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; margin: 18px 0; }
+    .total-num { font-size: 24px; font-weight: 800; color: #E8592A; }
+    .footer { text-align: center; font-size: 11px; color: #6B7280; border-top: 1px solid #1F2937; padding-top: 14px; margin-top: 14px; }
+    @media print {
+      body { background: #FFF; color: #000; padding: 0; }
+      .actions { display: none !important; }
+      .card { background: #FFF; color: #000; border: none; box-shadow: none; padding: 0; }
+      .title, .val, .total-num { color: #000 !important; }
+      .total-box { background: #F3F4F6; }
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="header">
-      <div class="title">Sharma Kirana Store</div>
-      <div style="font-size: 12px; color: #888;">Dukaan Dost Official Invoice</div>
-      <div class="badge">${statusStr}</div>
-    </div>
-    <div class="row"><span>Invoice ID:</span><span class="val">${orderId}</span></div>
-    <div class="row"><span>Date & Time:</span><span class="val">${dateStr}</span></div>
-    <div class="row"><span>Customer:</span><span class="val">${payerName}</span></div>
-    
-    <div class="total-box">
-      <div style="font-size: 12px; color: #888;">TOTAL AMOUNT</div>
-      <div class="total-num">₹${amount}</div>
+  <div class="container">
+    <div class="actions">
+      <button class="btn btn-download" onclick="downloadPdf()">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+        Download PDF Invoice
+      </button>
+      <button class="btn btn-print" onclick="window.print()">Print</button>
     </div>
 
-    <button class="btn" onclick="window.print()">Download / Print Invoice</button>
+    <div class="card" id="invoice-capture">
+      <div class="header">
+        <div>
+          <h1 class="title">${shopName}</h1>
+          <div style="font-size: 11px; color: #9CA3AF;">${shopAddress} • Ph: ${shopPhone}</div>
+        </div>
+        <div style="text-align: right;">
+          <div class="badge">${statusStr}</div>
+          <div style="font-size: 11px; color: #9CA3AF; margin-top: 4px; font-weight: 700;">#${orderId}</div>
+        </div>
+      </div>
+      <div class="row"><span>Customer:</span><span class="val">${payerName}</span></div>
+      <div class="row"><span>Date & Time:</span><span class="val">${dateStr}</span></div>
+      <div class="row"><span>Payment Method:</span><span class="val">ECO-WALLET</span></div>
+      
+      <div class="total-box">
+        <span style="font-size: 13px; font-weight: 700; color: #9CA3AF;">TOTAL PAID</span>
+        <span class="total-num">₹${Number(amount).toFixed(2)}</span>
+      </div>
+
+      <div class="footer">
+        <p style="margin: 0 0 4px 0; color: #9CA3AF;">Thank you for shopping with us!</p>
+        <div>Powered by Dukaan Dost Smart Billing</div>
+      </div>
+    </div>
   </div>
+
   <script>
-    // Auto trigger print/save on mobile scan
-    setTimeout(() => {
-      window.print();
-    }, 800);
+    function downloadPdf() {
+      const element = document.getElementById('invoice-capture');
+      const opt = {
+        margin: 10,
+        filename: 'Invoice_${orderId}.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
   </script>
 </body>
 </html>
@@ -812,7 +866,7 @@ router.get("/invoice/:bill_id", async (req, res) => {
     res.setHeader("Content-Type", "text/html");
     res.send(htmlContent);
   } catch (error) {
-    res.status(500).send("Error loading invoice");
+    res.status(500).send("Error loading invoice: " + error.message);
   }
 });
 
