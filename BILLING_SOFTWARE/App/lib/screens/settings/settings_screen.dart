@@ -9,7 +9,6 @@ import '../auth/login_screen.dart';
 import '../add_member_screen.dart';
 import '../suppliers/suppliers_screen.dart';
 import '../expenses/expenses_screen.dart';
-import '../server_config_screen.dart';
 import 'shop_profile_screen.dart';
 import 'language_selection_screen.dart';
 import 'backup_restore_screen.dart';
@@ -224,15 +223,6 @@ class SettingsScreen extends StatelessWidget {
                     subtitle: context.tr('backup_restore_sub'),
                     color: AppColors.info,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupRestoreScreen())),
-                  ),
-                  Divider(color: AppColors.borderSubtle, height: 20),
-                  _buildNavRow(
-                    context,
-                    icon: Icons.dns_rounded,
-                    title: context.tr('server_config'),
-                    subtitle: auth.baseUrl,
-                    color: AppColors.terracotta,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServerConfigScreen())),
                   ),
                   Divider(color: AppColors.borderSubtle, height: 20),
                   _buildNavRow(

@@ -53,10 +53,10 @@ class AuthProvider extends ChangeNotifier {
     _upiId = prefs.getString('shop_upi_id') ?? '';
     _baseUrl = prefs.getString(AppConstants.keyBaseUrl) ?? AppConstants.defaultEcoWalletBaseUrl;
 
-    _isConfigured = _apiKey.isNotEmpty || _mobileNumber.isNotEmpty;
+    _isConfigured = _apiKey.isNotEmpty && _mobileNumber.isNotEmpty;
     notifyListeners();
 
-    if (_baseUrl.isNotEmpty) {
+    if (_baseUrl.isNotEmpty && _isConfigured) {
       try {
         final profile = await apiService.getMerchantProfile();
         if (profile.isNotEmpty) {
@@ -168,22 +168,43 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> loginWithPin(String mobile, String pin) async {
     _authError = null;
-    if (_mobileNumber.isNotEmpty && _mobileNumber != mobile) {
-      _authError = 'Mobile number does not match registered account';
-      notifyListeners();
-      return false;
-    }
-    if (_securityPin.isNotEmpty && _securityPin != pin) {
-      _authError = 'Incorrect security PIN';
-      notifyListeners();
-      return false;
-    }
+    try {
+      final response = await apiService.loginMerchant(mobile, pin);
+      if (response["success"] == true) {
+        final m = response["merchant"] ?? {};
+        final apiKey = m["api_key"] ?? (m["api_key_hash"] ?? 'key_mch_$mobile');
+        final webhookSec = m["webhook_secret"] ?? 'whsec_$mobile';
+        final mchId = m["merchant_id"] ?? 'mch_$mobile';
+        final shopName = m["business_name"] ?? _shopName;
+        final ownerName = m["owner_name"] ?? _ownerName;
+        final gstin = m["gstin"] ?? _gstin;
+        final address = m["address"] ?? _address;
+        final upiId = m["upi_id"] ?? _upiId;
 
-    _mobileNumber = mobile;
-    _securityPin = pin;
-    _isConfigured = true;
-    notifyListeners();
-    return true;
+        await saveCredentials(
+          apiKey: apiKey,
+          webhookSecret: webhookSec,
+          merchantId: mchId,
+          shopName: shopName.isNotEmpty ? shopName : 'My Store',
+          ownerName: ownerName.isNotEmpty ? ownerName : 'Store Admin',
+          mobileNumber: mobile,
+          securityPin: pin,
+          baseUrl: _baseUrl,
+          gstin: gstin,
+          address: address,
+          upiId: upiId,
+        );
+        return true;
+      } else {
+        _authError = response["message"] ?? 'Invalid mobile number or security PIN';
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _authError = 'Cannot connect to backend server: $e';
+      notifyListeners();
+      return false;
+    }
   }
 
   Future<bool> registerMerchant({
@@ -196,21 +217,39 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     _authError = null;
     try {
-      await saveCredentials(
-        apiKey: 'eco_key_${DateTime.now().millisecondsSinceEpoch}',
-        webhookSecret: 'whsec_${DateTime.now().millisecondsSinceEpoch}',
-        merchantId: 'mch_$mobile',
+      final response = await apiService.signupMerchant(
+        mobileNumber: mobile,
         shopName: shopName,
         ownerName: ownerName,
-        mobileNumber: mobile,
         securityPin: pin,
-        baseUrl: _baseUrl,
-        gstin: gstin,
-        address: address,
       );
-      return true;
+
+      if (response["success"] == true) {
+        final m = response["merchant"] ?? {};
+        final apiKey = m["api_key"] ?? 'key_mch_$mobile';
+        final webhookSec = m["webhook_secret"] ?? 'whsec_$mobile';
+        final mchId = m["merchant_id"] ?? 'mch_$mobile';
+
+        await saveCredentials(
+          apiKey: apiKey,
+          webhookSecret: webhookSec,
+          merchantId: mchId,
+          shopName: shopName,
+          ownerName: ownerName,
+          mobileNumber: mobile,
+          securityPin: pin,
+          baseUrl: _baseUrl,
+          gstin: gstin,
+          address: address,
+        );
+        return true;
+      } else {
+        _authError = response["message"] ?? 'Store registration failed';
+        notifyListeners();
+        return false;
+      }
     } catch (e) {
-      _authError = e.toString();
+      _authError = 'Cannot connect to backend server: $e';
       notifyListeners();
       return false;
     }
@@ -233,6 +272,7 @@ class AuthProvider extends ChangeNotifier {
     _securityPin = '';
     _gstin = '';
     _address = '';
+    _upiId = '';
     _isConfigured = false;
     notifyListeners();
   }
