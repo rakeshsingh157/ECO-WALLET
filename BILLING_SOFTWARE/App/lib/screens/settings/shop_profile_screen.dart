@@ -8,6 +8,7 @@ import '../../core/theme.dart';
 import '../../core/localization.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../widgets/camera_scanner_modal.dart';
 
 class ShopProfileScreen extends StatefulWidget {
   const ShopProfileScreen({super.key});
@@ -54,74 +55,27 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
     super.dispose();
   }
 
-  void _scanStandeeQr() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SizedBox(
-        height: 480,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'SCAN PHYSICAL SHOP UPI QR',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close_rounded, color: AppColors.textSecondary),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: MobileScanner(
-                  onDetect: (capture) {
-                    final List<Barcode> barcodes = capture.barcodes;
-                    for (final barcode in barcodes) {
-                      final rawValue = barcode.rawValue;
-                      if (rawValue != null && rawValue.isNotEmpty) {
-                        _parseAndApplyUpiQr(rawValue);
-                        Navigator.pop(ctx);
-                        break;
-                      }
-                    }
-                  },
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Point camera at your PhonePe, Google Pay, or Paytm standee QR',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
-              ),
-            ),
-          ],
-        ),
-      ),
+  void _scanStandeeQr() async {
+    final scannedCode = await CameraScannerModal.show(
+      context,
+      title: 'SCAN PHYSICAL SHOP UPI QR',
+      subtitle: 'Point camera at your PhonePe, Google Pay, or Paytm standee QR',
     );
+
+    if (scannedCode != null && scannedCode.isNotEmpty && mounted) {
+      _parseAndApplyUpiQr(scannedCode);
+    }
   }
 
   Future<void> _pickQrFromGallery() async {
     try {
       final picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 90,
+      );
       if (image == null) return;
 
       final controller = MobileScannerController();
@@ -141,16 +95,16 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('No QR code detected in the selected image. Please select a clear QR photo or scan directly.'),
+            content: const Text('No QR code detected in this photo. Please try another image or use "Scan Standee QR".'),
             backgroundColor: AppColors.error,
           ),
         );
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not read image: $e'),
+            content: const Text('Could not process gallery image. Please use "Scan Standee QR" to scan directly.'),
             backgroundColor: AppColors.error,
           ),
         );

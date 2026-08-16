@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/theme.dart';
 import '../../core/localization.dart';
 import '../../models/product.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
+
+import '../../widgets/camera_scanner_modal.dart';
 
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({super.key});
@@ -22,11 +23,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _priceCtrl = TextEditingController();
   final _stockCtrl = TextEditingController();
   final _barcodeCtrl = TextEditingController();
+
   String _selectedCategory = 'Groceries';
   String _selectedUnit = 'pcs';
   bool _isLoading = false;
 
-  final List<String> _units = ['pcs', 'kg', 'gm', 'ltr', 'ml', 'pack', 'bottle'];
+  final List<String> _units = ['pcs', 'kg', 'g', 'ltr', 'ml', 'pack', 'box', 'dozen'];
 
   @override
   void dispose() {
@@ -37,76 +39,24 @@ class _AddProductScreenState extends State<AddProductScreen> {
     super.dispose();
   }
 
-  void _scanBarcode() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SizedBox(
-        height: 480,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'SCAN PRODUCT BARCODE / QR',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close_rounded, color: AppColors.textSecondary),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: MobileScanner(
-                  onDetect: (capture) {
-                    final List<Barcode> barcodes = capture.barcodes;
-                    for (final barcode in barcodes) {
-                      final rawValue = barcode.rawValue;
-                      if (rawValue != null && rawValue.isNotEmpty) {
-                        setState(() {
-                          _barcodeCtrl.text = rawValue.trim();
-                        });
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Scanned Code: ${rawValue.trim()}'),
-                            backgroundColor: AppColors.success,
-                          ),
-                        );
-                        break;
-                      }
-                    }
-                  },
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Point camera at product barcode (EAN, UPC) or QR code',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
-              ),
-            ),
-          ],
-        ),
-      ),
+  void _scanBarcode() async {
+    final scannedCode = await CameraScannerModal.show(
+      context,
+      title: 'SCAN PRODUCT BARCODE / QR',
+      subtitle: 'Point camera at product barcode (EAN, UPC) or QR code',
     );
+
+    if (scannedCode != null && scannedCode.isNotEmpty && mounted) {
+      setState(() {
+        _barcodeCtrl.text = scannedCode;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Scanned Code: $scannedCode'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
   }
 
   void _saveProduct() async {

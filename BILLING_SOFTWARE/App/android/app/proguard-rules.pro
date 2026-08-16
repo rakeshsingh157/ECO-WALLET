@@ -1,0 +1,6 @@
+-keep class com.google.mlkit.** { *; }
+-keep interface com.google.mlkit.** { *; }
+-keep class com.google.android.gms.vision.** { *; }
+-keep class dev.steenbakker.mobile_scanner.** { *; }
+-dontwarn com.google.mlkit.**
+-dontwarn dev.steenbakker.mobile_scanner.**

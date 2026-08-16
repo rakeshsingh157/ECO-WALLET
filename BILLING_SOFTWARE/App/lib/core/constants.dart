@@ -1,5 +1,5 @@
 class AppConstants {
-  static const String defaultEcoWalletBaseUrl = "http://10.0.2.2:5001/api";
+  static const String defaultEcoWalletBaseUrl = "https://eco-wallet-1.onrender.com/api";
   
   static const String keyApiKey = "dukaan_dost_api_key";
   static const String keyWebhookSecret = "dukaan_dost_webhook_secret";

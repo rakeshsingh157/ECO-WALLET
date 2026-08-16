@@ -222,44 +222,139 @@ app.get("/api/merchant/payment/:payment_id/status", async (req, res) => {
 });
 
 app.post("/api/merchant/pay", async (req, res) => {
-  const { payment_id } = req.body;
-  const txnId = `TXN_${Date.now()}`;
+  const { payment_id, payer_id, payer_name, amount } = req.body;
 
-  if (payment_id && activePayments.has(payment_id)) {
-    const payment = activePayments.get(payment_id);
-    payment.status = "completed";
-    payment.completed_at = new Date().toISOString();
-  } else {
-    for (const [id, payment] of activePayments.entries()) {
-      if (payment.status === "pending") {
-        payment.status = "completed";
-        payment.completed_at = new Date().toISOString();
-        break;
-      }
-    }
+  if (!payment_id || typeof payment_id !== "string") {
+    return res.status(400).json({
+      success: false,
+      code: "INVALID_PAYMENT_ID",
+      message: "Valid payment_id is required to complete payment.",
+    });
+  }
+
+  const txnId = `TXN_${Date.now()}`;
+  const now = new Date();
+
+  let dbPayment = await MerchantPayment.findOne({ payment_id });
+  if (!dbPayment) {
+    return res.status(404).json({
+      success: false,
+      code: "PAYMENT_NOT_FOUND",
+      message: "Payment session not found or invalid QR code.",
+    });
+  }
+
+  if (dbPayment.status === "completed") {
+    return res.status(409).json({
+      success: false,
+      code: "ALREADY_PAID",
+      message: "This payment QR has already been paid by a customer. Duplicate payments are rejected.",
+      auto_refund: {
+        status: "processed",
+        refund_id: `REF_${Date.now()}`,
+        amount: amount || dbPayment.amount,
+        note: "Amount auto-refunded to customer wallet immediately.",
+      },
+    });
+  }
+
+  if (dbPayment.status === "expired" || (dbPayment.expires_at && now > new Date(dbPayment.expires_at))) {
+    await MerchantPayment.findOneAndUpdate(
+      { payment_id, status: "pending" },
+      { $set: { status: "expired" } }
+    );
+    return res.status(410).json({
+      success: false,
+      code: "QR_EXPIRED",
+      message: "This payment QR has expired. Please ask the shopkeeper for a new QR.",
+      auto_refund: {
+        status: "processed",
+        refund_id: `REF_${Date.now()}`,
+        amount: amount || dbPayment.amount,
+        note: "Expired QR attempt auto-refunded.",
+      },
+    });
+  }
+
+  const updated = await MerchantPayment.findOneAndUpdate(
+    { payment_id, status: "pending" },
+    {
+      $set: {
+        status: "completed",
+        payer_id: payer_id || "cust_user",
+        payer_name: payer_name || "Customer",
+        transaction_id: txnId,
+        completed_at: now,
+      },
+    },
+    { new: true }
+  );
+
+  if (!updated) {
+    return res.status(409).json({
+      success: false,
+      code: "RACE_CONDITION_BLOCKED",
+      message: "Another customer just completed this payment QR. Your payment has been auto-refunded.",
+      auto_refund: {
+        status: "processed",
+        refund_id: `REF_${Date.now()}`,
+        amount: amount || dbPayment.amount,
+      },
+    });
+  }
+
+  if (activePayments.has(payment_id)) {
+    const memoryPayment = activePayments.get(payment_id);
+    memoryPayment.status = "completed";
+    memoryPayment.completed_at = now.toISOString();
+    memoryPayment.payer_name = payer_name || "Customer";
+    memoryPayment.transaction_id = txnId;
   }
 
   try {
-    if (payment_id) {
-      await MerchantPayment.findOneAndUpdate(
-        { payment_id },
-        { $set: { status: "completed", completed_at: new Date(), transaction_id: txnId } }
-      );
-    } else {
-      await MerchantPayment.findOneAndUpdate(
-        { status: "pending" },
-        { $set: { status: "completed", completed_at: new Date(), transaction_id: txnId } }
-      );
+    const existingBill = await Bill.findOne({
+      $or: [{ bill_number: updated.order_id }, { payment_id: payment_id }]
+    });
+
+    if (!existingBill) {
+      await Bill.create({
+        bill_number: updated.order_id || `BILL_${Date.now()}`,
+        payment_id: payment_id,
+        merchant_id: updated.merchant_id,
+        items: [
+          {
+            product_id: "prod_misc",
+            product_name: "Store Sale",
+            quantity: 1,
+            unit_price: updated.amount,
+            total_price: updated.amount,
+          }
+        ],
+        subtotal: updated.amount,
+        discount_amount: 0,
+        tax_amount: 0,
+        grand_total: updated.amount,
+        payment_mode: "ECO_WALLET",
+        payment_status: "PAID",
+        payment_reference: txnId,
+        created_at: now,
+      });
+      console.log(`[INFO] Auto-recorded paid bill for offline shopkeeper sync: ${updated.order_id}`);
     }
-  } catch (_) {}
+  } catch (billErr) {
+    console.error("[ERROR] Failed to auto-create bill:", billErr.message);
+  }
 
   res.json({
     success: true,
     message: "Payment processed successfully.",
     data: {
+      payment_id,
       transaction_id: txnId,
+      order_id: updated.order_id,
+      amount: updated.amount,
       status: "completed",
-      new_balance: 9800,
+      completed_at: now.toISOString(),
     },
   });
 });

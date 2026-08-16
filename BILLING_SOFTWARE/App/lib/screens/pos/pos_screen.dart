@@ -27,13 +27,21 @@ class _PosScreenState extends State<PosScreen> {
     super.dispose();
   }
 
-  void _openBarcodeScanner() {
+  void _openBarcodeScanner() async {
+    final controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.noDuplicates,
+      facing: CameraFacing.back,
+      torchEnabled: false,
+      autoStart: true,
+    );
+
     String? lastScannedCode;
     DateTime? lastScanTime;
     String? lastAddedMessage;
     bool isSuccess = true;
+    bool torchOn = false;
 
-    showModalBottomSheet(
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.black,
@@ -78,6 +86,16 @@ class _PosScreenState extends State<PosScreen> {
                       ),
                       Row(
                         children: [
+                          IconButton(
+                            icon: Icon(
+                              torchOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+                              color: torchOn ? AppColors.chaiGold : Colors.white,
+                            ),
+                            onPressed: () {
+                              controller.toggleTorch();
+                              setSheetState(() => torchOn = !torchOn);
+                            },
+                          ),
                           if (billProvider.currentItems.isNotEmpty)
                             ElevatedButton(
                               onPressed: () {
@@ -95,7 +113,7 @@ class _PosScreenState extends State<PosScreen> {
                               ),
                               child: const Text('View Cart'),
                             ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 4),
                           IconButton(
                             icon: const Icon(Icons.close_rounded, color: Colors.white),
                             onPressed: () => Navigator.pop(sheetContext),
@@ -145,6 +163,36 @@ class _PosScreenState extends State<PosScreen> {
                     alignment: Alignment.center,
                     children: [
                       MobileScanner(
+                        controller: controller,
+                        errorBuilder: (ctx, err, child) {
+                          return Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.camera_alt_outlined, size: 48, color: AppColors.terracotta),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Camera Access Issue (${err.errorCode.name})',
+                                    style: GoogleFonts.plusJakartaSans(fontSize: 14, color: Colors.white, fontWeight: FontWeight.w700),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      controller.start();
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.terracotta,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text('RETRY CAMERA'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                         onDetect: (capture) {
                           final List<Barcode> barcodes = capture.barcodes;
                           for (final barcode in barcodes) {
@@ -221,6 +269,8 @@ class _PosScreenState extends State<PosScreen> {
         },
       ),
     );
+
+    controller.dispose();
   }
 
   @override
