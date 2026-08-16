@@ -3,11 +3,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share_plus/share_plus.dart';
+import '../../models/bill.dart';
 import '../../core/theme.dart';
 import '../../core/localization.dart';
-import '../../models/bill.dart';
-import '../../providers/theme_provider.dart';
+import '../../core/pdf_invoice_service.dart';
+import '../../providers/auth_provider.dart';
+import 'return_order_screen.dart';
 
 class SaleDetailsScreen extends StatelessWidget {
   final Bill bill;
@@ -16,14 +17,15 @@ class SaleDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.watch<ThemeProvider>();
+    final auth = context.watch<AuthProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          'INVOICE #${bill.id.substring(0, bill.id.length > 8 ? 8 : bill.id.length).toUpperCase()}',
+          'INVOICE #${bill.id}',
           style: GoogleFonts.plusJakartaSans(
-            fontSize: 15,
+            fontSize: 14,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.2,
             color: AppColors.textPrimary,
@@ -31,9 +33,16 @@ class SaleDetailsScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.share_rounded, color: AppColors.terracotta),
+            icon: const Icon(Icons.share_rounded),
+            tooltip: 'Share PDF Invoice',
             onPressed: () {
-              Share.share('Invoice #${bill.id}\nAmount: ₹${bill.totalAmount}\nCustomer: ${bill.customerName ?? 'Walk-in'}');
+              PdfInvoiceService.sharePdfInvoice(
+                context,
+                bill,
+                shopName: auth.shopName,
+                ownerName: auth.ownerName,
+                phone: auth.phone,
+              );
             },
           ),
         ],
@@ -47,8 +56,15 @@ class SaleDetailsScreen extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: AppColors.borderSubtle),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x08000000),
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,34 +75,62 @@ class SaleDetailsScreen extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Billed Customer', style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted)),
                           Text(
-                            bill.customerName ?? 'Counter Customer',
-                            style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                            auth.shopName.isNotEmpty ? auth.shopName : 'Dukaan Dost Store',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            DateFormat('dd MMM yyyy, hh:mm a').format(bill.timestamp),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ],
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.secondaryContainer,
+                          color: bill.isReturned ? AppColors.error.withAlpha(40) : AppColors.secondaryContainer,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          bill.paymentMode.name.toUpperCase(),
-                          style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.forestMint),
+                          bill.isReturned
+                              ? 'RETURNED'
+                              : (bill.isPartiallyReturned ? 'PARTIALLY REFUNDED' : bill.paymentMode.name.toUpperCase()),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: bill.isReturned ? AppColors.error : AppColors.forestMint,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    DateFormat('EEEE, dd MMMM yyyy • hh:mm a').format(bill.timestamp),
-                    style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
-                  ),
-
                   const SizedBox(height: 16),
                   Divider(color: AppColors.borderSubtle),
+                  const SizedBox(height: 12),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(context.tr('customer'), style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
+                      Text(bill.customerName ?? 'Counter Customer', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(context.tr('payment_mode'), style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
+                      Text(bill.paymentMode.name.toUpperCase(), style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.terracotta)),
+                    ],
+                  ),
                   const SizedBox(height: 12),
 
                   Text(
@@ -103,12 +147,12 @@ class SaleDetailsScreen extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              '${item.product.name} (x${item.quantity})',
+                              '${item.product.name} (x${item.formattedQuantity})',
                               style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textPrimary),
                             ),
                           ),
                           Text(
-                            '₹${item.totalPrice.toStringAsFixed(0)}',
+                            '₹${item.totalPrice.toStringAsFixed(2)}',
                             style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                           ),
                         ],
@@ -131,47 +175,112 @@ class SaleDetailsScreen extends StatelessWidget {
                     ],
                   ),
 
+                  if (bill.refundedAmount > 0) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Total Refunded', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.error)),
+                        Text(
+                          '-₹${bill.refundedAmount.toStringAsFixed(2)}',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.error),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Net Settled Total', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.forestMint)),
+                        Text(
+                          '₹${bill.netAmount.toStringAsFixed(2)}',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.forestMint),
+                        ),
+                      ],
+                    ),
+                  ],
+
                   const SizedBox(height: 20),
 
                   Center(
-                    child: QrImageView(
-                      data: 'INVOICE:${bill.id}|TOTAL:${bill.totalAmount}',
-                      version: QrVersions.auto,
-                      size: 110.0,
-                      dataModuleStyle: QrDataModuleStyle(
-                        dataModuleShape: QrDataModuleShape.square,
-                        color: AppColors.textPrimary,
-                      ),
-                      eyeStyle: QrEyeStyle(
-                        eyeShape: QrEyeShape.square,
-                        color: AppColors.textPrimary,
-                      ),
+                    child: Column(
+                      children: [
+                        QrImageView(
+                          data: 'INVOICE:${bill.id}|TOTAL:${bill.totalAmount}|DATE:${bill.timestamp.toIso8601String()}',
+                          version: QrVersions.auto,
+                          size: 110.0,
+                          dataModuleStyle: QrDataModuleStyle(
+                            dataModuleShape: QrDataModuleShape.square,
+                            color: AppColors.textPrimary,
+                          ),
+                          eyeStyle: QrEyeStyle(
+                            eyeShape: QrEyeShape.square,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Scan to verify & return order',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppColors.textMuted),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: const Text('Receipt re-sent to thermal printer'), backgroundColor: AppColors.success),
-                  );
-                },
-                icon: const Icon(Icons.print_rounded, size: 18),
-                label: Text(context.tr('print_receipt')),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.terracotta,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      PdfInvoiceService.printOrShareInvoice(
+                        context,
+                        bill,
+                        shopName: auth.shopName,
+                        ownerName: auth.ownerName,
+                        phone: auth.phone,
+                      );
+                    },
+                    icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
+                    label: const Text('Download / Print PDF'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.terracotta,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            if (!bill.isReturned)
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ReturnOrderScreen(initialBill: bill),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.assignment_return_rounded, size: 18, color: AppColors.error),
+                  label: const Text('Return / Refund This Order'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    side: BorderSide(color: AppColors.error.withAlpha(128)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),

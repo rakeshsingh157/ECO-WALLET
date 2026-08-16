@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/bill_item.dart';
 import '../core/theme.dart';
+import 'quantity_selector_modal.dart';
 
 class BillItemTile extends StatelessWidget {
   final BillItem item;
   final VoidCallback onAdd;
   final VoidCallback onRemove;
+  final Function(double newQty)? onQtyChanged;
 
   const BillItemTile({
     super.key,
     required this.item,
     required this.onAdd,
     required this.onRemove,
+    this.onQtyChanged,
   });
 
   @override
@@ -68,14 +71,33 @@ class BillItemTile extends StatelessWidget {
                     child: Icon(Icons.remove_rounded, color: AppColors.error, size: 18),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    '${item.quantity}',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                GestureDetector(
+                  onTap: () {
+                    QuantitySelectorModal.show(
+                      context,
+                      product: item.product,
+                      initialQuantity: item.quantity,
+                      onConfirmed: (newQty) {
+                        if (onQtyChanged != null) {
+                          onQtyChanged!(newQty);
+                        }
+                      },
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppColors.borderSubtle),
+                    ),
+                    child: Text(
+                      item.formattedQuantity,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.terracotta,
+                      ),
                     ),
                   ),
                 ),
@@ -94,7 +116,7 @@ class BillItemTile extends StatelessWidget {
           const SizedBox(width: 14),
 
           Text(
-            '₹${item.totalPrice.toStringAsFixed(0)}',
+            '₹${item.totalPrice.toStringAsFixed(2)}',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 15,
               fontWeight: FontWeight.w800,

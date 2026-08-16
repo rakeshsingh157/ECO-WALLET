@@ -24,7 +24,8 @@ class BillProvider extends ChangeNotifier {
   bool get isLoadingBills => _isLoadingBills;
 
   double get currentTotal => _currentItems.fold(0, (sum, item) => sum + item.totalPrice);
-  int get itemCount => _currentItems.fold(0, (sum, item) => sum + item.quantity);
+  int get itemCount => _currentItems.length;
+  double get totalQuantityCount => _currentItems.fold(0.0, (sum, item) => sum + item.quantity);
 
   bool _isCreatingPayment = false;
   bool _isCheckingStatus = false;
@@ -48,21 +49,35 @@ class BillProvider extends ChangeNotifier {
     return "$minutes:$seconds";
   }
 
-  void addItem(Product product) {
+  void addItem(Product product, {double quantity = 1.0}) {
     final index = _currentItems.indexWhere((item) => item.product.id == product.id);
     if (index >= 0) {
-      _currentItems[index].quantity++;
+      _currentItems[index].quantity += quantity;
     } else {
-      _currentItems.add(BillItem(product: product, quantity: 1));
+      _currentItems.add(BillItem(product: product, quantity: quantity));
     }
     notifyListeners();
   }
 
-  void removeItem(Product product) {
+  void setItemQuantity(Product product, double quantity) {
+    final index = _currentItems.indexWhere((item) => item.product.id == product.id);
+    if (quantity <= 0) {
+      if (index >= 0) _currentItems.removeAt(index);
+    } else {
+      if (index >= 0) {
+        _currentItems[index].quantity = quantity;
+      } else {
+        _currentItems.add(BillItem(product: product, quantity: quantity));
+      }
+    }
+    notifyListeners();
+  }
+
+  void removeItem(Product product, {double step = 1.0}) {
     final index = _currentItems.indexWhere((item) => item.product.id == product.id);
     if (index >= 0) {
-      if (_currentItems[index].quantity > 1) {
-        _currentItems[index].quantity--;
+      if (_currentItems[index].quantity > step) {
+        _currentItems[index].quantity -= step;
       } else {
         _currentItems.removeAt(index);
       }
@@ -106,13 +121,13 @@ class BillProvider extends ChangeNotifier {
                 name: item["name"] ?? "Item",
                 price: (item["price"] as num?)?.toDouble() ?? 0.0,
                 category: "General",
-                unit: "pcs",
+                unit: item["unit"] ?? "pcs",
                 stock: 10,
                 icon: "box",
               );
               return BillItem(
                 product: product,
-                quantity: (item["quantity"] as num?)?.toInt() ?? 1,
+                quantity: (item["quantity"] as num?)?.toDouble() ?? 1.0,
               );
             }).toList();
 

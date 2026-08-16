@@ -17,6 +17,7 @@ import '../inventory/low_stock_screen.dart';
 import '../customers/khata_screen.dart';
 import '../reports/reports_screen.dart';
 import '../notifications/notifications_screen.dart';
+import '../sales/return_order_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -349,6 +350,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 10),
+                _buildActionButton(
+                  title: 'Order Returns & Refunds',
+                  subtitle: 'Search bill or scan receipt QR to refund',
+                  icon: Icons.assignment_return_rounded,
+                  color: AppColors.error,
+                  isPrimary: false,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReturnOrderScreen())),
                 ),
 
                 const SizedBox(height: 20),

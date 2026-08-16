@@ -191,6 +191,7 @@ class ApiService {
             "name": item.product.name,
             "price": item.product.price,
             "quantity": item.quantity,
+            "unit": item.product.unit,
           }).toList(),
           "total_amount": totalAmount,
           "payment_mode": paymentMode,
@@ -207,7 +208,38 @@ class ApiService {
     }
   }
 
-  // ==================== CUSTOMERS CRM ====================
+  Future<Map<String, dynamic>> returnBill({
+    required String billId,
+    String returnType = 'full',
+    List<Map<String, dynamic>>? returnedItems,
+    String? reason,
+    String? refundMode,
+  }) async {
+    final url = Uri.parse("$_cleanBase/bills/return");
+    try {
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          "bill_id": billId,
+          "return_type": returnType,
+          "returned_items": returnedItems ?? [],
+          "reason": reason ?? "Customer Return",
+          "refund_mode": refundMode ?? "cash",
+        }),
+      ).timeout(requestTimeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final err = jsonDecode(response.body);
+        return {"success": false, "message": err["message"] ?? "Failed to process return"};
+      }
+    } catch (e) {
+      return {"success": false, "message": e.toString()};
+    }
+  }
+
 
   Future<List<Customer>> getCustomers() async {
     final url = Uri.parse("$_cleanBase/customers");
@@ -446,7 +478,6 @@ class ApiService {
     }
   }
 
-  // ==================== REPORTS & SUMMARY ====================
 
   Future<Map<String, dynamic>> getReportSummary() async {
     final url = Uri.parse("$_cleanBase/reports/summary");
@@ -480,7 +511,6 @@ class ApiService {
     }
   }
 
-  // ==================== NOTIFICATIONS ====================
 
   Future<List<NotificationItem>> getNotifications() async {
     final url = Uri.parse("$_cleanBase/notifications");
@@ -525,7 +555,6 @@ class ApiService {
     }
   }
 
-  // ==================== BACKUP & RESTORE ====================
 
   Future<Map<String, dynamic>> exportBackup() async {
     final url = Uri.parse("$_cleanBase/backup/export");
@@ -571,7 +600,6 @@ class ApiService {
     }
   }
 
-  // ==================== STAFF MEMBERS ====================
 
   Future<List<Map<String, dynamic>>> getStaffMembers() async {
     final url = Uri.parse("$_cleanBase/staff");
@@ -626,7 +654,6 @@ class ApiService {
     }
   }
 
-  // ==================== MERCHANT PAYMENTS ====================
 
   Future<Map<String, dynamic>> createPayment({
     required String orderId,

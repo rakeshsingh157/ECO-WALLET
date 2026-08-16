@@ -6,11 +6,15 @@ const Customer = require("../models/Customer");
 
 router.get("/", async (req, res) => {
   try {
-    const { period, payment_mode, search, limit, page } = req.query;
+    const { period, payment_mode, search, limit, page, status } = req.query;
     const query = {};
 
     if (payment_mode) {
       query.payment_mode = payment_mode;
+    }
+
+    if (status) {
+      query.status = status;
     }
 
     const now = new Date();
@@ -51,18 +55,29 @@ router.get("/", async (req, res) => {
         .lean(),
       Bill.countDocuments(query),
       Bill.aggregate([
-        { $match: { createdAt: { $gte: startOfToday }, status: "completed" } },
-        { $group: { _id: null, total: { $sum: "$total_amount" }, count: { $sum: 1 } } },
+        { $match: { createdAt: { $gte: startOfToday }, status: { $in: ["completed", "partially_returned"] } } },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: { $subtract: ["$total_amount", { $ifNull: ["$refunded_amount", 0] }] } },
+            count: { $sum: 1 },
+          },
+        },
       ]),
       Bill.aggregate([
-        { $match: { status: "completed" } },
-        { $group: { _id: null, total: { $sum: "$total_amount" } } },
+        { $match: { status: { $in: ["completed", "partially_returned"] } } },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: { $subtract: ["$total_amount", { $ifNull: ["$refunded_amount", 0] }] } },
+          },
+        },
       ]),
     ]);
 
-    const todaySales = todayBillsAgg.length > 0 ? todayBillsAgg[0].total : 0;
+    const todaySales = todayBillsAgg.length > 0 ? Math.max(0, todayBillsAgg[0].total) : 0;
     const todayBillCount = todayBillsAgg.length > 0 ? todayBillsAgg[0].count : 0;
-    const totalSales = totalSalesAgg.length > 0 ? totalSalesAgg[0].total : 0;
+    const totalSales = totalSalesAgg.length > 0 ? Math.max(0, totalSalesAgg[0].total) : 0;
 
     const sanitized = bills.map((b) => ({
       ...b,
@@ -83,6 +98,159 @@ router.get("/", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, todaySales: 0, todayBillCount: 0, data: [], error: error.message });
+  }
+});
+
+router.post("/return", async (req, res) => {
+  try {
+    const { bill_id, return_type, returned_items, reason, refund_mode } = req.body;
+
+    if (!bill_id) {
+      return res.status(400).json({ success: false, message: "bill_id is required" });
+    }
+
+    const cleanBillId = bill_id.trim();
+    const bill = await Bill.findOne({
+      $or: [
+        { bill_id: cleanBillId },
+        { bill_id: `BILL_${cleanBillId}` },
+        { bill_id: `BILL-${cleanBillId}` },
+        ...(cleanBillId.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: cleanBillId }] : []),
+      ],
+    });
+
+    if (!bill) {
+      return res.status(404).json({ success: false, message: `Bill with ID "${bill_id}" not found` });
+    }
+
+    if (bill.status === "returned") {
+      return res.status(400).json({ success: false, message: "This bill has already been fully returned and refunded" });
+    }
+
+    let refundAmount = 0;
+    const returnHistoryItems = [];
+    const stockRestorations = [];
+
+    if (return_type === "partial" && Array.isArray(returned_items) && returned_items.length > 0) {
+      for (const item of returned_items) {
+        const matchingBillItem = bill.items.find(
+          (i) => i.product_id === item.product_id || i.name === item.name
+        );
+        const qtyToReturn = Number(item.quantity) || 0;
+        const itemPrice = matchingBillItem ? matchingBillItem.price : (Number(item.price) || 0);
+
+        if (qtyToReturn > 0) {
+          const itemRefund = qtyToReturn * itemPrice;
+          refundAmount += itemRefund;
+
+          returnHistoryItems.push({
+            product_id: item.product_id,
+            name: item.name || (matchingBillItem ? matchingBillItem.name : "Item"),
+            quantity: qtyToReturn,
+            price: itemPrice,
+          });
+
+          if (matchingBillItem) {
+            matchingBillItem.returned_quantity = (matchingBillItem.returned_quantity || 0) + qtyToReturn;
+          }
+
+          if (item.product_id) {
+            stockRestorations.push({
+              updateOne: {
+                filter: { $or: [{ product_id: item.product_id }, { id: item.product_id }] },
+                update: { $inc: { stock: qtyToReturn } },
+              },
+            });
+          }
+        }
+      }
+    } else {
+      const remainingAmount = bill.total_amount - (bill.refunded_amount || 0);
+      refundAmount = remainingAmount > 0 ? remainingAmount : bill.total_amount;
+
+      for (const billItem of bill.items) {
+        const qtyToReturn = billItem.quantity - (billItem.returned_quantity || 0);
+        if (qtyToReturn > 0) {
+          returnHistoryItems.push({
+            product_id: billItem.product_id,
+            name: billItem.name,
+            quantity: qtyToReturn,
+            price: billItem.price,
+          });
+
+          billItem.returned_quantity = billItem.quantity;
+
+          if (billItem.product_id) {
+            stockRestorations.push({
+              updateOne: {
+                filter: { $or: [{ product_id: billItem.product_id }, { id: billItem.product_id }] },
+                update: { $inc: { stock: qtyToReturn } },
+              },
+            });
+          }
+        }
+      }
+    }
+
+    if (refundAmount <= 0) {
+      return res.status(400).json({ success: false, message: "No eligible refund amount calculated" });
+    }
+
+    const returnId = `RET_${Date.now()}`;
+    const newRefundedTotal = (bill.refunded_amount || 0) + refundAmount;
+    const isFullyReturned = newRefundedTotal >= bill.total_amount;
+
+    bill.refunded_amount = newRefundedTotal;
+    bill.status = isFullyReturned ? "returned" : "partially_returned";
+    bill.return_history = bill.return_history || [];
+    bill.return_history.push({
+      return_id: returnId,
+      amount: refundAmount,
+      reason: reason || "Customer Return",
+      items: returnHistoryItems,
+      refund_mode: refund_mode || bill.payment_mode || "cash",
+      timestamp: new Date(),
+    });
+
+    await bill.save();
+
+    if (stockRestorations.length > 0) {
+      try {
+        await Product.bulkWrite(stockRestorations);
+      } catch (stockErr) {
+        console.error("Stock restore error:", stockErr.message);
+      }
+    }
+
+    if (bill.customer_phone && bill.customer_phone.trim().length >= 10) {
+      try {
+        await Customer.findOneAndUpdate(
+          { phone: bill.customer_phone.trim() },
+          {
+            $inc: {
+              total_spent: -refundAmount,
+              ...(bill.payment_mode === "pending" ? { due_amount: -refundAmount } : {}),
+            },
+          }
+        );
+      } catch (_) {}
+    }
+
+    res.json({
+      success: true,
+      message: `Successfully processed return of ₹${refundAmount.toFixed(2)} for Bill ${bill.bill_id}`,
+      data: {
+        bill_id: bill.bill_id,
+        return_id: returnId,
+        refund_amount: refundAmount,
+        total_refunded: newRefundedTotal,
+        net_bill_amount: Math.max(0, bill.total_amount - newRefundedTotal),
+        status: bill.status,
+        returned_items: returnHistoryItems,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

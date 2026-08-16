@@ -6,6 +6,21 @@ const BillItemSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   quantity: { type: Number, required: true, default: 1 },
   unit: { type: String, default: "pcs" },
+  returned_quantity: { type: Number, default: 0 },
+});
+
+const ReturnHistorySchema = new mongoose.Schema({
+  return_id: { type: String, required: true },
+  amount: { type: Number, required: true },
+  reason: { type: String, default: "Customer Return" },
+  items: [{
+    product_id: { type: String },
+    name: { type: String },
+    quantity: { type: Number },
+    price: { type: Number },
+  }],
+  refund_mode: { type: String, default: "cash" },
+  timestamp: { type: Date, default: Date.now },
 });
 
 const BillSchema = new mongoose.Schema(
@@ -14,6 +29,7 @@ const BillSchema = new mongoose.Schema(
     bill_id: { type: String, required: true, unique: true, index: true },
     items: [BillItemSchema],
     total_amount: { type: Number, required: true, min: 0 },
+    refunded_amount: { type: Number, default: 0, min: 0 },
     payment_mode: {
       type: String,
       enum: ["cash", "upi", "ecoWallet", "pending"],
@@ -26,10 +42,11 @@ const BillSchema = new mongoose.Schema(
     khata_customer_id: { type: String, index: true },
     status: {
       type: String,
-      enum: ["completed", "pending", "failed", "cancelled"],
+      enum: ["completed", "pending", "failed", "cancelled", "returned", "partially_returned"],
       default: "completed",
       index: true,
     },
+    return_history: [ReturnHistorySchema],
     payment_id: { type: String, index: true },
     notes: { type: String },
   },

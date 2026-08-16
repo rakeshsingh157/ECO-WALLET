@@ -24,6 +24,7 @@ class AuthProvider extends ChangeNotifier {
   String get shopName => _shopName;
   String get ownerName => _ownerName;
   String get mobileNumber => _mobileNumber;
+  String get phone => _mobileNumber;
   String get securityPin => _securityPin;
   String get gstin => _gstin;
   String get address => _address;

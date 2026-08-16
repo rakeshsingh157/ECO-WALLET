@@ -6,13 +6,17 @@ import '../core/theme.dart';
 class ProductGridItem extends StatelessWidget {
   final Product product;
   final VoidCallback onAdd;
-  final int countInCart;
+  final VoidCallback? onLongPress;
+  final String? cartQuantityLabel;
+  final bool isInCart;
 
   const ProductGridItem({
     super.key,
     required this.product,
     required this.onAdd,
-    this.countInCart = 0,
+    this.onLongPress,
+    this.cartQuantityLabel,
+    this.isInCart = false,
   });
 
   IconData _getCategoryIcon(String category) {
@@ -41,15 +45,16 @@ class ProductGridItem extends StatelessWidget {
 
     return InkWell(
       onTap: isOutOfStock ? null : onAdd,
+      onLongPress: isOutOfStock ? null : onLongPress,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: countInCart > 0 ? AppColors.primaryContainer.withValues(alpha: 0.5) : AppColors.surface,
+          color: isInCart ? AppColors.primaryContainer.withAlpha(128) : AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: countInCart > 0 ? AppColors.terracotta : AppColors.borderSubtle,
-            width: countInCart > 0 ? 1.5 : 1,
+            color: isInCart ? AppColors.terracotta : AppColors.borderSubtle,
+            width: isInCart ? 1.5 : 1,
           ),
           boxShadow: const [
             BoxShadow(
@@ -78,7 +83,7 @@ class ProductGridItem extends StatelessWidget {
                     size: 18,
                   ),
                 ),
-                if (countInCart > 0)
+                if (isInCart && cartQuantityLabel != null)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
@@ -86,7 +91,7 @@ class ProductGridItem extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      'x$countInCart',
+                      cartQuantityLabel!,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
@@ -158,14 +163,14 @@ class ProductGridItem extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isOutOfStock
                         ? AppColors.surfaceElevated
-                        : (countInCart > 0 ? AppColors.terracotta : AppColors.primaryContainer),
+                        : (isInCart ? AppColors.terracotta : AppColors.primaryContainer),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     isOutOfStock ? Icons.block_rounded : Icons.add_rounded,
                     color: isOutOfStock
                         ? AppColors.textMuted
-                        : (countInCart > 0 ? Colors.white : AppColors.terracotta),
+                        : (isInCart ? Colors.white : AppColors.terracotta),
                     size: 16,
                   ),
                 ),

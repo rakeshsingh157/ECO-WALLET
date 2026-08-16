@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../core/theme.dart';
 import '../../core/localization.dart';
+import '../../core/pdf_invoice_service.dart';
 import '../../models/bill.dart';
+import '../../providers/auth_provider.dart';
 import '../main_shell.dart';
 import 'pos_screen.dart';
 
@@ -14,29 +16,10 @@ class BillSuccessScreen extends StatelessWidget {
 
   const BillSuccessScreen({super.key, required this.bill});
 
-  void _shareReceipt(BuildContext context) {
-    final buffer = StringBuffer();
-    buffer.writeln('==============================');
-    buffer.writeln('      DUKAAN DOST INVOICE     ');
-    buffer.writeln('==============================');
-    buffer.writeln('Invoice ID: #${bill.id}');
-    buffer.writeln('Date: ${DateFormat('dd MMM yyyy, hh:mm a').format(bill.timestamp)}');
-    buffer.writeln('Customer: ${bill.customerName ?? 'Counter Customer'}');
-    buffer.writeln('Payment: ${bill.paymentMode.name.toUpperCase()}');
-    buffer.writeln('------------------------------');
-    for (final item in bill.items) {
-      buffer.writeln('${item.product.name} x${item.quantity} = ₹${item.totalPrice.toStringAsFixed(0)}');
-    }
-    buffer.writeln('------------------------------');
-    buffer.writeln('GRAND TOTAL: ₹${bill.totalAmount.toStringAsFixed(0)}');
-    buffer.writeln('==============================');
-    buffer.writeln('Thank you for shopping with us!');
-
-    Share.share(buffer.toString(), subject: 'Invoice #${bill.id}');
-  }
-
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -52,70 +35,115 @@ class BillSuccessScreen extends StatelessWidget {
         body: SafeArea(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-                const SizedBox(height: 10),
-                Image.asset(MascotAssets.receipt, width: 80, height: 80),
-                const SizedBox(height: 12),
+                const SizedBox(height: 20),
+
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: AppColors.forestMint.withAlpha(30),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: AppColors.forestMint,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 36,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
 
                 Text(
-                  context.tr('bill_success').toUpperCase(),
-                  textAlign: TextAlign.center,
+                  context.tr('payment_successful'),
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.forestMint,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Bill generated and inventory updated',
-                  style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
+                  '₹${bill.totalAmount.toStringAsFixed(2)} received via ${bill.paymentMode.name.toUpperCase()}',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
                 Container(
-                  width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: AppColors.borderSubtle),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x06000000),
+                        blurRadius: 12,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'TAX INVOICE',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.5,
-                          color: AppColors.terracotta,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'INVOICE RECEIPT',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.2,
+                              color: AppColors.terracotta,
+                            ),
+                          ),
+                          Text(
+                            '#${bill.id}',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '#${bill.id.substring(0, bill.id.length > 8 ? 8 : bill.id.length).toUpperCase()}',
-                        style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
-                      ),
-                      Text(
-                        DateFormat('dd MMM yyyy • hh:mm a').format(bill.timestamp),
-                        style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
-                      ),
-
                       const SizedBox(height: 14),
-                      Divider(color: AppColors.borderSubtle),
-                      const SizedBox(height: 10),
 
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Date & Time', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
+                          Text(
+                            DateFormat('dd MMM yyyy, hh:mm a').format(bill.timestamp),
+                            style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('Customer', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
                           Text(
                             bill.customerName ?? 'Counter Customer',
-                            style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                            style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                           ),
                         ],
                       ),
@@ -150,12 +178,12 @@ class BillSuccessScreen extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  '${item.product.name} (x${item.quantity})',
+                                  '${item.product.name} (x${item.formattedQuantity})',
                                   style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textPrimary),
                                 ),
                               ),
                               Text(
-                                '₹${item.totalPrice.toStringAsFixed(0)}',
+                                '₹${item.totalPrice.toStringAsFixed(2)}',
                                 style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                               ),
                             ],
@@ -171,12 +199,20 @@ class BillSuccessScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            context.tr('grand_total').toUpperCase(),
-                            style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                            'Grand Total',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
                           Text(
-                            NumberFormat.currency(locale: 'en_IN', symbol: '₹').format(bill.totalAmount),
-                            style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.terracotta),
+                            '₹${bill.totalAmount.toStringAsFixed(2)}',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.terracotta,
+                            ),
                           ),
                         ],
                       ),
@@ -184,18 +220,27 @@ class BillSuccessScreen extends StatelessWidget {
                       const SizedBox(height: 16),
 
                       Center(
-                        child: QrImageView(
-                          data: 'INVOICE:${bill.id}|AMT:${bill.totalAmount}',
-                          version: QrVersions.auto,
-                          size: 90.0,
-                          dataModuleStyle: QrDataModuleStyle(
-                            dataModuleShape: QrDataModuleShape.square,
-                            color: AppColors.textPrimary,
-                          ),
-                          eyeStyle: QrEyeStyle(
-                            eyeShape: QrEyeShape.square,
-                            color: AppColors.textPrimary,
-                          ),
+                        child: Column(
+                          children: [
+                            QrImageView(
+                              data: 'INVOICE:${bill.id}|AMT:${bill.totalAmount}',
+                              version: QrVersions.auto,
+                              size: 90.0,
+                              dataModuleStyle: QrDataModuleStyle(
+                                dataModuleShape: QrDataModuleShape.square,
+                                color: AppColors.textPrimary,
+                              ),
+                              eyeStyle: QrEyeStyle(
+                                eyeShape: QrEyeShape.square,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Scan to verify tax invoice',
+                              style: GoogleFonts.plusJakartaSans(fontSize: 9, color: AppColors.textMuted),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -208,10 +253,18 @@ class BillSuccessScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () => _shareReceipt(context),
+                        onPressed: () {
+                          PdfInvoiceService.sharePdfInvoice(
+                            context,
+                            bill,
+                            shopName: auth.shopName,
+                            ownerName: auth.ownerName,
+                            phone: auth.phone,
+                          );
+                        },
                         icon: Icon(Icons.share_rounded, color: AppColors.terracotta, size: 18),
                         label: Text(
-                          context.tr('share_whatsapp'),
+                          'Share PDF',
                           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.terracotta),
                         ),
                         style: OutlinedButton.styleFrom(
@@ -225,15 +278,16 @@ class BillSuccessScreen extends StatelessWidget {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Receipt sent to default thermal printer'),
-                              backgroundColor: AppColors.success,
-                            ),
+                          PdfInvoiceService.printOrShareInvoice(
+                            context,
+                            bill,
+                            shopName: auth.shopName,
+                            ownerName: auth.ownerName,
+                            phone: auth.phone,
                           );
                         },
-                        icon: const Icon(Icons.print_rounded, size: 18),
-                        label: Text(context.tr('print_receipt')),
+                        icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
+                        label: const Text('Download PDF'),
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 48),
                           backgroundColor: AppColors.forestMint,
@@ -259,12 +313,12 @@ class BillSuccessScreen extends StatelessWidget {
                         },
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 48),
-                          side: BorderSide(color: AppColors.borderStrong),
+                          side: BorderSide(color: AppColors.borderSubtle),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         child: Text(
                           context.tr('home'),
-                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textSecondary),
                         ),
                       ),
                     ),
@@ -272,7 +326,11 @@ class BillSuccessScreen extends StatelessWidget {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.of(context).pushReplacement(
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (_) => const MainShell()),
+                            (route) => false,
+                          );
+                          Navigator.of(context).push(
                             MaterialPageRoute(builder: (_) => const PosScreen()),
                           );
                         },
@@ -283,14 +341,13 @@ class BillSuccessScreen extends StatelessWidget {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         child: Text(
-                          context.tr('new_bill'),
-                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+                          context.tr('next_bill'),
+                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
               ],
             ),
           ),

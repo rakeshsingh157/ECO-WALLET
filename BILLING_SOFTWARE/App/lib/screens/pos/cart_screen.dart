@@ -88,6 +88,7 @@ class CartScreen extends StatelessWidget {
                       item: item,
                       onAdd: () => billProvider.addItem(item.product),
                       onRemove: () => billProvider.removeItem(item.product),
+                      onQtyChanged: (newQty) => billProvider.setItemQuantity(item.product, newQty),
                     ),
                   ),
 

@@ -9,6 +9,7 @@ import '../../providers/bill_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/product_grid_item.dart';
 import '../../widgets/camera_scanner_modal.dart';
+import '../../widgets/quantity_selector_modal.dart';
 import '../inventory/add_product_screen.dart';
 import 'cart_screen.dart';
 
@@ -471,12 +472,39 @@ class _PosScreenState extends State<PosScreen> {
                       final cartItemIndex = billProvider.currentItems.indexWhere(
                         (item) => item.product.id == product.id,
                       );
-                      final countInCart = cartItemIndex >= 0 ? billProvider.currentItems[cartItemIndex].quantity : 0;
+                      final cartItem = cartItemIndex >= 0 ? billProvider.currentItems[cartItemIndex] : null;
+                      final isInCart = cartItem != null;
+                      final cartQuantityLabel = cartItem != null ? 'x${cartItem.formattedQuantity}' : null;
+                      final isFractional = ['kg', 'g', 'gm', 'gram', 'ltr', 'l', 'liter', 'ml'].contains(product.unit.toLowerCase().trim());
 
                       return ProductGridItem(
                         product: product,
-                        countInCart: countInCart,
-                        onAdd: () => billProvider.addItem(product),
+                        isInCart: isInCart,
+                        cartQuantityLabel: cartQuantityLabel,
+                        onAdd: () {
+                          if (isFractional) {
+                            QuantitySelectorModal.show(
+                              context,
+                              product: product,
+                              initialQuantity: cartItem?.quantity ?? 1.0,
+                              onConfirmed: (newQty) {
+                                billProvider.setItemQuantity(product, newQty);
+                              },
+                            );
+                          } else {
+                            billProvider.addItem(product);
+                          }
+                        },
+                        onLongPress: () {
+                          QuantitySelectorModal.show(
+                            context,
+                            product: product,
+                            initialQuantity: cartItem?.quantity ?? 1.0,
+                            onConfirmed: (newQty) {
+                              billProvider.setItemQuantity(product, newQty);
+                            },
+                          );
+                        },
                       );
                     },
                   ),
