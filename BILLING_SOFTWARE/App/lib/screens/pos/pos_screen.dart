@@ -33,6 +33,21 @@ class _PosScreenState extends State<PosScreen> {
       facing: CameraFacing.back,
       torchEnabled: false,
       autoStart: true,
+      formats: const [
+        BarcodeFormat.ean13,
+        BarcodeFormat.ean8,
+        BarcodeFormat.upcA,
+        BarcodeFormat.upcE,
+        BarcodeFormat.code128,
+        BarcodeFormat.code39,
+        BarcodeFormat.code93,
+        BarcodeFormat.codabar,
+        BarcodeFormat.itf,
+        BarcodeFormat.qrCode,
+        BarcodeFormat.dataMatrix,
+        BarcodeFormat.pdf417,
+        BarcodeFormat.aztec,
+      ],
     );
 
     String? lastScannedCode;
@@ -228,8 +243,8 @@ class _PosScreenState extends State<PosScreen> {
                       ),
 
                       Container(
-                        width: 250,
-                        height: 250,
+                        width: 300,
+                        height: 200,
                         decoration: BoxDecoration(
                           border: Border.all(color: AppColors.terracotta, width: 2.5),
                           borderRadius: BorderRadius.circular(16),

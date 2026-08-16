@@ -12,7 +12,7 @@ class CameraScannerModal extends StatefulWidget {
   const CameraScannerModal({
     super.key,
     required this.title,
-    this.subtitle = 'Align code within the frame to scan',
+    this.subtitle = 'Align barcode or QR code within the frame to scan',
     required this.onScanned,
     this.continuous = false,
   });
@@ -20,7 +20,7 @@ class CameraScannerModal extends StatefulWidget {
   static Future<String?> show(
     BuildContext context, {
     required String title,
-    String subtitle = 'Align code within the frame to scan',
+    String subtitle = 'Align barcode or QR code within the frame to scan',
   }) async {
     String? scannedResult;
     await showModalBottomSheet(
@@ -47,30 +47,52 @@ class CameraScannerModal extends StatefulWidget {
   State<CameraScannerModal> createState() => _CameraScannerModalState();
 }
 
-class _CameraScannerModalState extends State<CameraScannerModal> {
+class _CameraScannerModalState extends State<CameraScannerModal> with SingleTickerProviderStateMixin {
   late MobileScannerController _controller;
+  late AnimationController _animController;
   bool _torchOn = false;
 
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+
     _controller = MobileScannerController(
       detectionSpeed: DetectionSpeed.noDuplicates,
       facing: CameraFacing.back,
       torchEnabled: false,
       autoStart: true,
+      formats: const [
+        BarcodeFormat.ean13,
+        BarcodeFormat.ean8,
+        BarcodeFormat.upcA,
+        BarcodeFormat.upcE,
+        BarcodeFormat.code128,
+        BarcodeFormat.code39,
+        BarcodeFormat.code93,
+        BarcodeFormat.codabar,
+        BarcodeFormat.itf,
+        BarcodeFormat.qrCode,
+        BarcodeFormat.dataMatrix,
+        BarcodeFormat.pdf417,
+        BarcodeFormat.aztec,
+      ],
     );
   }
 
   @override
   void dispose() {
+    _animController.dispose();
     _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.height * 0.80;
+    final height = MediaQuery.of(context).size.height * 0.82;
 
     return SizedBox(
       height: height,
@@ -96,6 +118,7 @@ class _CameraScannerModalState extends State<CameraScannerModal> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         widget.subtitle,
                         style: GoogleFonts.plusJakartaSans(
@@ -132,6 +155,33 @@ class _CameraScannerModalState extends State<CameraScannerModal> {
             ),
           ),
 
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            margin: const EdgeInsets.only(bottom: 10),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white24),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.qr_code_2_rounded, size: 16, color: AppColors.terracotta),
+                const SizedBox(width: 6),
+                Text(
+                  'Auto-detects Barcodes & QR Codes',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(Icons.view_week_rounded, size: 16, color: AppColors.success),
+              ],
+            ),
+          ),
+
           Expanded(
             child: Stack(
               alignment: Alignment.center,
@@ -157,7 +207,7 @@ class _CameraScannerModalState extends State<CameraScannerModal> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Please enable Camera permission for Dukaan Dost in your phone settings.',
+                              'Please enable Camera permission in device settings to scan.',
                               textAlign: TextAlign.center,
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 13,
@@ -197,11 +247,46 @@ class _CameraScannerModalState extends State<CameraScannerModal> {
                 ),
 
                 Container(
-                  width: 250,
-                  height: 250,
+                  width: 300,
+                  height: 220,
                   decoration: BoxDecoration(
                     border: Border.all(color: AppColors.terracotta, width: 2.5),
                     borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Stack(
+                    children: [
+                      AnimatedBuilder(
+                        animation: _animController,
+                        builder: (context, child) {
+                          return Positioned(
+                            top: _animController.value * 200,
+                            left: 10,
+                            right: 10,
+                            child: Container(
+                              height: 2.5,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColors.terracotta.withOpacity(0.1),
+                                    AppColors.terracotta,
+                                    AppColors.chaiGold,
+                                    AppColors.terracotta,
+                                    AppColors.terracotta.withOpacity(0.1),
+                                  ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.terracotta.withOpacity(0.6),
+                                    blurRadius: 8,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ],
