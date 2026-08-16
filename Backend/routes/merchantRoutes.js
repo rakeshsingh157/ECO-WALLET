@@ -423,23 +423,51 @@ router.post(
         return res.status(400).json({ success: false, message: "Cannot pay your own merchant account" });
       }
 
-      // 3. Begin atomic transaction
       const session = await mongoose.startSession();
       session.startTransaction();
 
       try {
+        const claimPayment = await MerchantPayment.findOneAndUpdate(
+          {
+            payment_id,
+            status: "pending",
+            expires_at: { $gt: new Date() },
+          },
+          {
+            $set: {
+              status: "processing",
+              payer_id: customer_id,
+              payer_name: req.user.name,
+              updatedAt: new Date(),
+            },
+          },
+          { session, new: true }
+        );
+
+        if (!claimPayment) {
+          const currentCheck = await MerchantPayment.findOne({ payment_id });
+          if (currentCheck && currentCheck.status === "completed") {
+            throw {
+              status: 409,
+              message: "This payment QR has already been completed by another user. Payment blocked.",
+            };
+          }
+          throw {
+            status: 410,
+            message: "This payment QR has expired or is invalid. Please request a new QR from the merchant.",
+          };
+        }
+
         const customer = await User.findOne({ user_id: customer_id }).session(session);
         const merchantUser = await User.findOne({ user_id: merchant.user_id }).session(session);
 
         if (!customer) throw { status: 404, message: "Customer account not found" };
         if (!merchantUser) throw { status: 404, message: "Merchant account not found" };
 
-        // Check balance
         if (customer.balance < payment.amount) {
-          throw { status: 400, message: "Insufficient balance" };
+          throw { status: 400, message: "Insufficient balance in ECO Wallet" };
         }
 
-        // Verify PIN if set
         if (customer.pin && req.body.pin) {
           const pinMatch = await customer.matchPin(req.body.pin);
           if (!pinMatch) throw { status: 401, message: "Invalid payment PIN" };
@@ -447,7 +475,6 @@ router.post(
           throw { status: 400, message: "Payment PIN required" };
         }
 
-        // Atomic debit customer (with optimistic concurrency)
         const debit = await User.findOneAndUpdate(
           { user_id: customer_id, version: customer.version },
           {
@@ -458,10 +485,9 @@ router.post(
         );
 
         if (!debit) {
-          throw { status: 409, message: "Transaction conflict — please retry" };
+          throw { status: 409, message: "Concurrent transaction conflict — please retry" };
         }
 
-        // Credit merchant
         await User.findOneAndUpdate(
           { user_id: merchant.user_id },
           {
@@ -471,7 +497,6 @@ router.post(
           { session }
         );
 
-        // Create Transaction record
         const txn_id = generateTransactionId();
         await Transaction.create(
           [
@@ -491,9 +516,8 @@ router.post(
           { session }
         );
 
-        // Update MerchantPayment
         await MerchantPayment.findOneAndUpdate(
-          { payment_id, status: "pending" },
+          { payment_id, status: "processing" },
           {
             $set: {
               status: "completed",
@@ -506,7 +530,6 @@ router.post(
           { session }
         );
 
-        // Update merchant stats
         await Merchant.findOneAndUpdate(
           { merchant_id: merchant.merchant_id },
           {
@@ -530,14 +553,14 @@ router.post(
         await notify(
           customer_id,
           "transaction",
-          "Payment Successful ✅",
+          "Payment Successful ",
           `You paid ${payment.amount} ECO to ${merchant.business_name}`,
           { transaction_id: txn_id, payment_id }
         );
         await notify(
           merchant.user_id,
           "transaction",
-          "Payment Received 🎉",
+          "Payment Received ",
           `${customer.name} paid ${payment.amount} ECO (Order: ${payment.order_id})`,
           { transaction_id: txn_id, payment_id }
         );
