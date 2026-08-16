@@ -181,6 +181,12 @@ class ApiService {
     String? customerName,
     String? customerPhone,
     String? khataCustomerId,
+    String? shopName,
+    String? ownerName,
+    String? shopPhone,
+    String? shopAddress,
+    String? shopGstin,
+    String? merchantId,
   }) async {
     final url = Uri.parse("$_cleanBase/bills");
     try {
@@ -189,6 +195,12 @@ class ApiService {
         headers: _headers,
         body: jsonEncode({
           "bill_id": billId,
+          "merchant_id": merchantId,
+          "shop_name": shopName,
+          "owner_name": ownerName,
+          "shop_phone": shopPhone,
+          "shop_address": shopAddress,
+          "shop_gstin": shopGstin,
           "items": items.map((item) => {
             "product_id": item.product.id,
             "name": item.product.name,

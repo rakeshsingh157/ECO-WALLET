@@ -206,7 +206,19 @@ class SaleDetailsScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         QrImageView(
-                          data: '${auth.baseUrl.replaceAll(RegExp(r'/api/?$'), '')}/invoice/${bill.id}',
+                          data: '${auth.baseUrl.replaceAll(RegExp(r'/api/?$'), '')}/invoice/${bill.id}${Uri(queryParameters: {
+                            if (auth.shopName.isNotEmpty) 'shop_name': auth.shopName,
+                            if (auth.ownerName.isNotEmpty) 'owner_name': auth.ownerName,
+                            if (auth.phone.isNotEmpty) 'phone': auth.phone,
+                            if (auth.address.isNotEmpty) 'address': auth.address,
+                            if (auth.gstin.isNotEmpty) 'gstin': auth.gstin,
+                          }).query.isNotEmpty ? '?${Uri(queryParameters: {
+                            if (auth.shopName.isNotEmpty) 'shop_name': auth.shopName,
+                            if (auth.ownerName.isNotEmpty) 'owner_name': auth.ownerName,
+                            if (auth.phone.isNotEmpty) 'phone': auth.phone,
+                            if (auth.address.isNotEmpty) 'address': auth.address,
+                            if (auth.gstin.isNotEmpty) 'gstin': auth.gstin,
+                          }).query}' : ''}',
                           version: QrVersions.auto,
                           size: 110.0,
                           dataModuleStyle: QrDataModuleStyle(

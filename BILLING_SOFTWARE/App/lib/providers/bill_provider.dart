@@ -225,7 +225,16 @@ class BillProvider extends ChangeNotifier {
     });
   }
 
-  void startStatusPolling(ApiService apiService, {Function(Bill)? onSuccess}) {
+  void startStatusPolling(
+    ApiService apiService, {
+    Function(Bill)? onSuccess,
+    String? shopName,
+    String? ownerName,
+    String? phone,
+    String? address,
+    String? gstin,
+    String? merchantId,
+  }) {
     _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
       if (_activePaymentId == null) {
@@ -269,6 +278,12 @@ class BillProvider extends ChangeNotifier {
               totalAmount: newBill.totalAmount,
               paymentMode: "ecoWallet",
               customerName: newBill.customerName,
+              shopName: shopName,
+              ownerName: ownerName,
+              shopPhone: phone,
+              shopAddress: address,
+              shopGstin: gstin,
+              merchantId: merchantId,
             );
 
             clearCart();
@@ -294,7 +309,17 @@ class BillProvider extends ChangeNotifier {
     _isCheckingStatus = false;
   }
 
-  Bill completeManualBill(PaymentMode mode, {String? customerName, ApiService? apiService}) {
+  Bill completeManualBill(
+    PaymentMode mode, {
+    String? customerName,
+    ApiService? apiService,
+    String? shopName,
+    String? ownerName,
+    String? phone,
+    String? address,
+    String? gstin,
+    String? merchantId,
+  }) {
     final newBill = Bill(
       billId: "BILL-${DateTime.now().millisecondsSinceEpoch}",
       items: List.from(_currentItems),
@@ -318,6 +343,12 @@ class BillProvider extends ChangeNotifier {
         totalAmount: newBill.totalAmount,
         paymentMode: mode.name,
         customerName: newBill.customerName,
+        shopName: shopName,
+        ownerName: ownerName,
+        shopPhone: phone,
+        shopAddress: address,
+        shopGstin: gstin,
+        merchantId: merchantId,
       );
     }
 

@@ -763,12 +763,16 @@ router.get("/invoice/:bill_id", async (req, res) => {
 
     let merchant = null;
     if (payment && payment.merchant_id) {
-      merchant = await Merchant.findOne({ merchant_id: payment.merchant_id }).lean();
+      merchant = await Merchant.findOne({
+        $or: [{ merchant_id: payment.merchant_id }, { user_id: payment.merchant_id }]
+      }).lean();
     }
 
-    const shopName = merchant ? merchant.business_name : "Dukaan Dost Retail Store";
-    const shopPhone = merchant ? merchant.mobile_number : "+91 98765 43210";
-    const shopAddress = merchant && merchant.address ? merchant.address : "Market Area, Main Road, India";
+    const shopName = req.query.shop_name || (payment && payment.shop_name) || (merchant ? merchant.business_name : "Dukaan Dost Retail Store");
+    const ownerName = req.query.owner_name || (payment && payment.owner_name) || (merchant ? merchant.owner_name : "");
+    const shopPhone = req.query.phone || req.query.shop_phone || (payment && payment.shop_phone) || (merchant ? merchant.mobile_number : "+91 98765 43210");
+    const shopAddress = req.query.address || req.query.shop_address || (payment && payment.shop_address) || (merchant && merchant.address ? merchant.address : "Market Area, Main Road, India");
+    const shopGstin = req.query.gstin || req.query.shop_gstin || (payment && payment.shop_gstin) || (merchant && merchant.gstin ? merchant.gstin : "");
     const amount = payment ? payment.amount : 0;
     const orderId = payment ? payment.order_id : cleanBillId;
     const payerName = payment ? (payment.payer_name || "Counter Customer") : "Valued Customer";
@@ -785,27 +789,25 @@ router.get("/invoice/:bill_id", async (req, res) => {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     * { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0A0E1A; color: #F8FAFC; margin: 0; padding: 16px; display: flex; flex-direction: column; align-items: center; }
-    .container { max-width: 480px; width: 100%; margin: 10px auto; }
-    .actions { display: flex; gap: 10px; margin-bottom: 16px; width: 100%; max-width: 480px; }
-    .btn { flex: 1; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 14px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
-    .btn-download { background: #E8592A; color: #FFFFFF; }
-    .btn-print { background: #1E293B; color: #F8FAFC; border: 1px solid #334155; }
-    .card { background: #111827; border: 1px solid #1F2937; border-radius: 20px; padding: 24px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
-    .header { border-bottom: 1px solid #1F2937; padding-bottom: 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; }
-    .title { font-size: 20px; font-weight: 800; color: #E8592A; margin: 0 0 4px 0; }
-    .badge { background: #065F46; color: #6EE7B7; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 8px; display: inline-block; }
-    .row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px; color: #9CA3AF; }
-    .val { font-weight: 600; color: #F9FAFB; }
-    .total-box { background: #1F2937; border: 1px solid #374151; border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; margin: 18px 0; }
-    .total-num { font-size: 24px; font-weight: 800; color: #E8592A; }
-    .footer { text-align: center; font-size: 11px; color: #6B7280; border-top: 1px solid #1F2937; padding-top: 14px; margin-top: 14px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #F3F4F6; color: #111827; margin: 0; padding: 16px; display: flex; flex-direction: column; align-items: center; }
+    .container { max-width: 540px; width: 100%; margin: 10px auto; }
+    .actions { display: flex; gap: 10px; margin-bottom: 16px; width: 100%; max-width: 540px; }
+    .btn { flex: 1; padding: 14px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+    .btn-download { background: #111827; color: #FFFFFF; border: 1px solid #000000; }
+    .btn-print { background: #FFFFFF; color: #111827; border: 1px solid #D1D5DB; }
+    .card { background: #FFFFFF; border: 2px solid #000000; border-radius: 12px; padding: 24px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+    .tax-header { text-align: center; border-bottom: 2px solid #000000; padding-bottom: 12px; margin-bottom: 16px; }
+    .tax-title { font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #000000; margin-bottom: 4px; }
+    .title { font-size: 22px; font-weight: 900; color: #000000; margin: 0 0 4px 0; }
+    .info-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #000000; }
+    .info-table td { padding: 8px 10px; font-size: 12px; border: 1px solid #000000; }
+    .total-box { border: 2px solid #000000; border-radius: 8px; padding: 14px; display: flex; justify-content: space-between; align-items: center; margin: 16px 0; background: #F9FAFB; }
+    .total-num { font-size: 22px; font-weight: 900; color: #000000; }
+    .footer { text-align: center; font-size: 11px; color: #4B5563; border-top: 1px dashed #9CA3AF; padding-top: 12px; margin-top: 14px; }
     @media print {
       body { background: #FFF; color: #000; padding: 0; }
       .actions { display: none !important; }
-      .card { background: #FFF; color: #000; border: none; box-shadow: none; padding: 0; }
-      .title, .val, .total-num { color: #000 !important; }
-      .total-box { background: #F3F4F6; }
+      .card { border: none; box-shadow: none; padding: 0; }
     }
   </style>
 </head>
@@ -820,28 +822,33 @@ router.get("/invoice/:bill_id", async (req, res) => {
     </div>
 
     <div class="card" id="invoice-capture">
-      <div class="header">
-        <div>
-          <h1 class="title">${shopName}</h1>
-          <div style="font-size: 11px; color: #9CA3AF;">${shopAddress} • Ph: ${shopPhone}</div>
-        </div>
-        <div style="text-align: right;">
-          <div class="badge">${statusStr}</div>
-          <div style="font-size: 11px; color: #9CA3AF; margin-top: 4px; font-weight: 700;">#${orderId}</div>
-        </div>
+      <div class="tax-header">
+        <div class="tax-title">RETAIL TAX INVOICE / CASH MEMO</div>
+        <h1 class="title">${shopName}</h1>
+        ${ownerName ? `<div style="font-size: 12px; font-weight: 700; color: #111827;">Proprietor: ${ownerName}</div>` : ""}
+        <div style="font-size: 12px; color: #374151;">${shopAddress}</div>
+        <div style="font-size: 12px; color: #374151;">Contact: ${shopPhone}${shopGstin ? ` | GSTIN: ${shopGstin}` : ""}</div>
       </div>
-      <div class="row"><span>Customer:</span><span class="val">${payerName}</span></div>
-      <div class="row"><span>Date & Time:</span><span class="val">${dateStr}</span></div>
-      <div class="row"><span>Payment Method:</span><span class="val">ECO-WALLET</span></div>
+
+      <table class="info-table">
+        <tr>
+          <td><strong>Invoice #:</strong> #${orderId}</td>
+          <td><strong>Date:</strong> ${dateStr}</td>
+        </tr>
+        <tr>
+          <td><strong>Customer:</strong> ${payerName}</td>
+          <td><strong>Payment Mode:</strong> ECO-WALLET (${statusStr})</td>
+        </tr>
+      </table>
       
       <div class="total-box">
-        <span style="font-size: 13px; font-weight: 700; color: #9CA3AF;">TOTAL PAID</span>
+        <span style="font-size: 14px; font-weight: 800; color: #000000;">TOTAL AMOUNT PAID</span>
         <span class="total-num">₹${Number(amount).toFixed(2)}</span>
       </div>
 
       <div class="footer">
-        <p style="margin: 0 0 4px 0; color: #9CA3AF;">Thank you for shopping with us!</p>
-        <div>Powered by Dukaan Dost Smart Billing</div>
+        <div style="font-weight: 700; color: #111827; margin-bottom: 2px;">Thank you for your business!</div>
+        <div>Computer generated receipt • Dukaan Dost Smart Billing</div>
       </div>
     </div>
   </div>
@@ -850,10 +857,10 @@ router.get("/invoice/:bill_id", async (req, res) => {
     function downloadPdf() {
       const element = document.getElementById('invoice-capture');
       const opt = {
-        margin: 10,
+        margin: [10, 10, 10, 10],
         filename: 'Invoice_${orderId}.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
+        image: { type: 'jpeg', quality: 1.0 },
+        html2canvas: { scale: 3, useCORS: true, backgroundColor: '#FFFFFF' },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
       html2pdf().set(opt).from(element).save();
@@ -861,7 +868,7 @@ router.get("/invoice/:bill_id", async (req, res) => {
   </script>
 </body>
 </html>
-    `;
+`;
 
     res.setHeader("Content-Type", "text/html");
     res.send(htmlContent);

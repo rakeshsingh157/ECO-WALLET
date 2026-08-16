@@ -489,10 +489,11 @@ async function renderInvoiceHtml(req, res) {
       });
     }
 
-    const shopName = req.query.shop_name || (merchant ? merchant.business_name : "Dukaan Dost Retail Store");
-    const shopPhone = merchant ? (merchant.mobile_number || merchant.phone) : "+91 98765 43210";
-    const shopAddress = merchant && merchant.address ? merchant.address : "Market Area, Main Road, India";
-    const shopGstin = merchant && merchant.gstin ? merchant.gstin : "";
+    const shopName = req.query.shop_name || (bill && bill.shop_name) || (merchant ? merchant.business_name : "Dukaan Dost Retail Store");
+    const ownerName = req.query.owner_name || (bill && bill.owner_name) || (merchant ? merchant.owner_name : "");
+    const shopPhone = req.query.phone || req.query.shop_phone || (bill && bill.shop_phone) || (merchant ? (merchant.mobile_number || merchant.phone) : "+91 98765 43210");
+    const shopAddress = req.query.address || req.query.shop_address || (bill && bill.shop_address) || (merchant && merchant.address ? merchant.address : "Market Area, Main Road, India");
+    const shopGstin = req.query.gstin || req.query.shop_gstin || (bill && bill.shop_gstin) || (merchant && merchant.gstin ? merchant.gstin : "");
     const totalAmount = bill ? bill.total_amount : 0;
     const refundedAmount = bill && bill.refunded_amount ? bill.refunded_amount : 0;
     const netAmount = Math.max(0, totalAmount - refundedAmount);
@@ -514,17 +515,20 @@ async function renderInvoiceHtml(req, res) {
           displayQty = `${item.quantity} ${item.unit || "pcs"}`;
         }
         return `
-        <tr style="border-bottom: 1px solid #334155;">
-          <td style="padding: 10px 4px; color: #94A3B8; font-size: 11px;">${idx + 1}</td>
-          <td style="padding: 10px 8px; color: #F8FAFC; font-weight: 600;">${item.name}</td>
-          <td style="padding: 10px 8px; text-align: center; color: #CBD5E1; font-weight: 500;">${displayQty}</td>
-          <td style="padding: 10px 8px; text-align: right; color: #94A3B8;">₹${Number(item.price).toFixed(2)}</td>
-          <td style="padding: 10px 4px; text-align: right; color: #F8FAFC; font-weight: 700;">₹${(item.price * item.quantity).toFixed(2)}</td>
+        <tr style="border-bottom: 1px solid #E5E7EB;">
+          <td style="padding: 10px 6px; color: #4B5563; font-size: 12px; text-align: center; border-right: 1px solid #E5E7EB;">${idx + 1}</td>
+          <td style="padding: 10px 8px; color: #111827; font-weight: 600; font-size: 13px; border-right: 1px solid #E5E7EB;">
+            ${item.name}
+            ${item.returned_quantity && item.returned_quantity > 0 ? `<div style="font-size: 10px; color: #DC2626; font-weight: 700;">Returned: ${item.returned_quantity} ${item.unit || 'pcs'}</div>` : ''}
+          </td>
+          <td style="padding: 10px 8px; text-align: center; color: #1F2937; font-weight: 600; font-size: 12px; border-right: 1px solid #E5E7EB;">${displayQty}</td>
+          <td style="padding: 10px 8px; text-align: right; color: #374151; font-size: 12px; border-right: 1px solid #E5E7EB;">₹${Number(item.price).toFixed(2)}</td>
+          <td style="padding: 10px 8px; text-align: right; color: #111827; font-weight: 700; font-size: 13px;">₹${(item.price * item.quantity).toFixed(2)}</td>
         </tr>
       `;
       }).join("");
     } else {
-      itemsHtml = `<tr><td colspan="5" style="padding: 14px 0; text-align: center; color: #94A3B8;">General Store Purchase</td></tr>`;
+      itemsHtml = `<tr><td colspan="5" style="padding: 16px 0; text-align: center; color: #4B5563; font-size: 13px;">General Store Purchase</td></tr>`;
     }
 
     res.send(`
@@ -537,36 +541,179 @@ async function renderInvoiceHtml(req, res) {
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
         <style>
           * { box-sizing: border-box; }
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #0A0E1A; color: #F8FAFC; padding: 16px; margin: 0; display: flex; flex-direction: column; align-items: center; }
-          .container { max-width: 520px; width: 100%; margin: 10px auto; }
-          .actions { display: flex; gap: 10px; margin-bottom: 16px; width: 100%; max-width: 520px; }
-          .btn { flex: 1; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 14px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: 0.2s; }
-          .btn-download { background: #E8592A; color: #FFFFFF; box-shadow: 0 4px 14px rgba(232, 89, 42, 0.4); }
-          .btn-download:hover { background: #D0481B; }
-          .btn-print { background: #1E293B; color: #F8FAFC; border: 1px solid #334155; }
-          .invoice-card { background: #111827; border-radius: 20px; padding: 24px; border: 1px solid #1F2937; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
-          .header { border-bottom: 1px solid #1F2937; padding-bottom: 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; }
-          .shop-title { font-size: 20px; font-weight: 800; color: #E8592A; margin: 0 0 4px 0; }
-          .shop-sub { font-size: 11px; color: #9CA3AF; line-height: 1.4; }
-          .badge { background: #065F46; color: #6EE7B7; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; display: inline-block; }
-          .badge-return { background: #7F1D1D; color: #FCA5A5; }
-          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; font-size: 12px; }
-          .info-label { color: #9CA3AF; font-size: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 2px; }
-          .info-val { color: #F9FAFB; font-weight: 600; }
-          .table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 12px; }
-          .table th { color: #9CA3AF; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #374151; padding: 8px 4px; }
-          .summary-box { background: #1F2937; border-radius: 12px; padding: 14px; margin-top: 16px; border: 1px solid #374151; }
-          .summary-row { display: flex; justify-content: space-between; font-size: 12px; color: #9CA3AF; margin-bottom: 6px; }
-          .summary-total { display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; color: #E8592A; margin-top: 8px; padding-top: 8px; border-top: 1px solid #374151; }
-          .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #6B7280; line-height: 1.5; border-top: 1px solid #1F2937; padding-top: 14px; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #F3F4F6;
+            color: #111827;
+            padding: 16px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+          .container {
+            max-width: 600px;
+            width: 100%;
+            margin: 10px auto;
+          }
+          .actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            width: 100%;
+            max-width: 600px;
+          }
+          .btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: 0.2s;
+          }
+          .btn-download {
+            background: #111827;
+            color: #FFFFFF;
+            border: 1px solid #000000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          }
+          .btn-download:hover {
+            background: #000000;
+          }
+          .btn-print {
+            background: #FFFFFF;
+            color: #111827;
+            border: 1px solid #D1D5DB;
+          }
+          .btn-print:hover {
+            background: #F9FAFB;
+          }
+          .invoice-card {
+            background: #FFFFFF;
+            color: #000000;
+            border-radius: 12px;
+            padding: 28px;
+            border: 2px solid #000000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+          }
+          .tax-header {
+            text-align: center;
+            border-bottom: 2px solid #000000;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+          }
+          .tax-title {
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #000000;
+            margin-bottom: 6px;
+          }
+          .shop-title {
+            font-size: 24px;
+            font-weight: 900;
+            color: #000000;
+            margin: 0 0 4px 0;
+            letter-spacing: -0.5px;
+          }
+          .shop-sub {
+            font-size: 12px;
+            color: #374151;
+            line-height: 1.4;
+          }
+          .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            border: 1px solid #000000;
+          }
+          .info-table td {
+            padding: 8px 10px;
+            font-size: 12px;
+            border: 1px solid #000000;
+          }
+          .info-label {
+            color: #4B5563;
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 2px;
+          }
+          .info-val {
+            color: #000000;
+            font-weight: 700;
+            font-size: 13px;
+          }
+          .item-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            border: 2px solid #000000;
+          }
+          .item-table th {
+            background: #000000;
+            color: #FFFFFF;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px 6px;
+            border: 1px solid #000000;
+          }
+          .summary-box {
+            border: 2px solid #000000;
+            padding: 14px;
+            margin-top: 16px;
+            background: #F9FAFB;
+          }
+          .summary-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #374151;
+            margin-bottom: 6px;
+          }
+          .summary-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 20px;
+            font-weight: 900;
+            color: #000000;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 2px solid #000000;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 11px;
+            color: #4B5563;
+            line-height: 1.5;
+            border-top: 1px dashed #9CA3AF;
+            padding-top: 14px;
+          }
           @media print {
-            body { background: #FFFFFF; color: #000000; padding: 0; }
-            .actions { display: none !important; }
-            .invoice-card { background: #FFFFFF; color: #000000; border: none; box-shadow: none; padding: 0; }
-            .shop-title { color: #000000; }
-            .info-val, .table td { color: #000000 !important; }
-            .summary-box { background: #F3F4F6; border: 1px solid #E5E7EB; }
-            .summary-total { color: #000000 !important; }
+            body {
+              background: #FFFFFF;
+              color: #000000;
+              padding: 0;
+            }
+            .actions {
+              display: none !important;
+            }
+            .invoice-card {
+              border: none;
+              box-shadow: none;
+              padding: 0;
+              border-radius: 0;
+            }
           }
         </style>
       </head>
@@ -584,39 +731,47 @@ async function renderInvoiceHtml(req, res) {
           </div>
 
           <div class="invoice-card" id="invoice-capture">
-            <div class="header">
-              <div>
-                <h1 class="shop-title">${shopName}</h1>
-                <div class="shop-sub">${shopAddress}</div>
-                <div class="shop-sub">Ph: ${shopPhone}${shopGstin ? ` • GSTIN: ${shopGstin}` : ""}</div>
-              </div>
-              <div style="text-align: right;">
-                <div class="badge ${refundedAmount > 0 ? 'badge-return' : ''}">
-                  ${refundedAmount >= totalAmount ? 'FULL RETURN' : (refundedAmount > 0 ? 'PARTIAL RETURN' : paymentMode)}
-                </div>
-                <div style="font-size: 11px; color: #9CA3AF; margin-top: 6px; font-weight: 700;">#${cleanBillId}</div>
-              </div>
+            <div class="tax-header">
+              <div class="tax-title">RETAIL TAX INVOICE / CASH MEMO</div>
+              <h1 class="shop-title">${shopName}</h1>
+              ${ownerName ? `<div class="shop-sub" style="font-weight: 700; color: #111827;">Proprietor: ${ownerName}</div>` : ""}
+              <div class="shop-sub">${shopAddress}</div>
+              <div class="shop-sub">Contact: ${shopPhone}${shopGstin ? ` | GSTIN: ${shopGstin}` : ""}</div>
             </div>
 
-            <div class="info-grid">
-              <div>
-                <div class="info-label">Customer</div>
-                <div class="info-val">${customerName}${customerPhone ? ` (${customerPhone})` : ""}</div>
-              </div>
-              <div style="text-align: right;">
-                <div class="info-label">Date & Time</div>
-                <div class="info-val">${dateStr}</div>
-              </div>
-            </div>
+            <table class="info-table">
+              <tr>
+                <td style="width: 50%;">
+                  <span class="info-label">Invoice / Bill Number</span>
+                  <span class="info-val">#${cleanBillId}</span>
+                </td>
+                <td style="width: 50%;">
+                  <span class="info-label">Date & Time</span>
+                  <span class="info-val">${dateStr}</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="info-label">Customer Details</span>
+                  <span class="info-val">${customerName}${customerPhone ? ` (${customerPhone})` : ""}</span>
+                </td>
+                <td>
+                  <span class="info-label">Payment Mode & Status</span>
+                  <span class="info-val">
+                    ${paymentMode} ${refundedAmount >= totalAmount ? '(100% REFUNDED)' : (refundedAmount > 0 ? `(PARTIALLY REFUNDED: ₹${refundedAmount.toFixed(2)})` : '(PAID)')}
+                  </span>
+                </td>
+              </tr>
+            </table>
 
-            <table class="table">
+            <table class="item-table">
               <thead>
                 <tr>
-                  <th style="text-align: left; width: 24px;">#</th>
-                  <th style="text-align: left;">Item</th>
-                  <th style="text-align: center;">Qty/Wt</th>
-                  <th style="text-align: right;">Rate</th>
-                  <th style="text-align: right;">Total</th>
+                  <th style="width: 32px; text-align: center;">#</th>
+                  <th style="text-align: left;">Item Description</th>
+                  <th style="width: 80px; text-align: center;">Qty / Wt</th>
+                  <th style="width: 80px; text-align: right;">Rate (₹)</th>
+                  <th style="width: 90px; text-align: right;">Amount (₹)</th>
                 </tr>
               </thead>
               <tbody>
@@ -626,28 +781,29 @@ async function renderInvoiceHtml(req, res) {
 
             <div class="summary-box">
               <div class="summary-row">
-                <span>Subtotal</span>
-                <span>₹${Number(totalAmount).toFixed(2)}</span>
+                <span>Total Items / Subtotal</span>
+                <span style="font-weight: 700; color: #111827;">₹${Number(totalAmount).toFixed(2)}</span>
               </div>
               <div class="summary-row">
                 <span>GST / Taxes</span>
                 <span>₹0.00 (Inclusive)</span>
               </div>
               ${refundedAmount > 0 ? `
-              <div class="summary-row" style="color: #F87171; font-weight: 700;">
-                <span>Total Refunded / Returned</span>
+              <div class="summary-row" style="color: #DC2626; font-weight: 700;">
+                <span>Returned / Refunded Amount</span>
                 <span>-₹${Number(refundedAmount).toFixed(2)}</span>
               </div>
               ` : ''}
               <div class="summary-total">
-                <span>GRAND TOTAL</span>
+                <span>NET AMOUNT PAYABLE</span>
                 <span>₹${Number(netAmount).toFixed(2)}</span>
               </div>
             </div>
 
             <div class="footer">
-              <p style="margin: 0 0 4px 0; color: #9CA3AF; font-weight: 600;">Thank you for shopping with us!</p>
-              <div>Powered by Dukaan Dost Smart Billing</div>
+              <div style="font-weight: 700; color: #111827; margin-bottom: 4px;">Thank you for your business!</div>
+              <div>This is a computer generated invoice and requires no physical signature.</div>
+              <div style="margin-top: 4px; font-size: 10px; color: #6B7280;">Dukaan Dost Smart Billing System</div>
             </div>
           </div>
         </div>
@@ -656,10 +812,10 @@ async function renderInvoiceHtml(req, res) {
           function downloadPdf() {
             const element = document.getElementById('invoice-capture');
             const opt = {
-              margin: 10,
+              margin: [10, 10, 10, 10],
               filename: 'Invoice_${cleanBillId}.pdf',
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true },
+              image: { type: 'jpeg', quality: 1.0 },
+              html2canvas: { scale: 3, useCORS: true, backgroundColor: '#FFFFFF' },
               jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             html2pdf().set(opt).from(element).save();

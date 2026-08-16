@@ -122,6 +122,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
     if (success && mounted) {
       billProvider.startStatusPolling(
         apiService,
+        shopName: auth.shopName,
+        ownerName: auth.ownerName,
+        phone: auth.phone,
+        address: auth.address,
+        gstin: auth.gstin,
+        merchantId: auth.merchantId,
         onSuccess: (completedBill) {
           if (mounted) {
             Navigator.pushReplacement(
@@ -165,6 +171,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
         PaymentMode.upi,
         customerName: _selectedCustomer?.name,
         apiService: apiService,
+        shopName: auth.shopName,
+        ownerName: auth.ownerName,
+        phone: auth.phone,
+        address: auth.address,
+        gstin: auth.gstin,
+        merchantId: auth.merchantId,
       );
       Navigator.pushReplacement(
         context,
@@ -178,6 +190,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
         PaymentMode.pending,
         customerName: _selectedCustomer != null ? '${_selectedCustomer!.name} (Khata)' : 'Khata Customer',
         apiService: apiService,
+        shopName: auth.shopName,
+        ownerName: auth.ownerName,
+        phone: auth.phone,
+        address: auth.address,
+        gstin: auth.gstin,
+        merchantId: auth.merchantId,
       );
       Navigator.pushReplacement(
         context,
@@ -188,6 +206,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
         _selectedMode,
         customerName: _selectedCustomer?.name,
         apiService: apiService,
+        shopName: auth.shopName,
+        ownerName: auth.ownerName,
+        phone: auth.phone,
+        address: auth.address,
+        gstin: auth.gstin,
+        merchantId: auth.merchantId,
       );
       Navigator.pushReplacement(
         context,

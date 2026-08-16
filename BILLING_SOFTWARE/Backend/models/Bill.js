@@ -39,6 +39,11 @@ const BillSchema = new mongoose.Schema(
     },
     customer_name: { type: String, trim: true },
     customer_phone: { type: String, trim: true, index: true },
+    shop_name: { type: String, trim: true },
+    owner_name: { type: String, trim: true },
+    shop_phone: { type: String, trim: true },
+    shop_address: { type: String, trim: true },
+    shop_gstin: { type: String, trim: true },
     khata_customer_id: { type: String, index: true },
     status: {
       type: String,

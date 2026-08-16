@@ -30,7 +30,14 @@ class PdfInvoiceService {
     final cleanBase = (baseUrl != null && baseUrl.trim().isNotEmpty)
         ? baseUrl.trim().replaceAll(RegExp(r'/api/?$'), '')
         : 'https://eco-wallet-1.onrender.com';
-    final invoiceQrPayload = '$cleanBase/invoice/${bill.billId}';
+    final queryParams = Uri(queryParameters: {
+      if (shopName != null && shopName.isNotEmpty) 'shop_name': shopName,
+      if (ownerName != null && ownerName.isNotEmpty) 'owner_name': ownerName,
+      if (phone != null && phone.isNotEmpty) 'phone': phone,
+      if (address != null && address.isNotEmpty) 'address': address,
+      if (gstin != null && gstin.isNotEmpty) 'gstin': gstin,
+    }).query;
+    final invoiceQrPayload = '$cleanBase/invoice/${bill.billId}${queryParams.isNotEmpty ? '?$queryParams' : ''}';
 
     pdf.addPage(
       pw.Page(

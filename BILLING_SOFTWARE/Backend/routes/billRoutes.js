@@ -123,8 +123,25 @@ router.post("/return", async (req, res) => {
       return res.status(404).json({ success: false, message: `Bill with ID "${bill_id}" not found` });
     }
 
-    if (bill.status === "returned") {
-      return res.status(400).json({ success: false, message: "This bill has already been fully returned and refunded" });
+    const alreadyRefunded = bill.refunded_amount || 0;
+    const maxRefundable = Math.max(0, bill.total_amount - alreadyRefunded);
+
+    if (bill.status === "returned" || maxRefundable <= 0) {
+      const lastReturn = (bill.return_history && bill.return_history.length > 0)
+        ? bill.return_history[bill.return_history.length - 1]
+        : null;
+      const dateText = lastReturn ? new Date(lastReturn.timestamp).toLocaleString("en-IN") : new Date(bill.updatedAt).toLocaleString("en-IN");
+      return res.status(400).json({
+        success: false,
+        message: `Order #${bill.bill_id} is already 100% refunded (Total ₹${alreadyRefunded.toFixed(2)} refunded on ${dateText}). Further returns are not permitted.`,
+        data: {
+          bill_id: bill.bill_id,
+          status: "returned",
+          refunded_amount: alreadyRefunded,
+          total_amount: bill.total_amount,
+          return_history: bill.return_history,
+        }
+      });
     }
 
     let refundAmount = 0;
@@ -136,7 +153,12 @@ router.post("/return", async (req, res) => {
         const matchingBillItem = bill.items.find(
           (i) => i.product_id === item.product_id || i.name === item.name
         );
-        const qtyToReturn = Number(item.quantity) || 0;
+        const requestedQty = Number(item.quantity) || 0;
+        const alreadyItemReturned = matchingBillItem ? (matchingBillItem.returned_quantity || 0) : 0;
+        const originalItemQty = matchingBillItem ? matchingBillItem.quantity : requestedQty;
+        const availableItemReturnQty = Math.max(0, originalItemQty - alreadyItemReturned);
+
+        const qtyToReturn = Math.min(requestedQty, availableItemReturnQty);
         const itemPrice = matchingBillItem ? matchingBillItem.price : (Number(item.price) || 0);
 
         if (qtyToReturn > 0) {
@@ -165,26 +187,23 @@ router.post("/return", async (req, res) => {
         }
       }
     } else {
-      const remainingAmount = bill.total_amount - (bill.refunded_amount || 0);
-      refundAmount = remainingAmount > 0 ? remainingAmount : bill.total_amount;
+      refundAmount = maxRefundable;
 
-      for (const billItem of bill.items) {
-        const qtyToReturn = billItem.quantity - (billItem.returned_quantity || 0);
-        if (qtyToReturn > 0) {
+      for (const item of bill.items) {
+        const remainingQty = Math.max(0, item.quantity - (item.returned_quantity || 0));
+        if (remainingQty > 0) {
           returnHistoryItems.push({
-            product_id: billItem.product_id,
-            name: billItem.name,
-            quantity: qtyToReturn,
-            price: billItem.price,
+            product_id: item.product_id,
+            name: item.name,
+            quantity: remainingQty,
+            price: item.price,
           });
-
-          billItem.returned_quantity = billItem.quantity;
-
-          if (billItem.product_id) {
+          item.returned_quantity = item.quantity;
+          if (item.product_id) {
             stockRestorations.push({
               updateOne: {
-                filter: { $or: [{ product_id: billItem.product_id }, { id: billItem.product_id }] },
-                update: { $inc: { stock: qtyToReturn } },
+                filter: { $or: [{ product_id: item.product_id }, { id: item.product_id }] },
+                update: { $inc: { stock: remainingQty } },
               },
             });
           }
@@ -193,11 +212,15 @@ router.post("/return", async (req, res) => {
     }
 
     if (refundAmount <= 0) {
-      return res.status(400).json({ success: false, message: "No eligible refund amount calculated" });
+      return res.status(400).json({
+        success: false,
+        message: "No eligible remaining quantities found for return. All selected items have already been returned."
+      });
     }
 
+    refundAmount = Math.min(refundAmount, maxRefundable);
     const returnId = `RET_${Date.now()}`;
-    const newRefundedTotal = (bill.refunded_amount || 0) + refundAmount;
+    const newRefundedTotal = alreadyRefunded + refundAmount;
     const isFullyReturned = newRefundedTotal >= bill.total_amount;
 
     bill.refunded_amount = newRefundedTotal;
@@ -238,7 +261,7 @@ router.post("/return", async (req, res) => {
 
     res.json({
       success: true,
-      message: `Successfully processed return of ₹${refundAmount.toFixed(2)} for Bill ${bill.bill_id}`,
+      message: `Successfully processed refund of ₹${refundAmount.toFixed(2)} for Bill #${bill.bill_id}`,
       data: {
         bill_id: bill.bill_id,
         return_id: returnId,
@@ -256,7 +279,21 @@ router.post("/return", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { items, total_amount, payment_mode, customer_name, customer_phone, khata_customer_id, bill_id } = req.body;
+    const {
+      items,
+      total_amount,
+      payment_mode,
+      customer_name,
+      customer_phone,
+      khata_customer_id,
+      bill_id,
+      shop_name,
+      owner_name,
+      shop_phone,
+      shop_address,
+      shop_gstin,
+      merchant_id,
+    } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ success: false, message: "Bill must contain at least one item" });
@@ -265,6 +302,12 @@ router.post("/", async (req, res) => {
     const billId = bill_id || `BILL_${Date.now()}`;
     const billData = {
       bill_id: billId,
+      merchant_id: merchant_id || "mch_default",
+      shop_name: shop_name || "Dukaan Dost Retail Store",
+      owner_name: owner_name || "Store Merchant",
+      shop_phone: shop_phone || null,
+      shop_address: shop_address || null,
+      shop_gstin: shop_gstin || null,
       items: items.map((item) => ({
         product_id: item.product_id || item.id || `p_${Date.now()}`,
         name: item.name || "Item",

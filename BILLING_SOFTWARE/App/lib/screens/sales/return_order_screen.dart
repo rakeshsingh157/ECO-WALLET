@@ -66,6 +66,25 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
     });
   }
 
+  String _extractBillIdFromScannedQr(String raw) {
+    String clean = raw.trim();
+    if (clean.contains('/invoice/')) {
+      final parts = clean.split('/invoice/');
+      if (parts.length > 1) {
+        clean = parts[1].split('?').first.split('/').first;
+      }
+    } else if (clean.contains('INVOICE:')) {
+      final parts = clean.split('|');
+      for (final p in parts) {
+        if (p.startsWith('INVOICE:')) {
+          clean = p.replaceFirst('INVOICE:', '').trim();
+          break;
+        }
+      }
+    }
+    return clean.trim();
+  }
+
   void _scanInvoiceQr() async {
     final scanned = await CameraScannerModal.show(
       context,
@@ -74,17 +93,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
     );
 
     if (scanned != null && scanned.isNotEmpty && mounted) {
-      String cleanId = scanned.trim();
-      if (cleanId.contains('INVOICE:')) {
-        final parts = cleanId.split('|');
-        for (final p in parts) {
-          if (p.startsWith('INVOICE:')) {
-            cleanId = p.replaceFirst('INVOICE:', '').trim();
-            break;
-          }
-        }
-      }
-
+      final cleanId = _extractBillIdFromScannedQr(scanned);
       _searchCtrl.text = cleanId;
       _findBillById(cleanId);
     }
@@ -114,7 +123,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('No completed bill found matching "$query"'),
+          content: Text('No bill found matching "$query"'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -123,8 +132,11 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
 
   double _calculateRefundAmount() {
     if (_selectedBill == null) return 0.0;
+    final maxRefundable = _selectedBill!.netAmount;
+    if (maxRefundable <= 0) return 0.0;
+
     if (_isFullReturn) {
-      return _selectedBill!.netAmount;
+      return maxRefundable;
     }
 
     double total = 0.0;
@@ -134,11 +146,21 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
         total += returnQty * item.product.price;
       }
     }
-    return total;
+    return total > maxRefundable ? maxRefundable : total;
   }
 
   void _processReturn() async {
     if (_selectedBill == null) return;
+    if (_selectedBill!.status == BillStatus.returned || _selectedBill!.netAmount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Bill #${_selectedBill!.billId} is already fully refunded.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     final refundAmount = _calculateRefundAmount();
     if (refundAmount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -325,6 +347,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
   Widget build(BuildContext context) {
     final billProvider = context.watch<BillProvider>();
     final refundAmount = _calculateRefundAmount();
+    final isFullyRefunded = _selectedBill != null && (_selectedBill!.status == BillStatus.returned || _selectedBill!.netAmount <= 0);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -397,217 +420,252 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
             ),
             const SizedBox(height: 16),
 
-            if (_selectedBill == null) ...[
-              Text(
-                'RECENT COMPLETED BILLS',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.1,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              if (billProvider.completedBills.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.borderSubtle),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'No completed bills found to return.',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
-                    ),
-                  ),
-                )
-              else
-                ...billProvider.completedBills.take(8).map((b) => _buildRecentBillCard(b)),
-            ] else ...[
-              _buildBillDetailsCard(_selectedBill!),
-              const SizedBox(height: 16),
-
-              Text(
-                'RETURN TYPE',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.1,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _isFullReturn = true),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: _isFullReturn ? AppColors.terracotta : AppColors.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: _isFullReturn ? AppColors.terracotta : AppColors.borderSubtle),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Full Order Return',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: _isFullReturn ? Colors.white : AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _isFullReturn = false),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: !_isFullReturn ? AppColors.terracotta : AppColors.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: !_isFullReturn ? AppColors.terracotta : AppColors.borderSubtle),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Select Specific Items',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: !_isFullReturn ? Colors.white : AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              if (!_isFullReturn) ...[
-                Text(
-                  'SELECT ITEMS & QUANTITY TO RETURN',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.1,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ..._selectedBill!.items.map((item) => _buildItemReturnSelector(item)),
-                const SizedBox(height: 16),
-              ],
-
-              Text(
-                'RETURN REASON',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.1,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _returnReasons.map((reason) {
-                  final isSelected = _selectedReason == reason;
-                  return ChoiceChip(
-                    label: Text(reason),
-                    selected: isSelected,
-                    onSelected: (_) => setState(() => _selectedReason = reason),
-                    selectedColor: AppColors.primaryContainer,
-                    backgroundColor: AppColors.surface,
-                    labelStyle: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: isSelected ? AppColors.terracotta : AppColors.textPrimary,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(color: isSelected ? AppColors.terracotta : AppColors.borderSubtle),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16),
-
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderSubtle),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Original Bill Total', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
-                        Text('₹${_selectedBill!.totalAmount.toStringAsFixed(2)}', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                      ],
-                    ),
-                    if (_selectedBill!.refundedAmount > 0) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Previously Refunded', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.error)),
-                          Text('-₹${_selectedBill!.refundedAmount.toStringAsFixed(2)}', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.error)),
-                        ],
-                      ),
-                    ],
-                    const SizedBox(height: 6),
-                    Divider(color: AppColors.borderSubtle),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Refund Amount', style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-                        Text('₹${refundAmount.toStringAsFixed(2)}', style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.terracotta)),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _isProcessing || refundAmount <= 0 ? null : _processReturn,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.terracotta,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  child: _isProcessing
-                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                      : Text(
-                          'CONFIRM RETURN & REFUND ₹${refundAmount.toStringAsFixed(2)}',
-                          style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800),
-                        ),
-                ),
-              ),
-            ],
+            if (_selectedBill == null) ..._buildRecentBillsList(billProvider)
+            else ..._buildSelectedBillView(isFullyRefunded, refundAmount),
           ],
         ),
       ),
     );
   }
 
+  List<Widget> _buildRecentBillsList(BillProvider billProvider) {
+    return [
+      Text(
+        'RECENT COMPLETED BILLS',
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 1.1,
+          color: AppColors.textSecondary,
+        ),
+      ),
+      const SizedBox(height: 8),
+      if (billProvider.completedBills.isEmpty)
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.borderSubtle),
+          ),
+          child: Center(
+            child: Text(
+              'No completed bills found to return.',
+              style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
+            ),
+          ),
+        )
+      else
+        ...billProvider.completedBills.take(8).map((b) => _buildRecentBillCard(b)),
+    ];
+  }
+
+  List<Widget> _buildSelectedBillView(bool isFullyRefunded, double refundAmount) {
+    return [
+      _buildBillDetailsCard(_selectedBill!),
+      const SizedBox(height: 16),
+      if (isFullyRefunded)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.error.withAlpha(25),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.error),
+          ),
+          child: Column(
+            children: [
+              Icon(Icons.block_rounded, color: AppColors.error, size: 32),
+              const SizedBox(height: 6),
+              Text(
+                'ORDER IS ALREADY 100% REFUNDED',
+                style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.error),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Total ₹${_selectedBill!.refundedAmount.toStringAsFixed(2)} was already returned for this order. No further returns are allowed.',
+                style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        )
+      else ...[
+        Text(
+          'RETURN TYPE',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.1,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => _isFullReturn = true),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: _isFullReturn ? AppColors.terracotta : AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _isFullReturn ? AppColors.terracotta : AppColors.borderSubtle),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Remaining Full Return',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: _isFullReturn ? Colors.white : AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => _isFullReturn = false),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: !_isFullReturn ? AppColors.terracotta : AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: !_isFullReturn ? AppColors.terracotta : AppColors.borderSubtle),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Select Specific Items',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: !_isFullReturn ? Colors.white : AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (!_isFullReturn) ...[
+          Text(
+            'SELECT ITEMS & QUANTITY TO RETURN',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.1,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ..._selectedBill!.items.map((item) => _buildItemReturnSelector(item)),
+          const SizedBox(height: 16),
+        ],
+        Text(
+          'RETURN REASON',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.1,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _returnReasons.map((reason) {
+            final isSelected = _selectedReason == reason;
+            return ChoiceChip(
+              label: Text(reason),
+              selected: isSelected,
+              onSelected: (_) => setState(() => _selectedReason = reason),
+              selectedColor: AppColors.primaryContainer,
+              backgroundColor: AppColors.surface,
+              labelStyle: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: isSelected ? AppColors.terracotta : AppColors.textPrimary,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+                side: BorderSide(color: isSelected ? AppColors.terracotta : AppColors.borderSubtle),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.borderSubtle),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Original Bill Total', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
+                  Text('₹${_selectedBill!.totalAmount.toStringAsFixed(2)}', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                ],
+              ),
+              if (_selectedBill!.refundedAmount > 0) ...[
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Previously Refunded', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.error)),
+                    Text('-₹${_selectedBill!.refundedAmount.toStringAsFixed(2)}', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.error)),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 6),
+              Divider(color: AppColors.borderSubtle),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Refund Amount', style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                  Text('₹${refundAmount.toStringAsFixed(2)}', style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.terracotta)),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton(
+            onPressed: _isProcessing || refundAmount <= 0 ? null : _processReturn,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.terracotta,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            child: _isProcessing
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                : Text(
+                    'CONFIRM RETURN & REFUND ₹${refundAmount.toStringAsFixed(2)}',
+                    style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800),
+                  ),
+          ),
+        ),
+      ],
+    ];
+  }
+
   Widget _buildRecentBillCard(Bill bill) {
     final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(bill.timestamp);
+    final isReturned = bill.status == BillStatus.returned || bill.refundedAmount >= bill.totalAmount;
+    final isPartial = bill.status == BillStatus.partiallyReturned;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -617,9 +675,28 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
       ),
       child: ListTile(
         onTap: () => _selectBill(bill),
-        title: Text(
-          bill.billId,
-          style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+        title: Row(
+          children: [
+            Text(
+              bill.billId,
+              style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+            ),
+            if (isReturned) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: AppColors.error.withAlpha(30), borderRadius: BorderRadius.circular(6)),
+                child: Text('RETURNED', style: GoogleFonts.plusJakartaSans(fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.error)),
+              ),
+            ] else if (isPartial) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: AppColors.warning.withAlpha(30), borderRadius: BorderRadius.circular(6)),
+                child: Text('PARTIAL', style: GoogleFonts.plusJakartaSans(fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.warning)),
+              ),
+            ],
+          ],
         ),
         subtitle: Text(
           '$dateStr • ${bill.customerName ?? "Counter Customer"}',
@@ -645,12 +722,18 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
 
   Widget _buildBillDetailsCard(Bill bill) {
     final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(bill.timestamp);
+    final isReturned = bill.status == BillStatus.returned || bill.refundedAmount >= bill.totalAmount;
+    final isPartial = bill.status == BillStatus.partiallyReturned;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.terracotta.withAlpha(128), width: 1.5),
+        border: Border.all(
+          color: isReturned ? AppColors.error : (isPartial ? AppColors.warning : AppColors.terracotta.withAlpha(128)),
+          width: 1.5,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -668,12 +751,16 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.secondaryContainer,
+                  color: isReturned ? AppColors.error.withAlpha(30) : AppColors.secondaryContainer,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  bill.paymentMode.name.toUpperCase(),
-                  style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.forestMint),
+                  isReturned ? 'FULLY RETURNED' : (isPartial ? 'PARTIALLY RETURNED' : bill.paymentMode.name.toUpperCase()),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: isReturned ? AppColors.error : AppColors.forestMint,
+                  ),
                 ),
               ),
             ],
