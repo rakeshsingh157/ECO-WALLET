@@ -8,6 +8,7 @@ const MerchantPayment = require("../models/MerchantPayment");
 const Transaction = require("../models/Transaction");
 const { generateTransactionId } = require("../utils/idGenerator");
 const { verifyQRPayload } = require("../utils/qrService");
+const { deliverWebhook } = require("../utils/webhookService");
 const { auditLog } = require("../utils/logger");
 const { notify } = require("../utils/notificationService");
 
@@ -15,7 +16,7 @@ const router = express.Router();
 
 const executeTransfer = async (sender_id, receiver_id, amount, description, req) => {
   if (!amount || isNaN(amount) || amount <= 0 || amount > 50000) {
-    throw { status: 400, message: "Amount must be between 0.01 and 50,000 ECO" };
+    throw { status: 40, message: "Amount must be between 0.01 and 50,000 ECO" };
   }
 
   const session = await mongoose.startSession();
@@ -23,6 +24,8 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
 
   try {
     const idempotencyKey = req.body.idempotency_key;
+    const paymentId = req.body.payment_id ? String(req.body.payment_id).trim() : null;
+
     if (idempotencyKey) {
       const existingTxn = await Transaction.findOne({ transaction_id: idempotencyKey }).session(session);
       if (existingTxn) {
@@ -33,6 +36,20 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
     const sender = await User.findOne({ user_id: sender_id }).session(session);
     if (!sender) {
       throw { status: 404, message: "Sender account not found" };
+    }
+
+    let merchantPayment = null;
+    if (paymentId) {
+      merchantPayment = await MerchantPayment.findOne({ payment_id: paymentId }).session(session);
+      if (!merchantPayment) {
+        throw { status: 404, message: "Payment session not found or invalid QR code." };
+      }
+      if (merchantPayment.status === "completed") {
+        throw { status: 409, message: "This merchant payment QR has already been paid and completed." };
+      }
+      if (merchantPayment.status === "expired" || (merchantPayment.expires_at && new Date() > new Date(merchantPayment.expires_at))) {
+        throw { status: 410, message: "This merchant payment QR has expired. Please ask merchant to generate a new QR." };
+      }
     }
 
     const cleanId = String(receiver_id || "").trim();
@@ -101,6 +118,45 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
       }
     }
 
+    const txn_id = idempotencyKey || generateTransactionId();
+
+    if (paymentId) {
+      const claimed = await MerchantPayment.findOneAndUpdate(
+        {
+          payment_id: paymentId,
+          status: "pending",
+          expires_at: { $gt: new Date() },
+        },
+        {
+          $set: {
+            status: "completed",
+            payer_id: sender.user_id,
+            payer_name: sender.name,
+            transaction_id: txn_id,
+            completed_at: new Date(),
+          },
+        },
+        { session, new: true }
+      );
+
+      if (!claimed) {
+        throw {
+          status: 409,
+          message: "This payment QR has already been completed by another user. Payment blocked.",
+        };
+      }
+
+      if (merchant) {
+        await Merchant.findOneAndUpdate(
+          { merchant_id: merchant.merchant_id },
+          {
+            $inc: { total_payments: 1, total_revenue: amount },
+          },
+          { session }
+        );
+      }
+    }
+
     let receiverDisplayName = receiver.name;
     if (merchant && merchant.business_name) {
       receiverDisplayName = merchant.business_name;
@@ -134,7 +190,6 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
       throw { status: 500, message: "Transfer aborted: recipient account credit failed" };
     }
 
-    const txn_id = idempotencyKey || generateTransactionId();
     await Transaction.create(
       [
         {
@@ -144,7 +199,7 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
           amount,
           type: "transfer",
           status: "success",
-          description: description || `Transfer to ${receiverDisplayName}`,
+          description: description || (paymentId ? `Merchant Payment to ${receiverDisplayName}` : `Transfer to ${receiverDisplayName}`),
           sender_name: sender.name,
           receiver_name: receiverDisplayName,
           timestamp: new Date(),
@@ -156,23 +211,14 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
     await session.commitTransaction();
     session.endSession();
 
-    try {
-      let paymentId = req.body.payment_id;
-      if (paymentId) {
-        await MerchantPayment.findOneAndUpdate(
-          { payment_id: paymentId },
-          {
-            $set: {
-              status: "completed",
-              payer_id: sender.user_id,
-              payer_name: sender.name,
-              transaction_id: txn_id,
-              completed_at: new Date(),
-            },
-          }
-        );
+    if (paymentId && merchant) {
+      const updatedPayment = await MerchantPayment.findOne({ payment_id: paymentId });
+      if (updatedPayment) {
+        deliverWebhook(merchant, updatedPayment, "payment.completed").catch((err) => {
+          console.error("Webhook delivery notice:", err.message);
+        });
       }
-    } catch (_) {}
+    }
 
     try {
       await notify(
@@ -180,19 +226,20 @@ const executeTransfer = async (sender_id, receiver_id, amount, description, req)
         "transaction",
         "Money Sent",
         `You sent ${amount} ECO to ${receiverDisplayName}`,
-        { transaction_id: txn_id }
+        { transaction_id: txn_id, payment_id: paymentId }
       );
       await notify(
         receiver.user_id,
         "transaction",
         "Money Received",
         `You received ${amount} ECO from ${sender.name}`,
-        { transaction_id: txn_id }
+        { transaction_id: txn_id, payment_id: paymentId }
       );
     } catch (_) {}
 
     return {
       transaction_id: txn_id,
+      payment_id: paymentId,
       amount,
       sender_id: sender.user_id,
       receiver_id: receiver.user_id,
@@ -272,7 +319,7 @@ router.post(
         return res.status(400).json({ success: false, message: "Please specify a valid transfer amount" });
       }
 
-      req.body.payment_id = parsedData.payment_id;
+      req.body.payment_id = parsedData.payment_id || parsedData.paymentId;
 
       const result = await executeTransfer(
         req.user.user_id,

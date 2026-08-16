@@ -1,7 +1,3 @@
-/**
- * ECO Wallet & Dukaan Dost — Merchant Payment Model
- * Lifecycle: pending → completed | expired | failed
- */
 const mongoose = require("mongoose");
 
 const merchantPaymentSchema = new mongoose.Schema(
@@ -34,7 +30,7 @@ const merchantPaymentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "completed", "expired", "failed"],
+      enum: ["pending", "processing", "completed", "refunded", "partially_refunded", "expired", "failed"],
       default: "pending",
       index: true,
     },
@@ -50,6 +46,23 @@ const merchantPaymentSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    refund_status: {
+      type: String,
+      enum: ["none", "partial", "full"],
+      default: "none",
+    },
+    refunded_amount: {
+      type: Number,
+      default: 0,
+    },
+    refund_history: [
+      {
+        refund_id: { type: String, required: true },
+        amount: { type: Number, required: true },
+        reason: { type: String, default: "Customer request" },
+        created_at: { type: Date, default: Date.now },
+      },
+    ],
     webhook_delivered: {
       type: Boolean,
       default: false,

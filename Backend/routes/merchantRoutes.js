@@ -171,17 +171,7 @@ router.post(
   }
 );
 
-// ═══════════════════════════════════════════════════════════
-// BILLING SOFTWARE ENDPOINTS (API Key auth)
-// ═══════════════════════════════════════════════════════════
 
-/**
- * @route   POST /api/merchant/create-payment
- * @desc    Billing software creates a new payment request
- * @auth    X-API-Key header
- * @body    { order_id, amount, description? }
- * @returns { payment_id, qr_data, status, expires_at }
- */
 router.post(
   "/create-payment",
   merchantAuth,
@@ -593,8 +583,163 @@ router.post(
     } catch (error) {
       const status = error.status || 500;
       const message = error.message || "Payment failed";
-      if (status === 500) console.error("Merchant payment error:", error);
       res.status(status).json({ success: false, message });
+    }
+  }
+);
+
+router.post(
+  "/refund",
+  protect,
+  [
+    body("payment_id").optional().trim(),
+    body("transaction_id").optional().trim(),
+    body("order_id").optional().trim(),
+    body("amount").optional().isFloat({ gt: 0 }),
+    body("reason").optional().trim(),
+  ],
+  async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+      const { payment_id, transaction_id, order_id, amount, reason } = req.body;
+      const callerUserId = req.user.user_id;
+
+      if (!payment_id && !transaction_id && !order_id) {
+        throw { status: 400, message: "Provide payment_id, transaction_id, or order_id to process refund." };
+      }
+
+      const query = {};
+      if (payment_id) query.payment_id = payment_id;
+      else if (transaction_id) query.transaction_id = transaction_id;
+      else if (order_id) query.order_id = order_id;
+
+      const payment = await MerchantPayment.findOne(query).session(session);
+      if (!payment) {
+        throw { status: 404, message: "Original payment record not found." };
+      }
+
+      if (payment.status !== "completed" && payment.status !== "partially_refunded") {
+        throw { status: 400, message: `Cannot refund payment with status '${payment.status}'. Only completed payments can be refunded.` };
+      }
+
+      const merchant = await Merchant.findOne({ merchant_id: payment.merchant_id }).session(session);
+      if (!merchant) {
+        throw { status: 404, message: "Merchant not found for this payment." };
+      }
+
+      const isMerchantOwner = callerUserId === merchant.user_id;
+      const isAdmin = req.user.role === "admin";
+      if (!isMerchantOwner && !isAdmin) {
+        throw { status: 403, message: "Unauthorized. Only the merchant or admin can initiate refunds." };
+      }
+
+      const currentRefunded = Number(payment.refunded_amount || 0);
+      const remainingRefundable = Math.max(0, payment.amount - currentRefunded);
+      if (remainingRefundable <= 0) {
+        throw { status: 400, message: "This payment has already been fully refunded." };
+      }
+
+      const refundAmount = amount ? Math.min(Number(amount), remainingRefundable) : remainingRefundable;
+      if (refundAmount <= 0) {
+        throw { status: 400, message: "Invalid refund amount." };
+      }
+
+      const merchantUser = await User.findOne({ user_id: merchant.user_id }).session(session);
+      const customer = await User.findOne({ user_id: payment.payer_id }).session(session);
+
+      if (!merchantUser) throw { status: 404, message: "Merchant user account not found." };
+      if (!customer) throw { status: 404, message: "Original payer user account not found." };
+
+      if (merchantUser.balance < refundAmount) {
+        throw { status: 400, message: `Merchant has insufficient wallet balance (${merchantUser.balance.toFixed(2)} ECO) to cover refund of ${refundAmount.toFixed(2)} ECO.` };
+      }
+
+      const debitMerchant = await User.findOneAndUpdate(
+        { user_id: merchant.user_id, balance: { $gte: refundAmount } },
+        { $inc: { balance: -refundAmount, version: 1 }, $set: { updatedAt: new Date() } },
+        { session, new: true }
+      );
+      if (!debitMerchant) throw { status: 409, message: "Merchant balance conflict during refund." };
+
+      const creditCustomer = await User.findOneAndUpdate(
+        { user_id: customer.user_id },
+        { $inc: { balance: refundAmount, version: 1 }, $set: { updatedAt: new Date() } },
+        { session, new: true }
+      );
+      if (!creditCustomer) throw { status: 500, message: "Failed to credit customer refund." };
+
+      const refundId = `REF_${Date.now()}`;
+      const newTotalRefunded = currentRefunded + refundAmount;
+      const newStatus = newTotalRefunded >= payment.amount ? "refunded" : "partially_refunded";
+      const newRefundStatus = newTotalRefunded >= payment.amount ? "full" : "partial";
+
+      await MerchantPayment.findOneAndUpdate(
+        { payment_id: payment.payment_id },
+        {
+          $set: {
+            status: newStatus,
+            refund_status: newRefundStatus,
+            refunded_amount: newTotalRefunded,
+          },
+          $push: {
+            refund_history: {
+              refund_id: refundId,
+              amount: refundAmount,
+              reason: reason || "Merchant initiated refund",
+              created_at: new Date(),
+            }
+          }
+        },
+        { session }
+      );
+
+      await Transaction.create(
+        [
+          {
+            transaction_id: refundId,
+            sender_id: merchant.user_id,
+            receiver_id: customer.user_id,
+            amount: refundAmount,
+            type: "transfer",
+            status: "success",
+            description: `Refund for Order #${payment.order_id} (${reason || "Customer refund"})`,
+            sender_name: merchant.business_name,
+            receiver_name: customer.name,
+            timestamp: new Date(),
+          }
+        ],
+        { session }
+      );
+
+      await session.commitTransaction();
+      session.endSession();
+
+      deliverWebhook(merchant, { ...payment.toObject(), refund_id: refundId, refund_amount: refundAmount, status: newStatus }, "payment.refunded").catch(() => { });
+
+      try {
+        await notify(customer.user_id, "transaction", "Refund Processed", `You received a refund of ${refundAmount} ECO from ${merchant.business_name}`, { refund_id: refundId });
+        await notify(merchant.user_id, "transaction", "Refund Issued", `Refund of ${refundAmount} ECO issued to ${customer.name}`, { refund_id: refundId });
+      } catch (_) { }
+
+      res.json({
+        success: true,
+        message: `Refund of ${refundAmount} ECO processed successfully.`,
+        data: {
+          refund_id: refundId,
+          payment_id: payment.payment_id,
+          order_id: payment.order_id,
+          refunded_amount: refundAmount,
+          total_refunded: newTotalRefunded,
+          status: newStatus,
+          customer_new_balance: creditCustomer.balance,
+        }
+      });
+    } catch (err) {
+      await session.abortTransaction();
+      session.endSession();
+      const status = err.status || 500;
+      res.status(status).json({ success: false, message: err.message || "Refund processing failed." });
     }
   }
 );

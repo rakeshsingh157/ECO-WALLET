@@ -1,8 +1,3 @@
-/**
- * ECO Wallet — Merchant Payment Model
- * Tracks individual payment requests created by billing software.
- * Lifecycle: pending → completed | expired | failed
- */
 const mongoose = require("mongoose");
 
 const merchantPaymentSchema = new mongoose.Schema(
@@ -22,7 +17,6 @@ const merchantPaymentSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      // The billing software's own invoice/bill ID
     },
     amount: {
       type: Number,
@@ -36,14 +30,13 @@ const merchantPaymentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "completed", "expired", "failed"],
+      enum: ["pending", "processing", "completed", "refunded", "partially_refunded", "expired", "failed"],
       default: "pending",
       index: true,
     },
     payer_id: {
       type: String,
       default: null,
-      // Filled when a customer pays
     },
     payer_name: {
       type: String,
@@ -52,8 +45,24 @@ const merchantPaymentSchema = new mongoose.Schema(
     transaction_id: {
       type: String,
       default: null,
-      // Links to the ECO Transaction record after payment
     },
+    refund_status: {
+      type: String,
+      enum: ["none", "partial", "full"],
+      default: "none",
+    },
+    refunded_amount: {
+      type: Number,
+      default: 0,
+    },
+    refund_history: [
+      {
+        refund_id: { type: String, required: true },
+        amount: { type: Number, required: true },
+        reason: { type: String, default: "Customer request" },
+        created_at: { type: Date, default: Date.now },
+      },
+    ],
     webhook_delivered: {
       type: Boolean,
       default: false,
@@ -81,9 +90,7 @@ const merchantPaymentSchema = new mongoose.Schema(
   }
 );
 
-// Compound index: merchant + order for idempotent lookups
 merchantPaymentSchema.index({ merchant_id: 1, order_id: 1 });
-// TTL-style index for finding expired payments efficiently
 merchantPaymentSchema.index({ status: 1, expires_at: 1 });
 
-module.exports = mongoose.model("MerchantPayment", merchantPaymentSchema);
+module.exports = mongoose.models.MerchantPayment || mongoose.model("MerchantPayment", merchantPaymentSchema);

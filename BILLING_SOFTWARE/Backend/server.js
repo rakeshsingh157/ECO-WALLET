@@ -359,6 +359,76 @@ app.post("/api/merchant/pay", async (req, res) => {
   });
 });
 
+app.post("/api/merchant/refund", async (req, res) => {
+  const { payment_id, order_id, amount, reason } = req.body;
+  if (!payment_id && !order_id) {
+    return res.status(400).json({ success: false, message: "payment_id or order_id is required for refund." });
+  }
+
+  try {
+    const query = payment_id ? { payment_id } : { order_id };
+    const payment = await MerchantPayment.findOne(query);
+    if (!payment) {
+      return res.status(404).json({ success: false, message: "Payment session not found." });
+    }
+
+    if (payment.status !== "completed" && payment.status !== "partially_refunded") {
+      return res.status(400).json({ success: false, message: `Cannot refund payment with status '${payment.status}'.` });
+    }
+
+    const currentRefunded = Number(payment.refunded_amount || 0);
+    const remainingRefundable = Math.max(0, payment.amount - currentRefunded);
+    if (remainingRefundable <= 0) {
+      return res.status(400).json({ success: false, message: "This payment is already fully refunded." });
+    }
+
+    const refundAmount = amount ? Math.min(Number(amount), remainingRefundable) : remainingRefundable;
+    const refundId = `REF_${Date.now()}`;
+    const newTotalRefunded = currentRefunded + refundAmount;
+    const newStatus = newTotalRefunded >= payment.amount ? "refunded" : "partially_refunded";
+    const newRefundStatus = newTotalRefunded >= payment.amount ? "full" : "partial";
+
+    await MerchantPayment.findOneAndUpdate(
+      { payment_id: payment.payment_id },
+      {
+        $set: {
+          status: newStatus,
+          refund_status: newRefundStatus,
+          refunded_amount: newTotalRefunded,
+        },
+        $push: {
+          refund_history: {
+            refund_id: refundId,
+            amount: refundAmount,
+            reason: reason || "Merchant initiated refund",
+            created_at: new Date(),
+          }
+        }
+      }
+    );
+
+    await Bill.findOneAndUpdate(
+      { $or: [{ payment_id: payment.payment_id }, { bill_number: payment.order_id }] },
+      { $set: { payment_status: newStatus === "refunded" ? "REFUNDED" : "PARTIALLY_REFUNDED" } }
+    );
+
+    res.json({
+      success: true,
+      message: `Refund of ₹${refundAmount} processed successfully.`,
+      data: {
+        refund_id: refundId,
+        payment_id: payment.payment_id,
+        order_id: payment.order_id,
+        refunded_amount: refundAmount,
+        total_refunded: newTotalRefunded,
+        status: newStatus,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message || "Failed to process refund." });
+  }
+});
+
 app.get("/api/wallet/user/:user_id", async (req, res) => {
   const cleanId = req.params.user_id;
   const cleanPhoneDigits = cleanId.replace(/\D/g, '');
