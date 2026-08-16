@@ -12,7 +12,7 @@ class CameraScannerModal extends StatefulWidget {
   const CameraScannerModal({
     super.key,
     required this.title,
-    this.subtitle = 'Align barcode or QR code within the frame to scan',
+    this.subtitle = 'Align target code inside the center frame',
     required this.onScanned,
     this.continuous = false,
   });
@@ -20,7 +20,7 @@ class CameraScannerModal extends StatefulWidget {
   static Future<String?> show(
     BuildContext context, {
     required String title,
-    String subtitle = 'Align barcode or QR code within the frame to scan',
+    String subtitle = 'Align target code inside the center frame',
   }) async {
     String? scannedResult;
     await showModalBottomSheet(
@@ -52,12 +52,15 @@ class _CameraScannerModalState extends State<CameraScannerModal> with SingleTick
   late AnimationController _animController;
   bool _torchOn = false;
 
+  final double _boxWidth = 240;
+  final double _boxHeight = 140;
+
   @override
   void initState() {
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
     _controller = MobileScannerController(
@@ -157,7 +160,7 @@ class _CameraScannerModalState extends State<CameraScannerModal> with SingleTick
 
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            margin: const EdgeInsets.only(bottom: 10),
+            margin: const EdgeInsets.only(bottom: 8),
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(20),
@@ -166,130 +169,145 @@ class _CameraScannerModalState extends State<CameraScannerModal> with SingleTick
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.qr_code_2_rounded, size: 16, color: AppColors.terracotta),
+                Icon(Icons.center_focus_strong_rounded, size: 16, color: AppColors.terracotta),
                 const SizedBox(width: 6),
                 Text(
-                  'Auto-detects Barcodes & QR Codes',
+                  'Precision Focus: Aim center box at target code',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(width: 6),
-                Icon(Icons.view_week_rounded, size: 16, color: AppColors.success),
               ],
             ),
           ),
 
           Expanded(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                MobileScanner(
-                  controller: _controller,
-                  errorBuilder: (context, error, child) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
+            child: LayoutBuilder(
+              builder: (ctx, constraints) {
+                final scanWindow = Rect.fromCenter(
+                  center: Offset(constraints.maxWidth / 2, constraints.maxHeight / 2),
+                  width: _boxWidth,
+                  height: _boxHeight,
+                );
+
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    MobileScanner(
+                      controller: _controller,
+                      scanWindow: scanWindow,
+                      errorBuilder: (context, error, child) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.camera_alt_outlined, size: 54, color: AppColors.terracotta),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Camera Access Required',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Please enable Camera permission in device settings to scan.',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 13,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    _controller.start();
+                                  },
+                                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                                  label: const Text('RETRY CAMERA'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.terracotta,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      onDetect: (capture) {
+                        final List<Barcode> barcodes = capture.barcodes;
+                        for (final barcode in barcodes) {
+                          final rawValue = barcode.rawValue;
+                          if (rawValue != null && rawValue.trim().isNotEmpty) {
+                            widget.onScanned(rawValue.trim());
+                            if (!widget.continuous) {
+                              break;
+                            }
+                          }
+                        }
+                      },
+                    ),
+
+                    CustomPaint(
+                      painter: ScannerOverlayPainter(scanWindow: scanWindow),
+                    ),
+
+                    Center(
+                      child: Container(
+                        width: _boxWidth,
+                        height: _boxHeight,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppColors.terracotta, width: 2.5),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Stack(
                           children: [
-                            Icon(Icons.camera_alt_outlined, size: 54, color: AppColors.terracotta),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Camera Access Required',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Please enable Camera permission in device settings to scan.',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 13,
-                                color: Colors.white70,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                _controller.start();
+                            AnimatedBuilder(
+                              animation: _animController,
+                              builder: (context, child) {
+                                return Positioned(
+                                  top: _animController.value * (_boxHeight - 10),
+                                  left: 10,
+                                  right: 10,
+                                  child: Container(
+                                    height: 2.5,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          AppColors.terracotta.withAlpha(25),
+                                          AppColors.terracotta,
+                                          AppColors.chaiGold,
+                                          AppColors.terracotta,
+                                          AppColors.terracotta.withAlpha(25),
+                                        ],
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.terracotta.withAlpha(150),
+                                          blurRadius: 8,
+                                          spreadRadius: 1,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
                               },
-                              icon: const Icon(Icons.refresh_rounded, size: 18),
-                              label: const Text('RETRY CAMERA'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.terracotta,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                              ),
                             ),
                           ],
                         ),
                       ),
-                    );
-                  },
-                  onDetect: (capture) {
-                    final List<Barcode> barcodes = capture.barcodes;
-                    for (final barcode in barcodes) {
-                      final rawValue = barcode.rawValue;
-                      if (rawValue != null && rawValue.trim().isNotEmpty) {
-                        widget.onScanned(rawValue.trim());
-                        if (!widget.continuous) {
-                          break;
-                        }
-                      }
-                    }
-                  },
-                ),
-
-                Container(
-                  width: 300,
-                  height: 220,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.terracotta, width: 2.5),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Stack(
-                    children: [
-                      AnimatedBuilder(
-                        animation: _animController,
-                        builder: (context, child) {
-                          return Positioned(
-                            top: _animController.value * 200,
-                            left: 10,
-                            right: 10,
-                            child: Container(
-                              height: 2.5,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    AppColors.terracotta.withOpacity(0.1),
-                                    AppColors.terracotta,
-                                    AppColors.chaiGold,
-                                    AppColors.terracotta,
-                                    AppColors.terracotta.withOpacity(0.1),
-                                  ],
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.terracotta.withOpacity(0.6),
-                                    blurRadius: 8,
-                                    spreadRadius: 1,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+                  ],
+                );
+              },
             ),
           ),
           const SizedBox(height: 14),
@@ -297,4 +315,26 @@ class _CameraScannerModalState extends State<CameraScannerModal> with SingleTick
       ),
     );
   }
+}
+
+class ScannerOverlayPainter extends CustomPainter {
+  final Rect scanWindow;
+  final double borderRadius;
+
+  ScannerOverlayPainter({required this.scanWindow, this.borderRadius = 16.0});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final backgroundPaint = Paint()..color = Colors.black.withAlpha(160);
+    final backgroundPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final cutoutPath = Path()
+      ..addRRect(RRect.fromRectAndRadius(scanWindow, Radius.circular(borderRadius)));
+
+    final finalPath = Path.combine(PathOperation.difference, backgroundPath, cutoutPath);
+    canvas.drawPath(finalPath, backgroundPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant ScannerOverlayPainter oldDelegate) =>
+      oldDelegate.scanWindow != scanWindow;
 }

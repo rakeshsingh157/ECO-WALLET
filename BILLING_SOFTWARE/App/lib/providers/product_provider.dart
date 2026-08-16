@@ -30,11 +30,28 @@ class ProductProvider extends ChangeNotifier {
 
   Product? findProductByBarcode(String code) {
     final clean = code.trim().toLowerCase();
+    final cleanDigits = clean.replaceAll(RegExp(r'\D'), '');
+
     for (final p in _products) {
-      if (p.barcode != null && p.barcode!.trim().toLowerCase() == clean) {
-        return p;
+      if (p.barcode != null && p.barcode!.trim().isNotEmpty) {
+        final pBarcodeClean = p.barcode!.trim().toLowerCase();
+        final pBarcodeDigits = pBarcodeClean.replaceAll(RegExp(r'\D'), '');
+
+        if (pBarcodeClean == clean) return p;
+        if (cleanDigits.isNotEmpty && pBarcodeDigits.isNotEmpty) {
+          if (cleanDigits == pBarcodeDigits) return p;
+          final s1 = cleanDigits.replaceFirst(RegExp(r'^0+'), '');
+          final s2 = pBarcodeDigits.replaceFirst(RegExp(r'^0+'), '');
+          if (s1.isNotEmpty && s1 == s2) return p;
+          if (cleanDigits.length >= 8 && pBarcodeDigits.length >= 8) {
+            if (cleanDigits.contains(pBarcodeDigits) || pBarcodeDigits.contains(cleanDigits)) return p;
+          }
+        }
       }
       if (p.id.trim().toLowerCase() == clean) {
+        return p;
+      }
+      if (p.name.trim().toLowerCase() == clean) {
         return p;
       }
     }

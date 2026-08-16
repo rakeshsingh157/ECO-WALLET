@@ -8,6 +8,7 @@ import '../../providers/product_provider.dart';
 import '../../providers/bill_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/product_grid_item.dart';
+import '../../widgets/camera_scanner_modal.dart';
 import '../inventory/add_product_screen.dart';
 import 'cart_screen.dart';
 
@@ -169,88 +170,125 @@ class _PosScreenState extends State<PosScreen> {
                             ),
                           ),
                         ),
+                        if (!isSuccess && lastScannedCode != null)
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(sheetContext);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const AddProductScreen(),
+                                ),
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.chaiGold,
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            ),
+                            child: const Text('Add Product', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
                       ],
                     ),
                   ),
 
                 Expanded(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      MobileScanner(
-                        controller: controller,
-                        errorBuilder: (ctx, err, child) {
-                          return Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.camera_alt_outlined, size: 48, color: AppColors.terracotta),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    'Camera Access Issue (${err.errorCode.name})',
-                                    style: GoogleFonts.plusJakartaSans(fontSize: 14, color: Colors.white, fontWeight: FontWeight.w700),
+                  child: LayoutBuilder(
+                    builder: (ctx, constraints) {
+                      const boxW = 240.0;
+                      const boxH = 140.0;
+                      final scanWindow = Rect.fromCenter(
+                        center: Offset(constraints.maxWidth / 2, constraints.maxHeight / 2),
+                        width: boxW,
+                        height: boxH,
+                      );
+
+                      return Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          MobileScanner(
+                            controller: controller,
+                            scanWindow: scanWindow,
+                            errorBuilder: (ctx, err, child) {
+                              return Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.camera_alt_outlined, size: 48, color: AppColors.terracotta),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'Camera Access Issue (${err.errorCode.name})',
+                                        style: GoogleFonts.plusJakartaSans(fontSize: 14, color: Colors.white, fontWeight: FontWeight.w700),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          controller.start();
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.terracotta,
+                                          foregroundColor: Colors.white,
+                                        ),
+                                        child: const Text('RETRY CAMERA'),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 12),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      controller.start();
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.terracotta,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                    child: const Text('RETRY CAMERA'),
-                                  ),
-                                ],
+                                ),
+                              );
+                            },
+                            onDetect: (capture) {
+                              final List<Barcode> barcodes = capture.barcodes;
+                              for (final barcode in barcodes) {
+                                final rawValue = barcode.rawValue;
+                                if (rawValue != null && rawValue.trim().isNotEmpty) {
+                                  final trimmed = rawValue.trim();
+                                  final now = DateTime.now();
+                                  if (lastScannedCode == trimmed &&
+                                      lastScanTime != null &&
+                                      now.difference(lastScanTime!).inMilliseconds < 1500) {
+                                    continue;
+                                  }
+
+                                  lastScannedCode = trimmed;
+                                  lastScanTime = now;
+
+                                  final product = productProvider.findProductByBarcode(trimmed);
+                                  if (product != null) {
+                                    billProvider.addItem(product);
+                                    setSheetState(() {
+                                      isSuccess = true;
+                                      lastAddedMessage = 'Added 1x ${product.name} (₹${product.price.toStringAsFixed(0)}) to cart';
+                                    });
+                                  } else {
+                                    setSheetState(() {
+                                      isSuccess = false;
+                                      lastAddedMessage = 'No product with barcode "$trimmed" found in inventory';
+                                    });
+                                  }
+                                  break;
+                                }
+                              }
+                            },
+                          ),
+
+                          CustomPaint(
+                            painter: ScannerOverlayPainter(scanWindow: scanWindow),
+                          ),
+
+                          Center(
+                            child: Container(
+                              width: boxW,
+                              height: boxH,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: AppColors.terracotta, width: 2.5),
+                                borderRadius: BorderRadius.circular(16),
                               ),
                             ),
-                          );
-                        },
-                        onDetect: (capture) {
-                          final List<Barcode> barcodes = capture.barcodes;
-                          for (final barcode in barcodes) {
-                            final rawValue = barcode.rawValue;
-                            if (rawValue != null && rawValue.isNotEmpty) {
-                              final now = DateTime.now();
-                              if (lastScannedCode == rawValue &&
-                                  lastScanTime != null &&
-                                  now.difference(lastScanTime!).inMilliseconds < 1500) {
-                                continue;
-                              }
-
-                              lastScannedCode = rawValue;
-                              lastScanTime = now;
-
-                              final product = productProvider.findProductByBarcode(rawValue);
-                              if (product != null) {
-                                billProvider.addItem(product);
-                                setSheetState(() {
-                                  isSuccess = true;
-                                  lastAddedMessage = 'Added 1x ${product.name} (₹${product.price.toStringAsFixed(0)}) to cart';
-                                });
-                              } else {
-                                setSheetState(() {
-                                  isSuccess = false;
-                                  lastAddedMessage = 'No product with barcode "$rawValue" found';
-                                });
-                              }
-                              break;
-                            }
-                          }
-                        },
-                      ),
-
-                      Container(
-                        width: 300,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.terracotta, width: 2.5),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                    ],
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
 
