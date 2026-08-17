@@ -8,6 +8,11 @@ class LocaleProvider extends ChangeNotifier {
   String get locale => _locale;
   bool get isHindi => _locale == 'hi';
   bool get isMarathi => _locale == 'mr';
+  bool get isGujarati => _locale == 'gu';
+  bool get isTamil => _locale == 'ta';
+  bool get isTelugu => _locale == 'te';
+
+  static const List<String> supportedLocales = ['en', 'hi', 'mr', 'gu', 'ta', 'te'];
 
   LocaleProvider() {
     _loadLocale();
@@ -17,7 +22,7 @@ class LocaleProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedLocale = prefs.getString('app_locale');
-      if (savedLocale != null && (savedLocale == 'en' || savedLocale == 'hi' || savedLocale == 'mr')) {
+      if (savedLocale != null && supportedLocales.contains(savedLocale)) {
         _locale = savedLocale;
         notifyListeners();
       }
@@ -25,7 +30,7 @@ class LocaleProvider extends ChangeNotifier {
   }
 
   Future<void> setLocale(String langCode) async {
-    if (langCode != _locale && (langCode == 'en' || langCode == 'hi' || langCode == 'mr')) {
+    if (langCode != _locale && supportedLocales.contains(langCode)) {
       _locale = langCode;
       notifyListeners();
 

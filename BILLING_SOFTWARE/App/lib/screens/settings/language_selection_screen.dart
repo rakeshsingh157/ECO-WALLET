@@ -28,6 +28,24 @@ class LanguageSelectionScreen extends StatelessWidget {
       'native': 'मराठी (Marathi)',
       'subtitle': 'मराठीमध्ये सोपी बिलिंग व उधारी वही',
     },
+    {
+      'code': 'gu',
+      'name': 'Gujarati',
+      'native': 'ગુજરાતી (Gujarati)',
+      'subtitle': 'સરળ ગુજરાતીમાં બિલિંગ અને ખાતાવહી',
+    },
+    {
+      'code': 'ta',
+      'name': 'Tamil',
+      'native': 'தமிழ் (Tamil)',
+      'subtitle': 'எளிய தமிழில் பில்லிங் மற்றும் கடன் புத்தகம்',
+    },
+    {
+      'code': 'te',
+      'name': 'Telugu',
+      'native': 'తెలుగు (Telugu)',
+      'subtitle': 'సులభమైన తెలుగులో బిల్లింగ్ మరియు ఖాతా పుస్తకం',
+    },
   ];
 
   @override
