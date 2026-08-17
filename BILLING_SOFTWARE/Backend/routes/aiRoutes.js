@@ -17,7 +17,7 @@ const MULTI_LANG_SYNONYMS = {
   "oil": ["tel", "tail", "telam", "yennai", "nunne", "telu", "તેલ", "तेल", "எண்ணெய்", "నూనె"],
   "rice": ["chawal", "tandul", "chokha", "arisi", "biyyam", "tandool", "ચોખા", "तांदूळ", "चावल", "அரிசி", "బియ్యం"],
   "flour": ["atta", "aata", "pith", "maida", "ravai", "godhumai", "pindi", "લોટ", "पीठ", "आटा", "மாவு", "పిండి"],
-  "salt": ["namak", "meeth", "mithu", "uppu", "lavan", "મીઠું", "मीठ", "नमक", "உப்பு", "ఉప్పు"],
+  "salt": ["namak", "meeth", "mithu", "uppu", "lavan", "મીઠું", "मीठ", "नमक", "உப்பு", "உప్పు"],
   "tea": ["chai", "chaha", "cha", "theeneer", "tea", "ચા", "चहा", "चाय", "தேநீர்", "టీ"],
   "soap": ["sabun", "saabu", "soap", "sabbu", "સાબુ", "साबण", "साबुन", "சோப்பு", "சబ్బు"],
   "biscuit": ["biscuit", "biscuits", "parle", "cookies", "બિસ્કિટ", "बिस्कीट", "बिस्कुट", "பிஸ்கட்", "బిస్కెట్"],
@@ -50,10 +50,11 @@ async function transcribeWithSarvam(base64Audio, languageCode, format) {
   }
 
   const modelsToTry = [
-    process.env.SARVAM_MODEL || "saaras:v4",
+    process.env.SARVAM_MODEL || "saarika:v2.5",
+    "saarika:flash",
     "saaras:v3",
-    "saaras:v2",
-    "saaras:v1"
+    "saaras:v4",
+    "saarika:v2"
   ];
 
   const audioBuffer = Buffer.from(base64Audio, "base64");
