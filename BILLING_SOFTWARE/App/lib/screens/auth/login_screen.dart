@@ -6,6 +6,7 @@ import '../../core/app_notifier.dart';
 import '../../core/localization.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/mascot_badge.dart';
+import '../../widgets/language_picker_button.dart';
 import '../main_shell.dart';
 import 'signup_screen.dart';
 
@@ -96,7 +97,11 @@ class _LoginScreenState extends State<LoginScreen> {
             key: _formKey,
             child: Column(
               children: [
-                const SizedBox(height: 10),
+                const Align(
+                  alignment: Alignment.topRight,
+                  child: LanguagePickerButton(),
+                ),
+                const SizedBox(height: 6),
                 MascotBadge(
                   assetPath: MascotAssets.shopkeeper,
                   size: 90,

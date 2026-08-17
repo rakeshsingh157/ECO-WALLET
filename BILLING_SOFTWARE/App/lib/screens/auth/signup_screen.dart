@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/localization.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/language_picker_button.dart';
 import '../main_shell.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -40,7 +41,7 @@ class _SignupScreenState extends State<SignupScreen> {
     if (_pinCtrl.text.trim() != _confirmPinCtrl.text.trim()) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('PINs do not match. Please enter the same 4-digit PIN.'),
+          content: Text(context.trRead('pins_do_not_match')),
           backgroundColor: AppColors.error,
         ),
       );
@@ -96,6 +97,12 @@ class _SignupScreenState extends State<SignupScreen> {
             color: AppColors.textPrimary,
           ),
         ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: LanguagePickerButton(),
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -107,7 +114,7 @@ class _SignupScreenState extends State<SignupScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Create your store account to start fast POS billing, managing inventory, and tracking Khata.',
+                  context.tr('signup_desc'),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -136,8 +143,8 @@ class _SignupScreenState extends State<SignupScreen> {
                         controller: _shopNameCtrl,
                         style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
                         decoration: InputDecoration(
-                          labelText: 'Shop / Business Name *',
-                          hintText: 'e.g. Ramesh Kirana Store',
+                          labelText: context.tr('shop_business_name'),
+                          hintText: context.tr('shop_name_hint'),
                           prefixIcon: Icon(Icons.store_rounded, color: AppColors.terracotta),
                         ),
                         validator: (v) => v == null || v.trim().isEmpty ? 'Enter shop name' : null,
@@ -149,8 +156,8 @@ class _SignupScreenState extends State<SignupScreen> {
                         controller: _ownerNameCtrl,
                         style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
                         decoration: InputDecoration(
-                          labelText: 'Proprietor / Owner Name *',
-                          hintText: 'e.g. Ramesh Sharma',
+                          labelText: context.tr('proprietor'),
+                          hintText: context.tr('owner_name_hint'),
                           prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta),
                         ),
                         validator: (v) => v == null || v.trim().isEmpty ? 'Enter owner name' : null,
@@ -163,7 +170,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         keyboardType: TextInputType.phone,
                         style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
                         decoration: InputDecoration(
-                          labelText: 'Mobile Number *',
+                          labelText: context.tr('mobile_number_label'),
                           hintText: '9876543210',
                           prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta),
                         ),
@@ -181,7 +188,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               keyboardType: TextInputType.number,
                               style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                               decoration: InputDecoration(
-                                labelText: '4-digit PIN *',
+                                labelText: context.tr('pin_label'),
                                 prefixIcon: Icon(Icons.lock_rounded, color: AppColors.terracotta),
                                 suffixIcon: IconButton(
                                   icon: Icon(
@@ -202,7 +209,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               keyboardType: TextInputType.number,
                               style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                               decoration: InputDecoration(
-                                labelText: 'Confirm PIN *',
+                                labelText: context.tr('confirm_pin_label'),
                                 prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.terracotta),
                               ),
                               validator: (v) => v == null || v.trim().isEmpty ? 'Confirm PIN' : null,

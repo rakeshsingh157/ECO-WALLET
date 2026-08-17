@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme.dart';
+import '../../widgets/language_picker_button.dart';
 import '../../providers/auth_provider.dart';
 import '../main_shell.dart';
 
@@ -76,6 +77,12 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
             color: AppColors.textPrimary,
           ),
         ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: LanguagePickerButton(),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
