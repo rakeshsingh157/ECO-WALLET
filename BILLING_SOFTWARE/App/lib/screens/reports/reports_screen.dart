@@ -128,7 +128,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             ),
                           ),
                           Text(
-                            'Realtime live net margin from backend',
+                            context.tr('live_net_margin'),
                             style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
                           ),
                         ],
@@ -141,7 +141,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               const SizedBox(height: 20),
 
               Text(
-                'PERFORMANCE SUMMARY',
+                context.tr('performance_summary'),
                 style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 10),
@@ -173,7 +173,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   Expanded(
                     child: _buildMetricCard(
                       title: context.tr('catalog_items'),
-                      value: '$totalProducts Products',
+                      value: '$totalProducts ${context.tr('products_unit')}',
                       color: AppColors.warmNavy,
                       icon: Icons.inventory_2_rounded,
                     ),
@@ -182,7 +182,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   Expanded(
                     child: _buildMetricCard(
                       title: context.tr('billed_invoices'),
-                      value: '$totalBills Invoices',
+                      value: '$totalBills ${context.tr('invoices_unit')}',
                       color: AppColors.chaiGold,
                       icon: Icons.receipt_long_rounded,
                     ),
@@ -218,7 +218,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'View Payments & Transactions History',
+                              context.tr('view_payments_history_title'),
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
@@ -227,7 +227,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Search by customer, phone, payment mode & date',
+                              context.tr('search_payments_history_sub'),
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 11,
                                 color: AppColors.textSecondary,
@@ -264,7 +264,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             padding: const EdgeInsets.all(16),
                             child: Center(
                               child: Text(
-                                'No top products data yet. Complete sales to generate insights.',
+                                context.tr('no_top_products'),
                                 style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
                                 textAlign: TextAlign.center,
                               ),
@@ -279,8 +279,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               final item = _topProducts[idx];
                               return _RankRow(
                                 rank: '${idx + 1}',
-                                title: item['_id'] ?? 'Product',
-                                count: '${item['totalQuantity'] ?? 0} sold',
+                                title: item['_id'] ?? context.tr('products_unit'),
+                                count: '${item['totalQuantity'] ?? 0} ${context.tr('sold_unit')}',
                                 revenue: '₹${(item['totalRevenue'] as num?)?.toStringAsFixed(0) ?? '0'}',
                               );
                             },
@@ -294,7 +294,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: const Text('Live report exported successfully'), backgroundColor: AppColors.success),
+                      SnackBar(content: Text(context.tr('report_exported_success')), backgroundColor: AppColors.success),
                     );
                   },
                   icon: Icon(Icons.download_rounded, color: AppColors.terracotta, size: 18),

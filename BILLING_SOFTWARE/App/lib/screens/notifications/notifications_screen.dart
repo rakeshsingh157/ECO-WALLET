@@ -28,6 +28,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  String _localizeNotifTitle(BuildContext context, String rawTitle) {
+    if (rawTitle.toLowerCase().contains('cloud backup completed') || rawTitle.toLowerCase().contains('cloud backup')) {
+      return context.tr('cloud_backup_completed');
+    }
+    return context.tr(rawTitle);
+  }
+
+  String _localizeNotifMessage(BuildContext context, String rawMessage) {
+    final reg = RegExp(r'(\d+)\s*products?,\s*(\d+)\s*sales?,\s*(\d+)\s*customers?', caseSensitive: false);
+    final match = reg.firstMatch(rawMessage);
+    if (match != null) {
+      final pCount = match.group(1) ?? '0';
+      final sCount = match.group(2) ?? '0';
+      final cCount = match.group(3) ?? '0';
+      return '$pCount ${context.tr('products_unit')}, $sCount ${context.tr('invoices_unit')}, $cCount ${context.tr('customers')} (${context.tr('auto_cloud_backup_active')})';
+    }
+    return context.tr(rawMessage);
+  }
+
   @override
   Widget build(BuildContext context) {
     context.watch<ThemeProvider>();
@@ -119,7 +138,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      item.title,
+                                      _localizeNotifTitle(context, item.title),
                                       style: GoogleFonts.plusJakartaSans(
                                         fontSize: 14,
                                         fontWeight: item.isRead ? FontWeight.w600 : FontWeight.w800,
@@ -128,7 +147,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      item.message,
+                                      _localizeNotifMessage(context, item.message),
                                       style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
                                     ),
                                   ],

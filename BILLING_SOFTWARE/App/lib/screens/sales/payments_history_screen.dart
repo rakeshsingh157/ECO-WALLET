@@ -126,6 +126,37 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
     }
   }
 
+  String _getFilterLabel(BuildContext context, String filter) {
+    switch (filter) {
+      case 'Today':
+        return context.tr('today');
+      case 'This Week':
+        return context.tr('this_week');
+      case 'This Month':
+        return context.tr('this_month');
+      case 'All Time':
+        return context.tr('all_time');
+      case 'All':
+        return context.tr('all_categories');
+      case 'Cash':
+        return context.tr('cash');
+      case 'UPI':
+        return context.tr('upi');
+      case 'ECO Wallet':
+        return context.tr('eco_wallet');
+      case 'Khata':
+        return context.tr('khata_credit');
+      case 'Completed':
+        return context.tr('completed');
+      case 'Pending Khata':
+        return context.tr('pending_khata');
+      case 'Returned':
+        return context.tr('returned');
+      default:
+        return filter;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     context.watch<ThemeProvider>();
@@ -331,7 +362,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                       return Padding(
                         padding: const EdgeInsets.only(right: 6),
                         child: ChoiceChip(
-                          label: Text(period),
+                          label: Text(_getFilterLabel(context, period)),
                           selected: isSelected,
                           onSelected: (_) => setState(() => _selectedPeriod = period),
                           selectedColor: AppColors.primaryContainer,
@@ -354,7 +385,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                       return Padding(
                         padding: const EdgeInsets.only(right: 6),
                         child: ChoiceChip(
-                          label: Text(mode),
+                          label: Text(_getFilterLabel(context, mode)),
                           selected: isSelected,
                           onSelected: (_) => setState(() => _selectedMode = mode),
                           selectedColor: AppColors.primaryContainer,
@@ -377,7 +408,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                       return Padding(
                         padding: const EdgeInsets.only(right: 6),
                         child: ChoiceChip(
-                          label: Text(status),
+                          label: Text(_getFilterLabel(context, status)),
                           selected: isSelected,
                           onSelected: (_) => setState(() => _selectedStatus = status),
                           selectedColor: AppColors.primaryContainer,
@@ -500,7 +531,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                                                 borderRadius: BorderRadius.circular(4),
                                               ),
                                               child: Text(
-                                                'PENDING KHATA',
+                                                context.tr('pending_khata').toUpperCase(),
                                                 style: GoogleFonts.plusJakartaSans(
                                                   fontSize: 8,
                                                   fontWeight: FontWeight.w800,
@@ -517,7 +548,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                                                 borderRadius: BorderRadius.circular(4),
                                               ),
                                               child: Text(
-                                                'RETURNED',
+                                                context.tr('returned').toUpperCase(),
                                                 style: GoogleFonts.plusJakartaSans(
                                                   fontSize: 8,
                                                   fontWeight: FontWeight.w800,
@@ -534,7 +565,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                                                 borderRadius: BorderRadius.circular(4),
                                               ),
                                               child: Text(
-                                                'PARTIAL',
+                                                context.tr('partial_return').toUpperCase(),
                                                 style: GoogleFonts.plusJakartaSans(
                                                   fontSize: 8,
                                                   fontWeight: FontWeight.w800,
@@ -601,7 +632,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      '${bill.items.length} ${bill.items.length == 1 ? 'item' : 'items'}',
+                                      '${bill.items.length} ${bill.items.length == 1 ? context.tr('item_unit') : context.tr('items_unit')}',
                                       style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
                                     ),
                                   ],

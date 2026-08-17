@@ -77,7 +77,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Restore Store Data',
+          context.tr('restore_store_data'),
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
         ),
         content: Column(
@@ -85,7 +85,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Paste your exported JSON database payload below to restore inventory, customers and ledgers.',
+              context.tr('restore_store_data_sub'),
               style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 12),
@@ -103,7 +103,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+            child: Text(context.tr('cancel'), style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -111,27 +111,31 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
               if (raw.isNotEmpty) {
                 final messenger = ScaffoldMessenger.of(context);
                 final auth = context.read<AuthProvider>();
+                final failMsg = context.tr('action_failed');
                 try {
                   final parsed = jsonDecode(raw);
                   Navigator.pop(ctx);
                   setState(() => _isProcessing = true);
                   final res = await auth.apiService.restoreBackup(parsed);
+                  if (!mounted) return;
                   setState(() => _isProcessing = false);
                   messenger.showSnackBar(
                     SnackBar(
-                      content: Text(res['message'] ?? 'Data restored successfully'),
+                      content: Text(res['message'] ?? failMsg),
                       backgroundColor: res['success'] == true ? AppColors.success : AppColors.error,
                     ),
                   );
                 } catch (e) {
+                  if (!mounted) return;
+                  setState(() => _isProcessing = false);
                   messenger.showSnackBar(
-                    SnackBar(content: const Text('Invalid JSON format'), backgroundColor: AppColors.error),
+                    SnackBar(content: Text(failMsg), backgroundColor: AppColors.error),
                   );
                 }
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.terracotta, foregroundColor: Colors.white),
-            child: const Text('RESTORE DATA'),
+            child: Text(context.tr('restore_data_btn')),
           ),
         ],
       ),
@@ -175,12 +179,12 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Automatic Cloud Backup Active',
+                          context.tr('auto_cloud_backup_active'),
                           style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.forestMint),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Last synced: $_lastSyncedText',
+                          '${context.tr('last_synced')}: $_lastSyncedText',
                           style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
                         ),
                       ],
@@ -209,24 +213,24 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                 children: [
                   ListTile(
                     leading: Icon(Icons.cloud_upload_rounded, color: AppColors.terracotta),
-                    title: Text('Sync & Backup to Cloud', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                    subtitle: Text('Upload all bills, customers & products to Atlas', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
+                    title: Text(context.tr('sync_backup_cloud'), style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                    subtitle: Text(context.tr('sync_backup_cloud_sub'), style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
                     trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                     onTap: _isProcessing ? null : _triggerCloudSync,
                   ),
                   Divider(color: AppColors.borderSubtle),
                   ListTile(
                     leading: Icon(Icons.table_chart_rounded, color: AppColors.forestMint),
-                    title: Text('Export Full JSON / CSV Backup', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                    subtitle: Text('Download portable database payload', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
+                    title: Text(context.tr('export_backup'), style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                    subtitle: Text(context.tr('export_backup_sub'), style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
                     trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                     onTap: _isProcessing ? null : _exportJsonBackup,
                   ),
                   Divider(color: AppColors.borderSubtle),
                   ListTile(
                     leading: Icon(Icons.settings_backup_restore_rounded, color: AppColors.warmNavy),
-                    title: Text('Restore from Backup File', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                    subtitle: Text('Import JSON backup database', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
+                    title: Text(context.tr('restore_backup'), style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                    subtitle: Text(context.tr('restore_backup_sub'), style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
                     trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                     onTap: _isProcessing ? null : _restoreFromLocal,
                   ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme.dart';
+import '../../core/localization.dart';
 import '../../providers/theme_provider.dart';
 
 class HelpSupportScreen extends StatelessWidget {
@@ -12,16 +13,16 @@ class HelpSupportScreen extends StatelessWidget {
     context.watch<ThemeProvider>();
     final faqs = [
       {
-        'q': 'How to connect thermal Bluetooth printer?',
-        'a': 'Go to Settings > Printer Setup, turn on printer Bluetooth, and pair your 58mm or 80mm POS printer.',
+        'q': context.tr('faq_printer_q'),
+        'a': context.tr('faq_printer_a'),
       },
       {
-        'q': 'How to accept 0% fee ECO Wallet QR payments?',
-        'a': 'Tap "ECO QR" on checkout or show the counter standee QR. When customers scan and pay from their ECO Wallet, payment confirms in real time.',
+        'q': context.tr('faq_wallet_q'),
+        'a': context.tr('faq_wallet_a'),
       },
       {
-        'q': 'How does Customer Khata work?',
-        'a': 'When a customer takes goods on credit, choose payment method "Khata". You can track balances and send WhatsApp reminders anytime.',
+        'q': context.tr('faq_khata_q'),
+        'a': context.tr('faq_khata_a'),
       },
     ];
 
@@ -29,7 +30,7 @@ class HelpSupportScreen extends StatelessWidget {
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          'HELP & SUPPORT',
+          context.tr('help_support').toUpperCase(),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -60,11 +61,11 @@ class HelpSupportScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '24/7 Dukaandar Helpline',
+                          context.tr('helpline_title'),
                           style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                         ),
                         Text(
-                          'Call us toll-free: 1800-123-DUKAAN',
+                          context.tr('helpline_sub'),
                           style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.terracotta, fontWeight: FontWeight.w600),
                         ),
                       ],
@@ -77,7 +78,7 @@ class HelpSupportScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             Text(
-              'FREQUENTLY ASKED QUESTIONS',
+              context.tr('faq_title'),
               style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 10),
