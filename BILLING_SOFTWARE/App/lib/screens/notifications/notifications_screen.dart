@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme.dart';
+import '../../core/localization.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -38,7 +39,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          'STORE NOTIFICATIONS',
+          context.tr('notifications').toUpperCase(),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -51,7 +52,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             TextButton(
               onPressed: () => notifProvider.markAllAsRead(auth.apiService),
               child: Text(
-                'Mark All Read',
+                context.tr('mark_all_read'),
                 style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.terracotta),
               ),
             ),
@@ -64,7 +65,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ? const Center(child: CircularProgressIndicator())
             : notifications.isEmpty
                 ? Center(
-                    child: Text('No notifications', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+                    child: Text(context.tr('no_notifications'), style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
                   )
                 : ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),

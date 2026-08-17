@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme.dart';
+import '../../core/localization.dart';
 import '../../models/bill.dart';
 import '../../models/bill_item.dart';
 import '../../providers/auth_provider.dart';
@@ -360,7 +361,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          'ORDER RETURNS & REFUNDS',
+          context.tr('order_returns').toUpperCase(),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 14,
             fontWeight: FontWeight.w800,

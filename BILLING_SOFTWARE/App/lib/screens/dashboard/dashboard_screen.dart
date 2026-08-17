@@ -378,8 +378,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 10),
                 _buildActionButton(
-                  title: 'Order Returns & Refunds',
-                  subtitle: 'Search bill or scan receipt QR to refund',
+                  title: localeProvider.tr('order_returns'),
+                  subtitle: localeProvider.tr('search_bill_return'),
                   icon: Icons.assignment_return_rounded,
                   color: AppColors.error,
                   isPrimary: false,
@@ -405,7 +405,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              '${lowStockItems.length} products are running low in stock. Tap to reorder.',
+                              '${lowStockItems.length} ${localeProvider.tr('low_stock_items')}',
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -425,7 +425,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'RECENT INVOICES',
+                      localeProvider.tr('recent_invoices').toUpperCase(),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -436,7 +436,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     InkWell(
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentsHistoryScreen())),
                       child: Text(
-                        'View All Payments →',
+                        localeProvider.tr('view_all_payments'),
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -464,7 +464,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Image.asset(MascotAssets.receipt, width: 64, height: 64),
                         const SizedBox(height: 12),
                         Text(
-                          'No bills generated yet today',
+                          localeProvider.tr('no_bills_today'),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -473,7 +473,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Tap "+ Create Bill" to make your first sale!',
+                          localeProvider.tr('create_first_bill'),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 12,
                             color: AppColors.textSecondary,
