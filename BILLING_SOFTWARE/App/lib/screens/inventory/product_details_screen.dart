@@ -48,7 +48,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          'PRODUCT DETAILS',
+          context.tr('product_details'),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -101,7 +101,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${_product.category} • Unit: ${_product.unit}',
+                    '${context.trCategory(_product.category)} • ${context.tr('units')}: ${_product.unit}',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 13,
                       color: AppColors.textSecondary,
@@ -126,7 +126,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       Container(width: 1, height: 32, color: AppColors.borderSubtle),
                       Column(
                         children: [
-                          Text('Current Stock', style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted)),
+                          Text(context.tr('current_stock'), style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted)),
                           const SizedBox(height: 2),
                           Text(
                             '${_product.stock} ${_product.unit}',
@@ -148,7 +148,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      'Low Stock Alert Threshold: <= ${_product.lowStockAlert} ${_product.unit}',
+                      '${context.tr('low_stock_threshold_label')}: <= ${_product.lowStockAlert} ${_product.unit}',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -174,7 +174,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'BARCODE & SKU IDENTIFIER',
+                    context.tr('barcode_sku_identifier'),
                     style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 14),
@@ -211,7 +211,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               child: ElevatedButton.icon(
                 onPressed: _openEditScreen,
                 icon: const Icon(Icons.edit_rounded, size: 18),
-                label: Text(context.tr('update_product').toUpperCase()),
+                label: Text(context.tr('update_product')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.terracotta,
                   foregroundColor: Colors.white,

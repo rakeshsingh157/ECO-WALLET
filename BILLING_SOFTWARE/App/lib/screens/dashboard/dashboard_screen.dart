@@ -49,15 +49,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   String _getTimeGreeting(LocaleProvider localeProvider) {
     final hour = DateTime.now().hour;
-    if (localeProvider.isHindi) {
+    final code = localeProvider.locale;
+    if (code == 'hi') {
       if (hour < 12) return 'शुभ प्रभात';
       if (hour < 17) return 'नमस्ते';
       return 'शुभ संध्या';
     }
-    if (localeProvider.isMarathi) {
+    if (code == 'mr') {
       if (hour < 12) return 'शुभ सकाळ';
       if (hour < 17) return 'नमस्कार';
       return 'शुभ संध्याकाळ';
+    }
+    if (code == 'gu') {
+      if (hour < 12) return 'શુભ સવાર';
+      if (hour < 17) return 'નમસ્તે';
+      return 'શુભ સાંજ';
+    }
+    if (code == 'ta') {
+      if (hour < 12) return 'காலை வணக்கம்';
+      if (hour < 17) return 'வணக்கம்';
+      return 'மாலை வணக்கம்';
+    }
+    if (code == 'te') {
+      if (hour < 12) return 'శుభోదయం';
+      if (hour < 17) return 'నమస్కారం';
+      return 'శుభ సాయంత్రం';
     }
     if (hour < 12) return 'Good Morning';
     if (hour < 17) return 'Good Afternoon';
@@ -256,7 +272,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textMuted),
                                 ),
                                 Text(
-                                  '$todayBills Invoices',
+                                  '$todayBills ${localeProvider.tr('invoices_unit')}',
                                   style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                                 ),
                               ],
@@ -295,7 +311,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textMuted),
                                   ),
                                   Text(
-                                    '${lowStockItems.length} Items',
+                                    '${lowStockItems.length} ${localeProvider.tr('items_count')}',
                                     style: GoogleFonts.plusJakartaSans(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,
