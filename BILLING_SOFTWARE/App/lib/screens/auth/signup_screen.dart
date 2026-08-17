@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme.dart';
+import '../../core/localization.dart';
 import '../../providers/auth_provider.dart';
 import '../main_shell.dart';
 
@@ -87,7 +88,7 @@ class _SignupScreenState extends State<SignupScreen> {
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          'REGISTER STORE',
+          context.tr('register_now').toUpperCase(),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -223,7 +224,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                 )
                               : const Icon(Icons.check_circle_rounded, size: 18),
-                          label: Text(_isLoading ? 'CREATING STORE...' : 'REGISTER & OPEN SHOP'),
+                          label: Text(_isLoading ? '...' : context.tr('register_now').toUpperCase()),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.terracotta,
                             foregroundColor: Colors.white,
