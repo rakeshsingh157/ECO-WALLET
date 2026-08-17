@@ -92,9 +92,19 @@ class VoiceAiService {
   final stt.SpeechToText _speech = stt.SpeechToText();
   final AudioRecorder _audioRecorder = AudioRecorder();
   bool _isSpeechInitialized = false;
+  bool _hasAudioPermission = false;
   String? _currentRecordingPath;
 
   bool get isListening => _speech.isListening;
+
+  Future<bool> initRecorder() async {
+    try {
+      _hasAudioPermission = await _audioRecorder.hasPermission();
+      return _hasAudioPermission;
+    } catch (_) {
+      return false;
+    }
+  }
 
   Future<bool> initSpeech() async {
     if (_isSpeechInitialized) return true;
@@ -136,8 +146,14 @@ class VoiceAiService {
       final tempDir = await getTemporaryDirectory();
       _currentRecordingPath = '${tempDir.path}/voice_order_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
-      final hasPermission = await _audioRecorder.hasPermission();
-      if (hasPermission) {
+      if (!_hasAudioPermission) {
+        _hasAudioPermission = await _audioRecorder.hasPermission();
+      }
+
+      if (_hasAudioPermission) {
+        if (await _audioRecorder.isRecording()) {
+          await _audioRecorder.stop();
+        }
         await _audioRecorder.start(
           const RecordConfig(
             encoder: AudioEncoder.aacLc,
@@ -181,11 +197,21 @@ class VoiceAiService {
     }
 
     try {
-      final path = await _audioRecorder.stop();
-      if (path != null && File(path).existsSync()) {
-        final bytes = await File(path).readAsBytes();
-        if (bytes.isNotEmpty) {
-          return base64Encode(bytes);
+      final isRec = await _audioRecorder.isRecording();
+      String? path;
+      if (isRec) {
+        path = await _audioRecorder.stop();
+      } else {
+        path = _currentRecordingPath;
+      }
+
+      if (path != null) {
+        final file = File(path);
+        if (await file.exists()) {
+          final bytes = await file.readAsBytes();
+          if (bytes.isNotEmpty) {
+            return base64Encode(bytes);
+          }
         }
       }
     } catch (_) {

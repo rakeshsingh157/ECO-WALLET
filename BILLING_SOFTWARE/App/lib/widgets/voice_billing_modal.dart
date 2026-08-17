@@ -43,6 +43,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
   @override
   void initState() {
     super.initState();
+    _voiceService.initRecorder();
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -96,13 +97,22 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
 
     if (!mounted) return;
 
+    final liveText = _textCtrl.text.trim();
+
+    if ((audioBase64 == null || audioBase64.isEmpty) && liveText.isEmpty) {
+      setState(() {
+        _isListening = false;
+        _isProcessing = false;
+        _errorMessage = 'No voice detected. Please hold the button firmly while speaking.';
+      });
+      return;
+    }
+
     setState(() {
       _isListening = false;
       _isProcessing = true;
       _errorMessage = null;
     });
-
-    final liveText = _textCtrl.text.trim();
 
     final result = await _voiceService.processVoiceOrder(
       baseUrl: auth.baseUrl,
