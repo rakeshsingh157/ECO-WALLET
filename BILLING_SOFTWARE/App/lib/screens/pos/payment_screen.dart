@@ -836,15 +836,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ],
             ],
 
-            if (_selectedMode != PaymentMode.ecoWallet) ...[
+            if (_selectedMode == PaymentMode.pending) ...[
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: _selectedMode == PaymentMode.pending ? AppColors.chaiGold : AppColors.borderSubtle,
-                    width: _selectedMode == PaymentMode.pending ? 1.5 : 1,
+                    color: AppColors.chaiGold,
+                    width: 1.5,
                   ),
                 ),
                 child: Column(
@@ -854,14 +854,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          _selectedMode == PaymentMode.pending
-                              ? context.tr('khata_customer_required').toUpperCase()
-                              : context.tr('attach_customer_optional').toUpperCase(),
+                          context.tr('khata_customer_required').toUpperCase(),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 1.2,
-                            color: _selectedMode == PaymentMode.pending ? AppColors.chaiGold : AppColors.textSecondary,
+                            color: AppColors.chaiGold,
                           ),
                         ),
                         InkWell(
@@ -957,7 +955,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
               ),
               const SizedBox(height: 20),
+            ],
 
+            if (_selectedMode != PaymentMode.ecoWallet) ...[
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
