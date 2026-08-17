@@ -869,8 +869,8 @@ async function renderInvoiceHtml(req, res) {
 
         <script>
           function downloadPdf() {
-            const element = document.getElementById('invoice-capture');
-            const opt = {
+            var element = document.getElementById('invoice-capture');
+            var opt = {
               margin: [8, 8, 8, 8],
               filename: 'Invoice_${cleanBillId}.pdf',
               image: { type: 'jpeg', quality: 1.0 },
@@ -880,39 +880,19 @@ async function renderInvoiceHtml(req, res) {
                 backgroundColor: '#FFFFFF',
                 logging: false,
                 onclone: function(clonedDoc) {
-                  const style = clonedDoc.createElement('style');
-                  style.innerHTML = `
-                    * {
-                      background: #FFFFFF !important;
-                      background-color: #FFFFFF !important;
-                      color: #000000 !important;
-                      -webkit-text-fill-color: #000000 !important;
-                      border-color: #000000 !important;
-                    }
-                    html, body, #invoice-capture, .invoice-card, .container {
-                      background: #FFFFFF !important;
-                      background-color: #FFFFFF !important;
-                      color: #000000 !important;
-                      -webkit-text-fill-color: #000000 !important;
-                    }
-                    table, tr, td, th, div, span, p, h1, h2, h3 {
-                      background: #FFFFFF !important;
-                      background-color: #FFFFFF !important;
-                      color: #000000 !important;
-                      -webkit-text-fill-color: #000000 !important;
-                    }
-                  `;
+                  var style = clonedDoc.createElement('style');
+                  style.textContent = '* { background: #FFFFFF !important; background-color: #FFFFFF !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; border-color: #000000 !important; } html, body, #invoice-capture, .invoice-card, .container { background: #FFFFFF !important; background-color: #FFFFFF !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; } table, tr, td, th, div, span, p, h1, h2, h3 { background: #FFFFFF !important; background-color: #FFFFFF !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; }';
                   clonedDoc.head.appendChild(style);
 
-                  const clonedElem = clonedDoc.getElementById('invoice-capture');
+                  var clonedElem = clonedDoc.getElementById('invoice-capture');
                   if (clonedElem) {
                     clonedElem.style.setProperty('background-color', '#FFFFFF', 'important');
                     clonedElem.style.setProperty('background', '#FFFFFF', 'important');
                     clonedElem.style.setProperty('color', '#000000', 'important');
                     clonedElem.style.setProperty('-webkit-text-fill-color', '#000000', 'important');
 
-                    const allElements = clonedElem.getElementsByTagName('*');
-                    for (let i = 0; i < allElements.length; i++) {
+                    var allElements = clonedElem.getElementsByTagName('*');
+                    for (var i = 0; i < allElements.length; i++) {
                       allElements[i].style.setProperty('background-color', '#FFFFFF', 'important');
                       allElements[i].style.setProperty('background', '#FFFFFF', 'important');
                       allElements[i].style.setProperty('color', '#000000', 'important');
