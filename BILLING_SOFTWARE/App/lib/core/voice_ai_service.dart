@@ -228,6 +228,17 @@ class VoiceAiService {
         final rawText = data['rawText']?.toString() ?? text;
         final provider = data['provider']?.toString();
         final sarvamUsed = data['sarvamUsed'] == true;
+        final isSuccess = data['success'] == true;
+
+        if (!isSuccess) {
+          return VoiceAiResult(
+            success: false,
+            rawText: rawText,
+            matched: [],
+            unmatched: [],
+            errorMessage: data['message']?.toString() ?? 'Failed to process voice order',
+          );
+        }
 
         final List<VoiceAiItem> matched = [];
         if (data['matched'] is List) {
@@ -256,12 +267,22 @@ class VoiceAiService {
           unmatched: unmatched,
         );
       } else {
+        String msg = 'Server communication error (${response.statusCode})';
+        try {
+          final errData = jsonDecode(response.body);
+          if (errData['message'] != null) {
+            msg = errData['message'].toString();
+          } else if (errData['error'] != null) {
+            msg = errData['error'].toString();
+          }
+        } catch (_) {}
+
         return VoiceAiResult(
           success: false,
           rawText: text,
           matched: [],
           unmatched: [],
-          errorMessage: 'Server communication error (${response.statusCode})',
+          errorMessage: msg,
         );
       }
     } catch (e) {

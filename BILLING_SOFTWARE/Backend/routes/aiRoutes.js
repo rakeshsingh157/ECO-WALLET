@@ -46,39 +46,54 @@ function mapLanguageToSarvam(langCode) {
 async function transcribeWithSarvam(base64Audio, languageCode, format) {
   const sarvamKey = process.env.SARVAM_API_KEY;
   if (!sarvamKey || sarvamKey.trim().length < 5) {
-    return null;
+    return { transcript: null, error: "SARVAM_API_KEY is not configured in backend environment variables" };
   }
 
-  try {
-    const audioBuffer = Buffer.from(base64Audio, "base64");
-    const mimeType = format === "wav" ? "audio/wav" : (format === "m4a" ? "audio/m4a" : "audio/aac");
-    const fileName = `speech.${format || "m4a"}`;
+  const modelsToTry = [
+    process.env.SARVAM_MODEL || "saaras:v2",
+    "saaras:v1",
+    "saaras:v4"
+  ];
 
-    const blob = new Blob([audioBuffer], { type: mimeType });
-    const formData = new FormData();
-    formData.append("file", blob, fileName);
-    formData.append("model", "saaras:v4");
-    if (languageCode && languageCode !== "unknown") {
-      formData.append("language_code", languageCode);
-    }
+  const audioBuffer = Buffer.from(base64Audio, "base64");
+  const mimeType = format === "wav" ? "audio/wav" : (format === "m4a" ? "audio/m4a" : "audio/aac");
+  const fileName = `speech.${format || "m4a"}`;
 
-    const response = await fetch("https://api.sarvam.ai/speech-to-text", {
-      method: "POST",
-      headers: {
-        "api-subscription-key": sarvamKey.trim()
-      },
-      body: formData
-    });
+  let lastError = null;
 
-    if (response.ok) {
-      const data = await response.json();
-      if (data && data.transcript && data.transcript.trim().length > 0) {
-        return data.transcript.trim();
+  for (const modelName of modelsToTry) {
+    try {
+      const blob = new Blob([audioBuffer], { type: mimeType });
+      const formData = new FormData();
+      formData.append("file", blob, fileName);
+      formData.append("model", modelName);
+      if (languageCode && languageCode !== "unknown") {
+        formData.append("language_code", languageCode);
       }
+
+      const response = await fetch("https://api.sarvam.ai/speech-to-text", {
+        method: "POST",
+        headers: {
+          "api-subscription-key": sarvamKey.trim()
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.transcript && data.transcript.trim().length > 0) {
+          return { transcript: data.transcript.trim(), error: null, model: modelName };
+        }
+      } else {
+        const errText = await response.text();
+        lastError = `Sarvam API error (${response.status}): ${errText}`;
+      }
+    } catch (e) {
+      lastError = e.message;
     }
-  } catch (_) {
   }
-  return null;
+
+  return { transcript: null, error: lastError };
 }
 
 function fallbackFuzzyMatch(spokenText, products) {
@@ -174,13 +189,16 @@ router.post("/voice-to-cart", async (req, res) => {
     const { audio, text, language, format } = req.body;
     let spokenText = "";
     let sarvamUsed = false;
+    let sarvamError = null;
 
     if (audio && typeof audio === "string" && audio.trim().length > 20) {
       const sarvamLang = mapLanguageToSarvam(language);
-      const transcribed = await transcribeWithSarvam(audio.trim(), sarvamLang, format || "m4a");
-      if (transcribed && transcribed.length > 0) {
-        spokenText = transcribed;
+      const sarvamRes = await transcribeWithSarvam(audio.trim(), sarvamLang, format || "m4a");
+      if (sarvamRes.transcript && sarvamRes.transcript.length > 0) {
+        spokenText = sarvamRes.transcript;
         sarvamUsed = true;
+      } else {
+        sarvamError = sarvamRes.error;
       }
     }
 
@@ -189,9 +207,10 @@ router.post("/voice-to-cart", async (req, res) => {
     }
 
     if (!spokenText || spokenText.length === 0) {
-      return res.status(400).json({
+      const errMsg = sarvamError || "Spoken audio recording or transcript text is required. Please check SARVAM_API_KEY in Render environment.";
+      return res.json({
         success: false,
-        message: "Spoken audio recording or transcript text is required",
+        message: errMsg,
         matched: [],
         unmatched: []
       });
@@ -256,7 +275,7 @@ Strict Response Format (ONLY return valid JSON):
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: "mistral-small-latest",
+            model: process.env.MISTRAL_MODEL || "mistral-small-latest",
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: `Spoken order: "${spokenText}" (Language: ${language || "auto"})` }
