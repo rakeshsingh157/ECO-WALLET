@@ -216,7 +216,22 @@ router.post("/:id/payment", async (req, res) => {
       return res.status(404).json({ success: false, message: "Customer not found" });
     }
 
-    const newDue = Math.max(0, (customer.due_amount || 0) - paymentAmount);
+    const currentDue = customer.due_amount || 0;
+    if (currentDue <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer has no outstanding due balance to pay",
+      });
+    }
+
+    if (paymentAmount > currentDue) {
+      return res.status(400).json({
+        success: false,
+        message: `Payment amount (₹${paymentAmount}) cannot exceed outstanding due balance of ₹${currentDue}`,
+      });
+    }
+
+    const newDue = Math.max(0, currentDue - paymentAmount);
     customer.due_amount = newDue;
     customer.last_transaction = new Date();
     await customer.save();

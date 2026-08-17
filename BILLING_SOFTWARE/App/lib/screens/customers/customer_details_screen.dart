@@ -128,9 +128,20 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   void _recordPayment() {
-    final amountCtrl = TextEditingController();
+    if (_customer.dueAmount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${_customer.name} has no outstanding pending dues'),
+          backgroundColor: AppColors.forestMint,
+        ),
+      );
+      return;
+    }
+
+    final amountCtrl = TextEditingController(text: _customer.dueAmount > 0 ? _customer.dueAmount.toStringAsFixed(0) : '');
     final noteCtrl = TextEditingController(text: 'Khata settlement');
     String selectedMode = 'cash';
+    bool isRecording = false;
 
     showDialog(
       context: context,
@@ -148,17 +159,39 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             children: [
               Text('Receiving credit payment from ${_customer.name}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
               const SizedBox(height: 8),
-              Text(
-                'Current Outstanding Due: ₹${_customer.dueAmount.toStringAsFixed(0)}',
-                style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.chaiGold),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.chaiGold.withAlpha(20),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.chaiGold.withAlpha(80)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Max Payable Due:',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                    ),
+                    Text(
+                      '₹${_customer.dueAmount.toStringAsFixed(0)}',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.chaiGold),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 14),
               TextField(
                 controller: amountCtrl,
+                enabled: !isRecording,
                 keyboardType: TextInputType.number,
                 autofocus: true,
                 style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                decoration: InputDecoration(labelText: 'Amount Received (₹) *', prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.forestMint)),
+                decoration: InputDecoration(
+                  labelText: 'Amount Received (₹) *',
+                  helperText: 'Must not exceed ₹${_customer.dueAmount.toStringAsFixed(0)}',
+                  prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.forestMint),
+                ),
               ),
               const SizedBox(height: 12),
               Text('PAYMENT METHOD', style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.textSecondary)),
@@ -170,7 +203,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     selected: selectedMode == 'cash',
                     selectedColor: AppColors.forestMint,
                     labelStyle: TextStyle(color: selectedMode == 'cash' ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.w700),
-                    onSelected: (_) => setDialogState(() => selectedMode = 'cash'),
+                    onSelected: isRecording ? null : (_) => setDialogState(() => selectedMode = 'cash'),
                   ),
                   const SizedBox(width: 8),
                   ChoiceChip(
@@ -178,7 +211,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     selected: selectedMode == 'upi',
                     selectedColor: AppColors.forestMint,
                     labelStyle: TextStyle(color: selectedMode == 'upi' ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.w700),
-                    onSelected: (_) => setDialogState(() => selectedMode = 'upi'),
+                    onSelected: isRecording ? null : (_) => setDialogState(() => selectedMode = 'upi'),
                   ),
                   const SizedBox(width: 8),
                   ChoiceChip(
@@ -186,13 +219,14 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     selected: selectedMode == 'bank',
                     selectedColor: AppColors.forestMint,
                     labelStyle: TextStyle(color: selectedMode == 'bank' ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.w700),
-                    onSelected: (_) => setDialogState(() => selectedMode = 'bank'),
+                    onSelected: isRecording ? null : (_) => setDialogState(() => selectedMode = 'bank'),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: noteCtrl,
+                enabled: !isRecording,
                 style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textPrimary),
                 decoration: const InputDecoration(labelText: 'Note (Optional)', prefixIcon: Icon(Icons.note_alt_outlined)),
               ),
@@ -200,38 +234,69 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: isRecording ? null : () => Navigator.pop(ctx),
               child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
             ),
             ElevatedButton(
-              onPressed: () async {
-                final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
-                if (amt > 0) {
-                  final auth = context.read<AuthProvider>();
-                  final note = noteCtrl.text.trim().isNotEmpty ? noteCtrl.text.trim() : 'Khata settlement';
-                  await context.read<CustomerProvider>().recordPayment(
-                    auth.apiService,
-                    _customer.id,
-                    amt,
-                    note: note,
-                    paymentMode: selectedMode,
-                  );
-                  setState(() {
-                    _customer.dueAmount = (_customer.dueAmount - amt) < 0 ? 0 : _customer.dueAmount - amt;
-                  });
-                  _loadTransactions();
-                  if (ctx.mounted) {
-                    Navigator.pop(ctx);
-                  }
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Received ₹${amt.toStringAsFixed(0)} from ${_customer.name} via ${selectedMode.toUpperCase()}'), backgroundColor: AppColors.success),
-                    );
-                  }
-                }
-              },
+              onPressed: isRecording
+                  ? null
+                  : () async {
+                      final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                      if (amt <= 0) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(content: const Text('Please enter a valid payment amount'), backgroundColor: AppColors.error),
+                        );
+                        return;
+                      }
+
+                      if (amt > _customer.dueAmount) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(
+                            content: Text('Payment amount (₹${amt.toStringAsFixed(0)}) cannot exceed pending due of ₹${_customer.dueAmount.toStringAsFixed(0)}'),
+                            backgroundColor: AppColors.error,
+                          ),
+                        );
+                        return;
+                      }
+
+                      setDialogState(() => isRecording = true);
+                      final auth = context.read<AuthProvider>();
+                      final note = noteCtrl.text.trim().isNotEmpty ? noteCtrl.text.trim() : 'Khata settlement';
+
+                      final success = await context.read<CustomerProvider>().recordPayment(
+                        auth.apiService,
+                        _customer.id,
+                        amt,
+                        note: note,
+                        paymentMode: selectedMode,
+                      );
+
+                      if (success) {
+                        setState(() {
+                          _customer.dueAmount = (_customer.dueAmount - amt) < 0 ? 0 : _customer.dueAmount - amt;
+                        });
+                        _loadTransactions();
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                        }
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Received ₹${amt.toStringAsFixed(0)} from ${_customer.name} via ${selectedMode.toUpperCase()}'), backgroundColor: AppColors.success),
+                          );
+                        }
+                      } else {
+                        setDialogState(() => isRecording = false);
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            SnackBar(content: const Text('Failed to record payment. Please try again.'), backgroundColor: AppColors.error),
+                          );
+                        }
+                      }
+                    },
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.forestMint, foregroundColor: Colors.white),
-              child: const Text('SAVE PAYMENT'),
+              child: isRecording
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('SAVE PAYMENT'),
             ),
           ],
         ),

@@ -25,16 +25,18 @@ class Customer {
 
   factory Customer.fromJson(Map<String, dynamic> json) {
     return Customer(
-      id: json['id'] ?? json['customerId'] ?? '',
-      name: json['name'] ?? '',
-      phone: json['phone'] ?? '',
-      email: json['email'] ?? '',
-      address: json['address'] ?? '',
-      aadhaarNumber: json['aadhaarNumber'] ?? '',
-      dueAmount: (json['dueAmount'] ?? 0).toDouble(),
-      totalSpent: (json['totalSpent'] ?? 0).toDouble(),
-      totalOrders: json['totalOrders'] ?? 0,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      id: json['id']?.toString() ?? json['customer_id']?.toString() ?? json['customerId']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      address: json['address']?.toString() ?? '',
+      aadhaarNumber: json['aadhaar_number']?.toString() ?? json['aadhaarNumber']?.toString() ?? '',
+      dueAmount: (json['due_amount'] as num?)?.toDouble() ?? (json['dueAmount'] as num?)?.toDouble() ?? 0.0,
+      totalSpent: (json['total_spent'] as num?)?.toDouble() ?? (json['totalSpent'] as num?)?.toDouble() ?? 0.0,
+      totalOrders: (json['total_orders'] as num?)?.toInt() ?? (json['totalOrders'] as num?)?.toInt() ?? 0,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
+          : (json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now() : DateTime.now()),
     );
   }
 

@@ -18,12 +18,14 @@ class KhataScreen extends StatefulWidget {
 
 class _KhataScreenState extends State<KhataScreen> {
   final _searchCtrl = TextEditingController();
+  int _selectedFilterIndex = 0;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshKhata();
+      final auth = context.read<AuthProvider>();
+      context.read<CustomerProvider>().fetchCustomers(auth.apiService);
     });
   }
 
@@ -35,9 +37,7 @@ class _KhataScreenState extends State<KhataScreen> {
 
   Future<void> _refreshKhata() async {
     final auth = context.read<AuthProvider>();
-    if (auth.apiService.baseUrl.isNotEmpty) {
-      await context.read<CustomerProvider>().fetchCustomers(auth.apiService);
-    }
+    await context.read<CustomerProvider>().fetchCustomers(auth.apiService);
   }
 
   void _showAddCreditModal() {
@@ -270,7 +270,13 @@ class _KhataScreenState extends State<KhataScreen> {
     context.watch<ThemeProvider>();
     final customerProvider = context.watch<CustomerProvider>();
     final allCustomers = customerProvider.customers;
-    final khataCustomers = allCustomers.where((c) => c.dueAmount > 0).toList();
+    final pendingCustomers = allCustomers.where((c) => c.dueAmount > 0).toList();
+    final settledCustomers = allCustomers.where((c) => c.dueAmount <= 0).toList();
+
+    final displayedCustomers = _selectedFilterIndex == 0
+        ? pendingCustomers
+        : (_selectedFilterIndex == 1 ? settledCustomers : allCustomers);
+
     final totalDue = customerProvider.totalOutstandingDues;
 
     return Scaffold(
@@ -329,7 +335,7 @@ class _KhataScreenState extends State<KhataScreen> {
                             ),
                           ),
                           Text(
-                            '${khataCustomers.length} customers with pending udhar',
+                            '${pendingCustomers.length} pending • ${settledCustomers.length} cleared',
                             style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
                           ),
                         ],
@@ -362,12 +368,57 @@ class _KhataScreenState extends State<KhataScreen> {
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  ChoiceChip(
+                    label: Text('Pending Dues (${pendingCustomers.length})'),
+                    selected: _selectedFilterIndex == 0,
+                    selectedColor: AppColors.terracotta,
+                    labelStyle: TextStyle(
+                      color: _selectedFilterIndex == 0 ? Colors.white : AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                    ),
+                    onSelected: (_) => setState(() => _selectedFilterIndex = 0),
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: Text('Cleared / Paid (${settledCustomers.length})'),
+                    selected: _selectedFilterIndex == 1,
+                    selectedColor: AppColors.forestMint,
+                    labelStyle: TextStyle(
+                      color: _selectedFilterIndex == 1 ? Colors.white : AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                    ),
+                    onSelected: (_) => setState(() => _selectedFilterIndex = 1),
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: Text('All (${allCustomers.length})'),
+                    selected: _selectedFilterIndex == 2,
+                    selectedColor: AppColors.textPrimary,
+                    labelStyle: TextStyle(
+                      color: _selectedFilterIndex == 2 ? AppColors.surface : AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                    ),
+                    onSelected: (_) => setState(() => _selectedFilterIndex = 2),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 8),
 
             Expanded(
               child: customerProvider.isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : khataCustomers.isEmpty
+                  : displayedCustomers.isEmpty
                       ? Center(
                           child: Padding(
                             padding: const EdgeInsets.all(24),
@@ -377,12 +428,14 @@ class _KhataScreenState extends State<KhataScreen> {
                                 Image.asset(MascotAssets.shopkeeper, width: 80, height: 80),
                                 const SizedBox(height: 14),
                                 Text(
-                                  'No Pending Udhar!',
+                                  _selectedFilterIndex == 0 ? 'No Pending Udhar!' : 'No Customers Found',
                                   style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'All customer dues have been cleared. Outstanding credit balance is zero.',
+                                  _selectedFilterIndex == 0
+                                      ? 'All customer dues have been cleared. Outstanding credit balance is zero.'
+                                      : 'Add customers or record khata transactions to get started.',
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
                                 ),
@@ -393,22 +446,31 @@ class _KhataScreenState extends State<KhataScreen> {
                       : ListView.separated(
                           physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                          itemCount: khataCustomers.length,
+                          itemCount: displayedCustomers.length,
                           separatorBuilder: (_, __) => const SizedBox(height: 10),
                           itemBuilder: (context, index) {
-                            final c = khataCustomers[index];
+                            final c = displayedCustomers[index];
+                            final isSettled = c.dueAmount <= 0;
+
                             return InkWell(
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => CustomerDetailsScreen(customer: c)),
-                              ),
+                              onTap: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => CustomerDetailsScreen(customer: c)),
+                                );
+                                if (mounted) {
+                                  _refreshKhata();
+                                }
+                              },
                               borderRadius: BorderRadius.circular(16),
                               child: Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
                                   color: AppColors.surface,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: AppColors.borderSubtle),
+                                  border: Border.all(
+                                    color: isSettled ? AppColors.forestMint.withAlpha(50) : AppColors.borderSubtle,
+                                  ),
                                 ),
                                 child: Row(
                                   children: [
@@ -416,13 +478,17 @@ class _KhataScreenState extends State<KhataScreen> {
                                       width: 44,
                                       height: 44,
                                       decoration: BoxDecoration(
-                                        color: AppColors.primaryContainer,
+                                        color: isSettled ? AppColors.forestMint.withAlpha(25) : AppColors.primaryContainer,
                                         shape: BoxShape.circle,
                                       ),
                                       child: Center(
                                         child: Text(
                                           c.name.isNotEmpty ? c.name[0].toUpperCase() : 'C',
-                                          style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.terracotta),
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w700,
+                                            color: isSettled ? AppColors.forestMint : AppColors.terracotta,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -431,9 +497,31 @@ class _KhataScreenState extends State<KhataScreen> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            c.name,
-                                            style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                          Row(
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  c.name,
+                                                  style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              if (isSettled) ...[
+                                                const SizedBox(width: 6),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.forestMint.withAlpha(25),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: Text(
+                                                    'CLEARED',
+                                                    style: GoogleFonts.plusJakartaSans(fontSize: 8, fontWeight: FontWeight.w800, color: AppColors.forestMint),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
@@ -451,12 +539,16 @@ class _KhataScreenState extends State<KhataScreen> {
                                           style: GoogleFonts.plusJakartaSans(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w800,
-                                            color: AppColors.chaiGold,
+                                            color: isSettled ? AppColors.forestMint : AppColors.chaiGold,
                                           ),
                                         ),
                                         Text(
-                                          'Due Balance',
-                                          style: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppColors.textMuted),
+                                          isSettled ? 'Settled' : context.tr('pending_due'),
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 11,
+                                            color: isSettled ? AppColors.forestMint : AppColors.textMuted,
+                                            fontWeight: isSettled ? FontWeight.w700 : FontWeight.normal,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -469,13 +561,6 @@ class _KhataScreenState extends State<KhataScreen> {
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddCreditModal,
-        backgroundColor: AppColors.terracotta,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded, size: 20),
-        label: const Text('GIVE CREDIT / KHATA', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
       ),
     );
   }
