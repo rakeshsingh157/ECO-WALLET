@@ -552,14 +552,14 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'KHATA & TRANSACTION HISTORY',
+                        context.tr('khata_transaction_history').toUpperCase(),
                         style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2, color: AppColors.textSecondary),
                       ),
                       if (_isLoadingTransactions)
                         SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.terracotta))
                       else
                         Text(
-                          '${_transactions.length} Records',
+                          '${_transactions.length} ${context.tr('records')}',
                           style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textMuted),
                         ),
                     ],
@@ -570,7 +570,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       child: Center(
                         child: Text(
-                          'No transactions recorded yet for this customer.',
+                          context.tr('no_transactions_customer'),
                           style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textMuted),
                         ),
                       ),
@@ -590,7 +590,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
                         String formattedDate = '';
                         if (tx['date'] != null) {
-                          final parsedDate = DateTime.tryParse(tx['date']);
+                          final parsedDate = DateTime.tryParse(tx['date'])?.toLocal();
                           if (parsedDate != null) {
                             formattedDate = DateFormat('dd MMM yyyy, hh:mm a').format(parsedDate);
                           }
@@ -675,7 +675,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                                 if (balanceAfter != null) ...[
                                   const SizedBox(height: 2),
                                   Text(
-                                    'Bal: ₹${balanceAfter.toStringAsFixed(0)}',
+                                    '${context.tr('balance')}: ₹${balanceAfter.toStringAsFixed(0)}',
                                     style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textMuted),
                                   ),
                                 ],

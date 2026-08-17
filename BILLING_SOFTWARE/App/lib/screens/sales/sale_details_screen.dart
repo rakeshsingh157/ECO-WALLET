@@ -23,7 +23,7 @@ class SaleDetailsScreen extends StatelessWidget {
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          'INVOICE #${bill.id}',
+          '${context.tr('invoice').toUpperCase()} #${bill.id}',
           style: GoogleFonts.plusJakartaSans(
             fontSize: 14,
             fontWeight: FontWeight.w800,
@@ -34,7 +34,7 @@ class SaleDetailsScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.share_rounded),
-            tooltip: 'Share PDF Invoice',
+            tooltip: context.tr('share_pdf'),
             onPressed: () {
               PdfInvoiceService.sharePdfInvoice(
                 context,
@@ -76,7 +76,7 @@ class SaleDetailsScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            auth.shopName.isNotEmpty ? auth.shopName : 'Dukaan Dost Store',
+                            auth.shopName.isNotEmpty ? auth.shopName : context.tr('app_title'),
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
@@ -85,7 +85,7 @@ class SaleDetailsScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            DateFormat('dd MMM yyyy, hh:mm a').format(bill.timestamp),
+                            DateFormat('dd MMM yyyy, hh:mm a').format(bill.timestamp.toLocal()),
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 11,
                               color: AppColors.textSecondary,
@@ -101,8 +101,8 @@ class SaleDetailsScreen extends StatelessWidget {
                         ),
                         child: Text(
                           bill.isReturned
-                              ? 'RETURNED'
-                              : (bill.isPartiallyReturned ? 'PARTIALLY REFUNDED' : bill.paymentMode.name.toUpperCase()),
+                              ? context.tr('returned').toUpperCase()
+                              : (bill.isPartiallyReturned ? context.tr('partial_return').toUpperCase() : bill.paymentMode.name.toUpperCase()),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
@@ -120,7 +120,7 @@ class SaleDetailsScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(context.tr('customer'), style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
-                      Text(bill.customerName ?? 'Counter Customer', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                      Text(bill.customerName ?? context.tr('counter_customer'), style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -134,7 +134,7 @@ class SaleDetailsScreen extends StatelessWidget {
                   const SizedBox(height: 12),
 
                   Text(
-                    'ITEMIZED BREAKDOWN',
+                    context.tr('itemized_breakdown').toUpperCase(),
                     style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 10),
@@ -170,21 +170,21 @@ class SaleDetailsScreen extends StatelessWidget {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                                           decoration: BoxDecoration(color: AppColors.error.withAlpha(25), borderRadius: BorderRadius.circular(4)),
-                                          child: Text('RETURNED', style: GoogleFonts.plusJakartaSans(fontSize: 8, fontWeight: FontWeight.w800, color: AppColors.error)),
+                                          child: Text(context.tr('returned').toUpperCase(), style: GoogleFonts.plusJakartaSans(fontSize: 8, fontWeight: FontWeight.w800, color: AppColors.error)),
                                         ),
                                       ] else if (isPartRet) ...[
                                         const SizedBox(width: 6),
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                                           decoration: BoxDecoration(color: AppColors.warning.withAlpha(25), borderRadius: BorderRadius.circular(4)),
-                                          child: Text('PARTIAL', style: GoogleFonts.plusJakartaSans(fontSize: 8, fontWeight: FontWeight.w800, color: AppColors.warning)),
+                                          child: Text(context.tr('partial').toUpperCase(), style: GoogleFonts.plusJakartaSans(fontSize: 8, fontWeight: FontWeight.w800, color: AppColors.warning)),
                                         ),
                                       ],
                                     ],
                                   ),
                                   if (isPartRet)
                                     Text(
-                                      '${item.formatQuantityValue(item.returnedQuantity)} returned',
+                                      '${item.formatQuantityValue(item.returnedQuantity)} ${context.tr('returned')}',
                                       style: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.w600),
                                     ),
                                 ],
@@ -224,7 +224,7 @@ class SaleDetailsScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Total Refunded', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.error)),
+                        Text(context.tr('total_refunded'), style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.error)),
                         Text(
                           '-₹${bill.refundedAmount.toStringAsFixed(2)}',
                           style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.error),
@@ -235,7 +235,7 @@ class SaleDetailsScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Net Settled Total', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.forestMint)),
+                        Text(context.tr('net_settled_total'), style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.forestMint)),
                         Text(
                           '₹${bill.netAmount.toStringAsFixed(2)}',
                           style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.forestMint),
@@ -276,7 +276,8 @@ class SaleDetailsScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Scan to view & download PDF invoice on browser',
+                          context.tr('scan_qr_invoice_hint'),
+                          textAlign: TextAlign.center,
                           style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.terracotta),
                         ),
                       ],
@@ -302,7 +303,7 @@ class SaleDetailsScreen extends StatelessWidget {
                       );
                     },
                     icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
-                    label: const Text('Download / Print PDF'),
+                    label: Text(context.tr('download_print_pdf')),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.terracotta,
                       foregroundColor: Colors.white,
@@ -328,7 +329,7 @@ class SaleDetailsScreen extends StatelessWidget {
                     );
                   },
                   icon: Icon(Icons.assignment_return_rounded, size: 18, color: AppColors.error),
-                  label: const Text('Return / Refund This Order'),
+                  label: Text(context.tr('return_refund_order')),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error,
                     side: BorderSide(color: AppColors.error.withAlpha(128)),

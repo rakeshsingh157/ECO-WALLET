@@ -559,7 +559,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                                         children: [
                                           Flexible(
                                             child: Text(
-                                              bill.customerName ?? 'Counter Customer',
+                                              bill.customerName ?? context.tr('counter_customer'),
                                               style: GoogleFonts.plusJakartaSans(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w700,
@@ -643,7 +643,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                                           ),
                                           const SizedBox(width: 6),
                                           Text(
-                                            DateFormat('dd MMM yyyy, hh:mm a').format(bill.timestamp),
+                                            DateFormat('dd MMM yyyy, hh:mm a').format(bill.timestamp.toLocal()),
                                             style: GoogleFonts.plusJakartaSans(
                                               fontSize: 11,
                                               color: AppColors.textSecondary,

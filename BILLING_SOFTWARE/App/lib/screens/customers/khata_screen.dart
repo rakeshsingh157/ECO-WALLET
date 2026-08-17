@@ -250,15 +250,15 @@ class _KhataScreenState extends State<KhataScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: isSaving
-                        ? const Row(
+                        ? Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)),
-                              SizedBox(width: 12),
-                              Text('Saving Khata Entry...', style: TextStyle(fontWeight: FontWeight.w700)),
+                              const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)),
+                              const SizedBox(width: 12),
+                              Text(ctx.tr('saving_khata_entry'), style: const TextStyle(fontWeight: FontWeight.w700)),
                             ],
                           )
-                        : const Text('RECORD KHATA CREDIT', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                        : Text(ctx.tr('record_khata_credit').toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                   ),
                 ),
               ],
