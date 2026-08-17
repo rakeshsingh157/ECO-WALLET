@@ -51,8 +51,8 @@ async function transcribeWithSarvam(base64Audio, languageCode, format) {
 
   const modelsToTry = [
     process.env.SARVAM_MODEL || "saaras:v4",
-    "saaras:v1",
-    "saaras:v4"
+    "saaras:v2",
+    "saaras:v1"
   ];
 
   const audioBuffer = Buffer.from(base64Audio, "base64");
@@ -94,6 +94,69 @@ async function transcribeWithSarvam(base64Audio, languageCode, format) {
   }
 
   return { transcript: null, error: lastError };
+}
+
+function extractJSONFromText(rawText) {
+  if (!rawText || typeof rawText !== "string") return null;
+
+  try {
+    return JSON.parse(rawText.trim());
+  } catch (_) {}
+
+  try {
+    const cleaned = rawText.replace(/```(?:json)?/gi, "").replace(/```/g, "").trim();
+    return JSON.parse(cleaned);
+  } catch (_) {}
+
+  try {
+    const firstBrace = rawText.indexOf("{");
+    const lastBrace = rawText.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      const jsonCandidate = rawText.substring(firstBrace, lastBrace + 1);
+      return JSON.parse(jsonCandidate);
+    }
+  } catch (_) {}
+
+  return null;
+}
+
+function findProductInInventory(queryIdentifier, queryName, products) {
+  const queryIdLower = (queryIdentifier || "").toString().toLowerCase().trim();
+  const queryNameLower = (queryName || "").toString().toLowerCase().trim();
+
+  let found = products.find(p => {
+    const pId = (p.product_id || p._id.toString()).toLowerCase();
+    return pId === queryIdLower;
+  });
+  if (found) return found;
+
+  if (queryNameLower) {
+    found = products.find(p => p.name.toLowerCase() === queryNameLower);
+    if (found) return found;
+  }
+
+  if (queryIdLower) {
+    found = products.find(p => p.name.toLowerCase() === queryIdLower);
+    if (found) return found;
+  }
+
+  const token = queryNameLower || queryIdLower;
+  if (token) {
+    found = products.find(p => p.name.toLowerCase().includes(token) || token.includes(p.name.toLowerCase()));
+    if (found) return found;
+
+    for (const [canonical, syns] of Object.entries(MULTI_LANG_SYNONYMS)) {
+      if (syns.includes(token) || canonical === token) {
+        found = products.find(p => {
+          const pName = p.name.toLowerCase();
+          return pName.includes(canonical) || syns.some(s => pName.includes(s));
+        });
+        if (found) return found;
+      }
+    }
+  }
+
+  return null;
 }
 
 function fallbackFuzzyMatch(spokenText, products) {
@@ -141,28 +204,17 @@ function fallbackFuzzyMatch(spokenText, products) {
       continue;
     }
 
-    let foundProduct = products.find(p => p.name.toLowerCase().includes(token));
-
-    if (!foundProduct) {
-      for (const [canonical, syns] of Object.entries(MULTI_LANG_SYNONYMS)) {
-        if (syns.includes(token) || canonical === token) {
-          foundProduct = products.find(p => {
-            const pName = p.name.toLowerCase();
-            return pName.includes(canonical) || syns.some(s => pName.includes(s));
-          });
-          if (foundProduct) break;
-        }
-      }
-    }
+    const foundProduct = findProductInInventory(token, token, products);
 
     if (foundProduct) {
-      const alreadyInMatched = matched.find(m => m.id === (foundProduct.product_id || foundProduct._id.toString()));
+      const pId = foundProduct.product_id || foundProduct._id.toString();
+      const alreadyInMatched = matched.find(m => m.id === pId);
       if (alreadyInMatched) {
         alreadyInMatched.quantity += qty;
       } else {
         matched.push({
-          id: foundProduct.product_id || foundProduct._id.toString(),
-          product_id: foundProduct.product_id || foundProduct._id.toString(),
+          id: pId,
+          product_id: pId,
           name: foundProduct.name,
           price: foundProduct.price,
           unit: foundProduct.unit || unit,
@@ -249,24 +301,27 @@ Your task is to parse all items, their requested quantities and units, and match
 Available Merchant Inventory:
 ${JSON.stringify(inventorySummary)}
 
-Strict Response Format (ONLY return valid JSON):
+Strict Response Format (ONLY return valid JSON without commentary):
 {
   "matched": [
     {
       "id": "exact product id from inventory",
-      "quantity": number,
-      "unit": "requested or product unit"
+      "name": "exact product name from inventory",
+      "quantity": 1,
+      "unit": "kg"
     }
   ],
   "unmatched": [
     {
-      "name": "requested product name as spoken",
-      "quantity": number,
-      "unit": "requested unit",
+      "name": "requested item name as spoken",
+      "quantity": 1,
+      "unit": "pcs",
       "reason": "not_in_inventory"
     }
   ]
 }`;
+
+        const mistralModel = process.env.MISTRAL_MODEL || "mistral-large-latest";
 
         const mistralResponse = await fetch("https://api.mistral.ai/v1/chat/completions", {
           method: "POST",
@@ -275,7 +330,7 @@ Strict Response Format (ONLY return valid JSON):
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: process.env.MISTRAL_MODEL || "mistral-large-latest",
+            model: mistralModel,
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: `Spoken order: "${spokenText}" (Language: ${language || "auto"})` }
@@ -287,35 +342,56 @@ Strict Response Format (ONLY return valid JSON):
 
         if (mistralResponse.ok) {
           const aiData = await mistralResponse.json();
-          const parsedContent = JSON.parse(aiData.choices[0].message.content);
+          const rawMessageContent = aiData.choices && aiData.choices[0] && aiData.choices[0].message ? aiData.choices[0].message.content : "";
+          const parsedContent = extractJSONFromText(rawMessageContent);
 
-          const matchedList = [];
-          if (Array.isArray(parsedContent.matched)) {
-            for (const item of parsedContent.matched) {
-              const matchedProduct = products.find(p => (p.product_id || p._id.toString()) === item.id);
-              if (matchedProduct) {
-                matchedList.push({
-                  id: matchedProduct.product_id || matchedProduct._id.toString(),
-                  product_id: matchedProduct.product_id || matchedProduct._id.toString(),
-                  name: matchedProduct.name,
-                  price: matchedProduct.price,
-                  unit: matchedProduct.unit || item.unit || "pcs",
-                  stock: matchedProduct.stock,
-                  category: matchedProduct.category,
-                  quantity: typeof item.quantity === "number" && item.quantity > 0 ? item.quantity : 1
-                });
+          if (parsedContent) {
+            const matchedList = [];
+            const unmatchedList = Array.isArray(parsedContent.unmatched) ? parsedContent.unmatched : [];
+
+            if (Array.isArray(parsedContent.matched)) {
+              for (const item of parsedContent.matched) {
+                const matchedProduct = findProductInInventory(item.id, item.name, products);
+                const rawQty = typeof item.quantity === "number" ? item.quantity : parseFloat(item.quantity);
+                const safeQty = !isNaN(rawQty) && rawQty > 0 ? rawQty : 1;
+
+                if (matchedProduct) {
+                  const pId = matchedProduct.product_id || matchedProduct._id.toString();
+                  const existing = matchedList.find(m => m.id === pId);
+                  if (existing) {
+                    existing.quantity += safeQty;
+                  } else {
+                    matchedList.push({
+                      id: pId,
+                      product_id: pId,
+                      name: matchedProduct.name,
+                      price: matchedProduct.price,
+                      unit: matchedProduct.unit || item.unit || "pcs",
+                      stock: matchedProduct.stock,
+                      category: matchedProduct.category,
+                      quantity: safeQty
+                    });
+                  }
+                } else {
+                  unmatchedList.push({
+                    name: item.name || item.id || "Unknown item",
+                    quantity: safeQty,
+                    unit: item.unit || "pcs",
+                    reason: "not_found"
+                  });
+                }
               }
             }
-          }
 
-          return res.json({
-            success: true,
-            sarvamUsed,
-            provider: "mistral",
-            rawText: spokenText,
-            matched: matchedList,
-            unmatched: Array.isArray(parsedContent.unmatched) ? parsedContent.unmatched : []
-          });
+            return res.json({
+              success: true,
+              sarvamUsed,
+              provider: `mistral (${mistralModel})`,
+              rawText: spokenText,
+              matched: matchedList,
+              unmatched: unmatchedList
+            });
+          }
         }
       } catch (_) {
       }
