@@ -5,10 +5,10 @@ const MerchantPayment = require("../models/MerchantPayment");
 const User = require("../models/User");
 const Bank = require("../models/Bank");
 const Transaction = require("../models/Transaction");
-const { authMiddleware } = require("../middleware/auth");
+const { protect } = require("../middleware/auth");
 const { generateTransactionId } = require("../utils/idGenerator");
 
-router.post("/register", authMiddleware, async (req, res) => {
+router.post("/register", protect, async (req, res) => {
   try {
     const { business_name, owner_name, mobile_number, email, address, gstin } = req.body;
     if (!business_name || !owner_name || !mobile_number) {
@@ -45,7 +45,7 @@ router.post("/register", authMiddleware, async (req, res) => {
   }
 });
 
-router.get("/profile", authMiddleware, async (req, res) => {
+router.get("/profile", protect, async (req, res) => {
   try {
     const merchant = await Merchant.findOne({ user_id: req.user.user_id });
     if (!merchant) {
@@ -296,8 +296,8 @@ const renderInvoice = async (req, res) => {
 
   <script>
     function downloadPdf() {
-      const element = document.getElementById('invoice-capture');
-      const opt = {
+      var element = document.getElementById('invoice-capture');
+      var opt = {
         margin: [8, 8, 8, 8],
         filename: 'Invoice_${orderId}.pdf',
         image: { type: 'jpeg', quality: 1.0 },
@@ -307,39 +307,19 @@ const renderInvoice = async (req, res) => {
           backgroundColor: '#FFFFFF',
           logging: false,
           onclone: function(clonedDoc) {
-            const style = clonedDoc.createElement('style');
-            style.innerHTML = `
-              * {
-                background: #FFFFFF !important;
-                background-color: #FFFFFF !important;
-                color: #000000 !important;
-                -webkit-text-fill-color: #000000 !important;
-                border-color: #000000 !important;
-              }
-              html, body, #invoice-capture, .card, .container {
-                background: #FFFFFF !important;
-                background-color: #FFFFFF !important;
-                color: #000000 !important;
-                -webkit-text-fill-color: #000000 !important;
-              }
-              table, tr, td, th, div, span, p, h1, h2, h3 {
-                background: #FFFFFF !important;
-                background-color: #FFFFFF !important;
-                color: #000000 !important;
-                -webkit-text-fill-color: #000000 !important;
-              }
-            `;
+            var style = clonedDoc.createElement('style');
+            style.textContent = '* { background: #FFFFFF !important; background-color: #FFFFFF !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; border-color: #000000 !important; } html, body, #invoice-capture, .card, .container { background: #FFFFFF !important; background-color: #FFFFFF !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; } table, tr, td, th, div, span, p, h1, h2, h3 { background: #FFFFFF !important; background-color: #FFFFFF !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; }';
             clonedDoc.head.appendChild(style);
 
-            const clonedElem = clonedDoc.getElementById('invoice-capture');
+            var clonedElem = clonedDoc.getElementById('invoice-capture');
             if (clonedElem) {
               clonedElem.style.setProperty('background-color', '#FFFFFF', 'important');
               clonedElem.style.setProperty('background', '#FFFFFF', 'important');
               clonedElem.style.setProperty('color', '#000000', 'important');
               clonedElem.style.setProperty('-webkit-text-fill-color', '#000000', 'important');
 
-              const allElements = clonedElem.getElementsByTagName('*');
-              for (let i = 0; i < allElements.length; i++) {
+              var allElements = clonedElem.getElementsByTagName('*');
+              for (var i = 0; i < allElements.length; i++) {
                 allElements[i].style.setProperty('background-color', '#FFFFFF', 'important');
                 allElements[i].style.setProperty('background', '#FFFFFF', 'important');
                 allElements[i].style.setProperty('color', '#000000', 'important');
