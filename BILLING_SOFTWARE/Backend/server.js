@@ -528,28 +528,51 @@ async function renderInvoiceHtml(req, res) {
       `;
       }).join("");
     } else {
-      itemsHtml = `<tr><td colspan="5" style="padding: 16px 0; text-align: center; color: #4B5563; font-size: 13px;">General Store Purchase</td></tr>`;
+      itemsHtml = `<tr><td colspan="5" style="padding: 16px 0; text-align: center; color: #000000;">General Store Purchase</td></tr>`;
     }
 
     res.send(`
       <!DOCTYPE html>
-      <html lang="en">
+      <html lang="en" style="background-color: #FFFFFF !important; color-scheme: light only !important;">
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light only">
+        <meta name="supported-color-schemes" content="light">
         <title>Tax Invoice #${cleanBillId} - ${shopName}</title>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
         <style>
-          * { box-sizing: border-box; }
-          body {
+          :root {
+            color-scheme: light only !important;
+          }
+          * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          html, body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: #F3F4F6;
-            color: #111827;
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
             padding: 16px;
             margin: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
+            color-scheme: light only !important;
+          }
+          @media (prefers-color-scheme: dark) {
+            html, body, div, table, tr, td, th, span, p, h1, h2, h3, h4, h5, h6 {
+              background-color: transparent;
+              color: #000000 !important;
+              -webkit-text-fill-color: #000000 !important;
+            }
+            .invoice-card, #invoice-capture {
+              background-color: #FFFFFF !important;
+              color: #000000 !important;
+              -webkit-text-fill-color: #000000 !important;
+            }
           }
           .container {
             max-width: 600px;
@@ -578,29 +601,32 @@ async function renderInvoiceHtml(req, res) {
             transition: 0.2s;
           }
           .btn-download {
-            background: #111827;
-            color: #FFFFFF;
+            background: #000000;
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
             border: 1px solid #000000;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
           }
           .btn-download:hover {
-            background: #000000;
+            background: #222222;
           }
           .btn-print {
             background: #FFFFFF;
-            color: #111827;
-            border: 1px solid #D1D5DB;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+            border: 1px solid #000000;
           }
           .btn-print:hover {
             background: #F9FAFB;
           }
           .invoice-card {
-            background: #FFFFFF;
-            color: #000000;
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
             border-radius: 12px;
             padding: 28px;
             border: 2px solid #000000;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
           }
           .tax-header {
             text-align: center;
@@ -613,42 +639,50 @@ async function renderInvoiceHtml(req, res) {
             font-weight: 800;
             letter-spacing: 2px;
             text-transform: uppercase;
-            color: #000000;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
             margin-bottom: 6px;
           }
           .shop-title {
             font-size: 24px;
             font-weight: 900;
-            color: #000000;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
             margin: 0 0 4px 0;
             letter-spacing: -0.5px;
           }
           .shop-sub {
             font-size: 12px;
-            color: #374151;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
             line-height: 1.4;
           }
           .info-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 16px;
-            border: 1px solid #000000;
+            border: 1.5px solid #000000;
           }
           .info-table td {
             padding: 8px 10px;
             font-size: 12px;
             border: 1px solid #000000;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+            background-color: #FFFFFF !important;
           }
           .info-label {
-            color: #4B5563;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
             font-size: 10px;
             text-transform: uppercase;
-            font-weight: 700;
+            font-weight: 800;
             display: block;
             margin-bottom: 2px;
           }
           .info-val {
-            color: #000000;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
             font-weight: 700;
             font-size: 13px;
           }
@@ -659,107 +693,107 @@ async function renderInvoiceHtml(req, res) {
             border: 2px solid #000000;
           }
           .item-table th {
-            background: #000000;
-            color: #FFFFFF;
+            background-color: #F3F4F6 !important;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
             font-size: 11px;
-            text-transform: uppercase;
+            font-weight: 800;
             letter-spacing: 0.5px;
-            padding: 8px 6px;
+            text-transform: uppercase;
+            padding: 10px;
             border: 1px solid #000000;
+            text-align: left;
+          }
+          .item-table td {
+            padding: 9px 10px;
+            font-size: 12px;
+            border: 1px solid #000000;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+            background-color: #FFFFFF !important;
           }
           .summary-box {
-            border: 2px solid #000000;
-            padding: 14px;
             margin-top: 16px;
-            background: #F9FAFB;
+            border: 2px solid #000000;
+            border-radius: 8px;
+            padding: 14px;
+            background-color: #FFFFFF !important;
           }
           .summary-row {
             display: flex;
             justify-content: space-between;
-            font-size: 13px;
-            color: #374151;
+            font-size: 12px;
             margin-bottom: 6px;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
           }
           .summary-total {
             display: flex;
             justify-content: space-between;
-            font-size: 20px;
+            font-size: 16px;
             font-weight: 900;
-            color: #000000;
-            margin-top: 8px;
-            padding-top: 8px;
             border-top: 2px solid #000000;
+            padding-top: 8px;
+            margin-top: 6px;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
           }
           .footer {
             text-align: center;
-            margin-top: 20px;
             font-size: 11px;
-            color: #4B5563;
-            line-height: 1.5;
-            border-top: 1px dashed #9CA3AF;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+            border-top: 1px dashed #000000;
             padding-top: 14px;
+            margin-top: 16px;
+            line-height: 1.4;
           }
           @media print {
-            body {
-              background: #FFFFFF;
-              color: #000000;
-              padding: 0;
-            }
-            .actions {
-              display: none !important;
-            }
-            .invoice-card {
-              border: none;
-              box-shadow: none;
-              padding: 0;
-              border-radius: 0;
-            }
+            body { background-color: #FFF !important; color: #000 !important; -webkit-text-fill-color: #000 !important; padding: 0; }
+            .actions { display: none !important; }
+            .invoice-card { border: none; box-shadow: none; padding: 0; }
           }
         </style>
       </head>
-      <body>
+      <body style="background-color: #FFFFFF !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important;">
         <div class="container">
           <div class="actions">
             <button class="btn btn-download" onclick="downloadPdf()">
               <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
               Download PDF Invoice
             </button>
-            <button class="btn btn-print" onclick="window.print()">
-              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-              Print
-            </button>
+            <button class="btn btn-print" onclick="window.print()">Print</button>
           </div>
 
-          <div class="invoice-card" id="invoice-capture">
+          <div class="invoice-card" id="invoice-capture" style="background-color: #FFFFFF !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important;">
             <div class="tax-header">
               <div class="tax-title">RETAIL TAX INVOICE / CASH MEMO</div>
               <h1 class="shop-title">${shopName}</h1>
-              ${ownerName ? `<div class="shop-sub" style="font-weight: 700; color: #111827;">Proprietor: ${ownerName}</div>` : ""}
+              ${ownerName ? `<div style="font-size: 12px; font-weight: 700; color: #000000; -webkit-text-fill-color: #000000;">Proprietor: ${ownerName}</div>` : ''}
               <div class="shop-sub">${shopAddress}</div>
-              <div class="shop-sub">Contact: ${shopPhone}${shopGstin ? ` | GSTIN: ${shopGstin}` : ""}</div>
+              <div class="shop-sub">Contact: ${shopPhone}${shopGstin ? ` | GSTIN: ${shopGstin}` : ''}</div>
             </div>
 
             <table class="info-table">
               <tr>
                 <td style="width: 50%;">
-                  <span class="info-label">Invoice / Bill Number</span>
+                  <span class="info-label">Invoice Number</span>
                   <span class="info-val">#${cleanBillId}</span>
                 </td>
                 <td style="width: 50%;">
-                  <span class="info-label">Date & Time</span>
+                  <span class="info-label">Invoice Date & Time</span>
                   <span class="info-val">${dateStr}</span>
                 </td>
               </tr>
               <tr>
                 <td>
-                  <span class="info-label">Customer Details</span>
-                  <span class="info-val">${customerName}${customerPhone ? ` (${customerPhone})` : ""}</span>
+                  <span class="info-label">Billed To (Customer)</span>
+                  <span class="info-val">${customerName}</span>
+                  ${customerPhone ? `<div style="font-size: 11px; color: #000000; -webkit-text-fill-color: #000000;">Ph: ${customerPhone}</div>` : ''}
                 </td>
                 <td>
                   <span class="info-label">Payment Mode & Status</span>
-                  <span class="info-val">
-                    ${paymentMode} ${refundedAmount >= totalAmount ? '(100% REFUNDED)' : (refundedAmount > 0 ? `(PARTIALLY REFUNDED: ₹${refundedAmount.toFixed(2)})` : '(PAID)')}
-                  </span>
+                  <span class="info-val" style="text-transform: uppercase;">${paymentMode} (${status.toUpperCase()})</span>
                 </td>
               </tr>
             </table>
@@ -767,11 +801,11 @@ async function renderInvoiceHtml(req, res) {
             <table class="item-table">
               <thead>
                 <tr>
-                  <th style="width: 32px; text-align: center;">#</th>
-                  <th style="text-align: left;">Item Description</th>
-                  <th style="width: 80px; text-align: center;">Qty / Wt</th>
-                  <th style="width: 80px; text-align: right;">Rate (₹)</th>
-                  <th style="width: 90px; text-align: right;">Amount (₹)</th>
+                  <th style="width: 40px; text-align: center;">#</th>
+                  <th>Item Description</th>
+                  <th style="text-align: center;">Qty / Unit</th>
+                  <th style="text-align: right;">Rate (₹)</th>
+                  <th style="text-align: right;">Amount (₹)</th>
                 </tr>
               </thead>
               <tbody>
@@ -782,14 +816,14 @@ async function renderInvoiceHtml(req, res) {
             <div class="summary-box">
               <div class="summary-row">
                 <span>Total Items / Subtotal</span>
-                <span style="font-weight: 700; color: #111827;">₹${Number(totalAmount).toFixed(2)}</span>
+                <span style="font-weight: 700; color: #000000; -webkit-text-fill-color: #000000;">₹${Number(totalAmount).toFixed(2)}</span>
               </div>
               <div class="summary-row">
                 <span>GST / Taxes</span>
                 <span>₹0.00 (Inclusive)</span>
               </div>
               ${refundedAmount > 0 ? `
-              <div class="summary-row" style="color: #DC2626; font-weight: 700;">
+              <div class="summary-row" style="color: #000000; font-weight: 700;">
                 <span>Returned / Refunded Amount</span>
                 <span>-₹${Number(refundedAmount).toFixed(2)}</span>
               </div>
@@ -800,25 +834,25 @@ async function renderInvoiceHtml(req, res) {
               </div>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 12px 14px; border: 1.5px solid #000000; background: #FFFFFF; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 12px 14px; border: 1.5px solid #000000; background-color: #FFFFFF; border-radius: 8px;">
               <div style="display: flex; align-items: center; gap: 12px;">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(cleanBillId)}" style="width: 75px; height: 75px; border: 1px solid #000000; display: block;" alt="Invoice QR" crossOrigin="anonymous" />
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(cleanBillId)}" style="width: 75px; height: 75px; border: 1px solid #000000; display: block; background: #FFFFFF;" alt="Invoice QR" crossOrigin="anonymous" />
                 <div>
-                  <div style="font-size: 11px; font-weight: 900; color: #000000; letter-spacing: 0.5px; text-transform: uppercase;">SCAN TO RETURN / VERIFY ORDER</div>
-                  <div style="font-size: 10px; color: #4B5563; margin-top: 2px;">Scan this QR with the Dukaan Dost app to process return</div>
-                  <div style="font-size: 11px; font-weight: 800; color: #000000; margin-top: 3px;">INVOICE ID: #${cleanBillId}</div>
+                  <div style="font-size: 11px; font-weight: 900; color: #000000; -webkit-text-fill-color: #000000; letter-spacing: 0.5px; text-transform: uppercase;">SCAN TO RETURN / VERIFY ORDER</div>
+                  <div style="font-size: 10px; color: #000000; -webkit-text-fill-color: #000000; margin-top: 2px;">Scan this QR with the Dukaan Dost app to process return</div>
+                  <div style="font-size: 11px; font-weight: 800; color: #000000; -webkit-text-fill-color: #000000; margin-top: 3px;">INVOICE ID: #${cleanBillId}</div>
                 </div>
               </div>
-              <div style="text-align: right; font-size: 10px; color: #374151;">
-                <div style="font-weight: 700; color: #000000;">DIGITALLY VERIFIED</div>
-                <div style="color: #6B7280; font-size: 9px; margin-top: 2px;">Auth #${Math.abs(cleanBillId.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0))}</div>
+              <div style="text-align: right; font-size: 10px; color: #000000; -webkit-text-fill-color: #000000;">
+                <div style="font-weight: 700; color: #000000; -webkit-text-fill-color: #000000;">DIGITALLY VERIFIED</div>
+                <div style="color: #000000; -webkit-text-fill-color: #000000; font-size: 9px; margin-top: 2px;">Auth #${Math.abs(cleanBillId.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0))}</div>
               </div>
             </div>
 
             <div class="footer">
-              <div style="font-weight: 700; color: #111827; margin-bottom: 4px;">Thank you for your business!</div>
+              <div style="font-weight: 700; color: #000000; -webkit-text-fill-color: #000000; margin-bottom: 4px;">Thank you for your business!</div>
               <div>This is a computer generated invoice and requires no physical signature.</div>
-              <div style="margin-top: 4px; font-size: 10px; color: #6B7280;">Dukaan Dost Smart Billing System</div>
+              <div style="margin-top: 4px; font-size: 10px; color: #000000; -webkit-text-fill-color: #000000;">Dukaan Dost Smart Billing System</div>
             </div>
           </div>
         </div>
@@ -830,7 +864,27 @@ async function renderInvoiceHtml(req, res) {
               margin: [8, 8, 8, 8],
               filename: 'Invoice_${cleanBillId}.pdf',
               image: { type: 'jpeg', quality: 1.0 },
-              html2canvas: { scale: 3, useCORS: true, backgroundColor: '#FFFFFF', logging: false },
+              html2canvas: {
+                scale: 3,
+                useCORS: true,
+                backgroundColor: '#FFFFFF',
+                logging: false,
+                onclone: function(clonedDoc) {
+                  const clonedElem = clonedDoc.getElementById('invoice-capture');
+                  if (clonedElem) {
+                    clonedElem.style.backgroundColor = '#FFFFFF';
+                    clonedElem.style.color = '#000000';
+                    const allElements = clonedElem.querySelectorAll('*');
+                    allElements.forEach(function(el) {
+                      if (el.tagName !== 'BUTTON') {
+                        el.style.backgroundColor = el.style.backgroundColor === '#000000' ? '#000000' : '#FFFFFF';
+                        el.style.color = '#000000';
+                        el.style.webkitTextFillColor = '#000000';
+                      }
+                    });
+                  }
+                }
+              },
               jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             html2pdf().set(opt).from(element).save();

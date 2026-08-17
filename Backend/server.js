@@ -16,7 +16,9 @@ const transactionRoutes = require("./routes/transactionRoutes");
 const rewardRoutes = require("./routes/rewardRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
-const merchantRoutes = require("./routes/merchantRoutes");
+const merchantModule = require("./routes/merchantRoutes");
+const merchantRoutes = merchantModule.router || merchantModule;
+const renderInvoice = merchantModule.renderInvoice;
 
 const Bank = require("./models/Bank");
 const User = require("./models/User");
@@ -25,7 +27,6 @@ const { generateUserId, generateTaskId } = require("./utils/idGenerator");
 
 const app = express();
 
-// ─── Security Middleware ────────────────────────────────
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   contentSecurityPolicy: false,
@@ -36,7 +37,6 @@ app.use(helmet({
   },
 }));
 
-// ─── CORS ───────────────────────────────────────────────
 const corsOrigins = (process.env.CORS_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
 app.use(
   cors({
@@ -45,18 +45,15 @@ app.use(
   })
 );
 
-// ─── Body Parsing ───────────────────────────────────────
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// ─── Request Logging ────────────────────────────────────
 if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));
 }
 
-// ─── Rate Limiting ──────────────────────────────────────
 const globalLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
+  windowMs: 60 * 1000,
   max: parseInt(process.env.RATE_LIMIT_PER_MINUTE) || 60,
   message: { success: false, message: "Too many requests, please try again later" },
   standardHeaders: true,
@@ -65,31 +62,30 @@ const globalLimiter = rateLimit({
 app.use("/api/", globalLimiter);
 
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: parseInt(process.env.LOGIN_RATE_LIMIT) || 5,
   message: { success: false, message: "Too many login attempts, try again in 15 minutes" },
 });
 app.use("/api/auth/login", authLimiter);
 
 const transferLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
+  windowMs: 60 * 1000,
   max: 10,
   message: { success: false, message: "Too many transfer attempts. Please try again later." },
 });
 
 const taskLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
+  windowMs: 60 * 1000,
   max: 15,
   message: { success: false, message: "Too many task actions. Please try again later." },
 });
 
 const merchantLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
+  windowMs: 60 * 1000,
   max: 30,
   message: { success: false, message: "Too many merchant API requests. Please try again later." },
 });
 
-// ─── API Routes ─────────────────────────────────────────
 app.use("/api/auth", authRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/transfer", transferLimiter, transferRoutes);
@@ -98,6 +94,13 @@ app.use("/api/rewards", taskLimiter, rewardRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/merchant", merchantLimiter, merchantRoutes);
+
+if (renderInvoice) {
+  app.get("/api/merchant/invoice/:bill_id", renderInvoice);
+  app.get("/api/invoice/:bill_id", renderInvoice);
+  app.get("/api/bills/invoice/:bill_id", renderInvoice);
+  app.get("/invoice/:bill_id", renderInvoice);
+}
 
 // ─── Health Check ───────────────────────────────────────
 app.get("/api/health", (req, res) => {
