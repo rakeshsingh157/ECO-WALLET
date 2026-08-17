@@ -226,7 +226,7 @@ class _KhataScreenState extends State<KhataScreen> {
                               if (ctx.mounted) {
                                 Navigator.pop(ctx);
                               }
-                              if (context.mounted) {
+                              if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text('Recorded ₹${amt.toStringAsFixed(0)} Khata credit'), backgroundColor: AppColors.success),
                                 );

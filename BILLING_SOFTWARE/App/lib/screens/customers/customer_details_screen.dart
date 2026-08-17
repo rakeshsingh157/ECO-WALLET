@@ -480,7 +480,6 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         final tx = _transactions[i];
                         final isCredit = tx['type'] == 'credit';
                         final isPayment = tx['type'] == 'payment';
-                        final isBill = tx['type'] == 'bill';
                         final amount = (tx['amount'] as num?)?.toDouble() ?? 0.0;
                         final balanceAfter = (tx['balance_after'] as num?)?.toDouble();
 
