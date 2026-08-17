@@ -19,7 +19,7 @@ const MULTI_LANG_SYNONYMS = {
   "flour": ["atta", "aata", "pith", "maida", "ravai", "godhumai", "pindi", "લોટ", "पीठ", "आटा", "மாவு", "పిండి"],
   "salt": ["namak", "meeth", "mithu", "uppu", "lavan", "મીઠું", "मीठ", "नमक", "உப்பு", "ఉప్పు"],
   "tea": ["chai", "chaha", "cha", "theeneer", "tea", "ચા", "चहा", "चाय", "தேநீர்", "టీ"],
-  "soap": ["sabun", "saabu", "soap", "sabbu", "સાબુ", "साबण", "साबुन", "சோப்பு", "సబ్బు"],
+  "soap": ["sabun", "saabu", "soap", "sabbu", "સાબુ", "साबण", "साबुन", "சோப்பு", "சబ్బు"],
   "biscuit": ["biscuit", "biscuits", "parle", "cookies", "બિસ્કિટ", "बिस्कीट", "बिस्कुट", "பிஸ்கட்", "బిస్కెట్"],
   "dal": ["dal", "daal", "paruppu", "pappu", "pulse", "lentils", "દાળ", "डाळ", "दाल", "பருப்பு", "పప్పు"]
 };
@@ -52,7 +52,8 @@ async function transcribeWithSarvam(base64Audio, languageCode, format) {
   const modelsToTry = [
     process.env.SARVAM_MODEL || "saaras:v4",
     "saaras:v3",
-    "saaras:v2"
+    "saaras:v2",
+    "saaras:v1"
   ];
 
   const audioBuffer = Buffer.from(base64Audio, "base64");
@@ -86,7 +87,7 @@ async function transcribeWithSarvam(base64Audio, languageCode, format) {
         }
       } else {
         const errText = await response.text();
-        lastError = `Sarvam API error (${response.status}): ${errText}`;
+        lastError = `Sarvam API (${modelName}) returned ${response.status}: ${errText}`;
       }
     } catch (e) {
       lastError = e.message;
@@ -241,6 +242,7 @@ router.post("/voice-to-cart", async (req, res) => {
     const { audio, text, language, format } = req.body;
     let spokenText = "";
     let sarvamUsed = false;
+    let sarvamModelUsed = null;
     let sarvamError = null;
 
     if (audio && typeof audio === "string" && audio.trim().length > 20) {
@@ -249,6 +251,7 @@ router.post("/voice-to-cart", async (req, res) => {
       if (sarvamRes.transcript && sarvamRes.transcript.length > 0) {
         spokenText = sarvamRes.transcript;
         sarvamUsed = true;
+        sarvamModelUsed = sarvamRes.model;
       } else {
         sarvamError = sarvamRes.error;
       }
@@ -263,6 +266,9 @@ router.post("/voice-to-cart", async (req, res) => {
       return res.json({
         success: false,
         message: errMsg,
+        sarvamError,
+        rawText: "",
+        mistralRaw: "",
         matched: [],
         unmatched: []
       });
@@ -275,13 +281,17 @@ router.post("/voice-to-cart", async (req, res) => {
         success: true,
         rawText: spokenText,
         sarvamUsed,
+        sarvamModel: sarvamModelUsed,
         provider: "none",
+        mistralRaw: "No products in database",
         matched: [],
         unmatched: [{ name: spokenText, quantity: 1, unit: "pcs", reason: "inventory_empty" }]
       });
     }
 
     const mistralApiKey = process.env.MISTRAL_API_KEY;
+    let mistralRawOutput = "";
+    let mistralErrorMsg = null;
 
     if (mistralApiKey && mistralApiKey.trim().length > 5) {
       try {
@@ -342,8 +352,8 @@ Strict Response Format (ONLY return valid JSON without commentary):
 
         if (mistralResponse.ok) {
           const aiData = await mistralResponse.json();
-          const rawMessageContent = aiData.choices && aiData.choices[0] && aiData.choices[0].message ? aiData.choices[0].message.content : "";
-          const parsedContent = extractJSONFromText(rawMessageContent);
+          mistralRawOutput = aiData.choices && aiData.choices[0] && aiData.choices[0].message ? aiData.choices[0].message.content : "";
+          const parsedContent = extractJSONFromText(mistralRawOutput);
 
           if (parsedContent) {
             const matchedList = [];
@@ -386,15 +396,25 @@ Strict Response Format (ONLY return valid JSON without commentary):
             return res.json({
               success: true,
               sarvamUsed,
+              sarvamModel: sarvamModelUsed,
               provider: `mistral (${mistralModel})`,
               rawText: spokenText,
+              mistralRaw: mistralRawOutput,
               matched: matchedList,
               unmatched: unmatchedList
             });
           }
+        } else {
+          const errText = await mistralResponse.text();
+          mistralErrorMsg = `Mistral API error (${mistralResponse.status}): ${errText}`;
+          mistralRawOutput = mistralErrorMsg;
         }
-      } catch (_) {
+      } catch (e) {
+        mistralErrorMsg = e.message;
+        mistralRawOutput = `Mistral execution failed: ${e.message}`;
       }
+    } else {
+      mistralRawOutput = "MISTRAL_API_KEY not set in backend .env";
     }
 
     const { matched, unmatched } = fallbackFuzzyMatch(spokenText, products);
@@ -402,8 +422,12 @@ Strict Response Format (ONLY return valid JSON without commentary):
     return res.json({
       success: true,
       sarvamUsed,
+      sarvamModel: sarvamModelUsed,
+      sarvamError,
       provider: "fallback_fuzzy",
       rawText: spokenText,
+      mistralRaw: mistralRawOutput,
+      mistralError: mistralErrorMsg,
       matched,
       unmatched
     });

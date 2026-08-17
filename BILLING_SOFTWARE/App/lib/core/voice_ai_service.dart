@@ -65,6 +65,10 @@ class VoiceAiResult {
   final String rawText;
   final String? provider;
   final bool sarvamUsed;
+  final String? sarvamModel;
+  final String? sarvamError;
+  final String? mistralRaw;
+  final String? mistralError;
   final List<VoiceAiItem> matched;
   final List<VoiceAiUnmatched> unmatched;
   final String? errorMessage;
@@ -74,6 +78,10 @@ class VoiceAiResult {
     required this.rawText,
     this.provider,
     this.sarvamUsed = false,
+    this.sarvamModel,
+    this.sarvamError,
+    this.mistralRaw,
+    this.mistralError,
     required this.matched,
     required this.unmatched,
     this.errorMessage,
@@ -221,19 +229,27 @@ class VoiceAiService {
           'x-api-key': apiKey,
         },
         body: jsonEncode(payload),
-      ).timeout(const Duration(seconds: 25));
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final rawText = data['rawText']?.toString() ?? text;
         final provider = data['provider']?.toString();
         final sarvamUsed = data['sarvamUsed'] == true;
+        final sarvamModel = data['sarvamModel']?.toString();
+        final sarvamError = data['sarvamError']?.toString();
+        final mistralRaw = data['mistralRaw']?.toString();
+        final mistralError = data['mistralError']?.toString();
         final isSuccess = data['success'] == true;
 
         if (!isSuccess) {
           return VoiceAiResult(
             success: false,
             rawText: rawText,
+            sarvamModel: sarvamModel,
+            sarvamError: sarvamError,
+            mistralRaw: mistralRaw,
+            mistralError: mistralError,
             matched: [],
             unmatched: [],
             errorMessage: data['message']?.toString() ?? 'Failed to process voice order',
@@ -263,6 +279,10 @@ class VoiceAiService {
           rawText: rawText,
           provider: provider,
           sarvamUsed: sarvamUsed,
+          sarvamModel: sarvamModel,
+          sarvamError: sarvamError,
+          mistralRaw: mistralRaw,
+          mistralError: mistralError,
           matched: matched,
           unmatched: unmatched,
         );
