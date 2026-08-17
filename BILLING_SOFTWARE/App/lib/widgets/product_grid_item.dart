@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/product.dart';
 import '../core/theme.dart';
+import '../core/localization.dart';
 
 class ProductGridItem extends StatelessWidget {
   final Product product;
@@ -118,7 +119,7 @@ class ProductGridItem extends StatelessWidget {
 
             if (isOutOfStock)
               Text(
-                'Out of stock',
+                context.tr('out_of_stock'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
@@ -127,7 +128,7 @@ class ProductGridItem extends StatelessWidget {
               )
             else if (isLowStock)
               Text(
-                'Only ${product.stock} left',
+                '${context.tr('low_stock')} (${product.stock})',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,

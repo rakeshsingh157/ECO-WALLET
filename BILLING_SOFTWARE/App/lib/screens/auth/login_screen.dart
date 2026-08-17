@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/app_notifier.dart';
+import '../../core/localization.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/mascot_badge.dart';
 import '../main_shell.dart';
@@ -160,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  'STORE OWNER',
+                                  context.tr('owner').toUpperCase(),
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w800,
@@ -197,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  'STAFF / CASHIER',
+                                  context.tr('staff').toUpperCase(),
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w800,
@@ -286,8 +287,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               : const Icon(Icons.login_rounded, size: 18),
                           label: Text(
                             _isLoading
-                                ? 'SIGNING IN...'
-                                : (_selectedLoginType == 0 ? 'LOGIN TO STORE' : 'LOGIN AS CASHIER'),
+                                ? '...'
+                                : context.tr('login').toUpperCase(),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _selectedLoginType == 0 ? AppColors.terracotta : AppColors.forestMint,
@@ -308,7 +309,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'New to Dukaan Dost? ',
+                        '${context.tr('dont_have_account')} ',
                         style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
                       ),
                       TextButton(
@@ -319,7 +320,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                         },
                         child: Text(
-                          'Register Store',
+                          context.tr('register_now'),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
