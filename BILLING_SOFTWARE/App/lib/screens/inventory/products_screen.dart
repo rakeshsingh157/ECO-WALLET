@@ -362,13 +362,13 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                   }
                                 },
                                 itemBuilder: (ctx) => [
-                                  const PopupMenuItem(
+                                  PopupMenuItem(
                                     value: 'edit',
                                     child: Row(
                                       children: [
-                                        Icon(Icons.edit_outlined, size: 18),
-                                        SizedBox(width: 8),
-                                        Text('Edit Product'),
+                                        const Icon(Icons.edit_outlined, size: 18),
+                                        const SizedBox(width: 8),
+                                        Text(context.tr('edit_product')),
                                       ],
                                     ),
                                   ),
@@ -378,7 +378,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                       children: [
                                         Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.error),
                                         const SizedBox(width: 8),
-                                        Text('Delete', style: TextStyle(color: AppColors.error)),
+                                        Text(context.tr('delete'), style: TextStyle(color: AppColors.error)),
                                       ],
                                     ),
                                   ),

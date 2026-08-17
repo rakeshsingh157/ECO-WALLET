@@ -258,15 +258,17 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                             ),
                           ),
                           const SizedBox(height: 2),
-                          Text(
-                            NumberFormat.currency(locale: 'en_IN', symbol: '₹').format(totalCollected),
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.textPrimary,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0).format(totalCollected),
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -294,15 +296,17 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                             ),
                           ),
                           const SizedBox(height: 2),
-                          Text(
-                            NumberFormat.currency(locale: 'en_IN', symbol: '₹').format(totalPending),
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.chaiGold,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0).format(totalPending),
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.chaiGold,
+                              ),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -331,15 +335,17 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
-                              NumberFormat.currency(locale: 'en_IN', symbol: '₹').format(totalRefunded),
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.error,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0).format(totalRefunded),
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.error,
+                                ),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -356,35 +362,57 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
                 child: Row(
-                  children: [
-                    ..._periodFilters.map((period) {
-                      final isSelected = _selectedPeriod == period;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: ChoiceChip(
-                          label: Text(_getFilterLabel(context, period)),
-                          selected: isSelected,
-                          onSelected: (_) => setState(() => _selectedPeriod = period),
-                          selectedColor: AppColors.primaryContainer,
-                          backgroundColor: AppColors.surface,
-                          labelStyle: GoogleFonts.plusJakartaSans(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: isSelected ? AppColors.terracotta : AppColors.textSecondary,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            side: BorderSide(color: isSelected ? AppColors.terracotta : AppColors.borderSubtle),
-                          ),
+                  children: _periodFilters.map((period) {
+                    final isSelected = _selectedPeriod == period;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ChoiceChip(
+                        label: Text(_getFilterLabel(context, period)),
+                        selected: isSelected,
+                        onSelected: (_) => setState(() => _selectedPeriod = period),
+                        selectedColor: AppColors.primaryContainer,
+                        backgroundColor: AppColors.surface,
+                        labelStyle: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: isSelected ? AppColors.terracotta : AppColors.textSecondary,
                         ),
-                      );
-                    }),
-                    Container(height: 20, width: 1, color: AppColors.borderSubtle, margin: const EdgeInsets.symmetric(horizontal: 4)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(color: isSelected ? AppColors.terracotta : AppColors.borderSubtle),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 2),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
+                  children: [
                     ..._modeFilters.map((mode) {
                       final isSelected = _selectedMode == mode;
                       return Padding(
                         padding: const EdgeInsets.only(right: 6),
                         child: ChoiceChip(
+                          avatar: mode == 'All'
+                              ? null
+                              : Icon(
+                                  mode == 'Cash'
+                                      ? Icons.payments_rounded
+                                      : mode == 'UPI'
+                                          ? Icons.qr_code_2_rounded
+                                          : mode == 'ECO Wallet'
+                                              ? Icons.account_balance_wallet_rounded
+                                              : Icons.pending_actions_rounded,
+                                  size: 14,
+                                  color: isSelected ? AppColors.terracotta : AppColors.textSecondary,
+                                ),
                           label: Text(_getFilterLabel(context, mode)),
                           selected: isSelected,
                           onSelected: (_) => setState(() => _selectedMode = mode),
@@ -402,25 +430,44 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                         ),
                       );
                     }),
-                    Container(height: 20, width: 1, color: AppColors.borderSubtle, margin: const EdgeInsets.symmetric(horizontal: 4)),
-                    ..._statusFilters.map((status) {
+                    Container(height: 18, width: 1, color: AppColors.borderSubtle, margin: const EdgeInsets.symmetric(horizontal: 4)),
+                    ..._statusFilters.where((s) => s != 'All').map((status) {
                       final isSelected = _selectedStatus == status;
                       return Padding(
                         padding: const EdgeInsets.only(right: 6),
                         child: ChoiceChip(
+                          avatar: Icon(
+                            status == 'Completed'
+                                ? Icons.check_circle_rounded
+                                : status == 'Returned'
+                                    ? Icons.assignment_return_rounded
+                                    : Icons.pending_actions_rounded,
+                            size: 14,
+                            color: isSelected
+                                ? (status == 'Returned' ? AppColors.error : AppColors.terracotta)
+                                : AppColors.textSecondary,
+                          ),
                           label: Text(_getFilterLabel(context, status)),
                           selected: isSelected,
-                          onSelected: (_) => setState(() => _selectedStatus = status),
-                          selectedColor: AppColors.primaryContainer,
+                          onSelected: (_) => setState(() => _selectedStatus = isSelected ? 'All' : status),
+                          selectedColor: status == 'Returned'
+                              ? AppColors.error.withAlpha(30)
+                              : AppColors.primaryContainer,
                           backgroundColor: AppColors.surface,
                           labelStyle: GoogleFonts.plusJakartaSans(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: isSelected ? AppColors.terracotta : AppColors.textSecondary,
+                            color: isSelected
+                                ? (status == 'Returned' ? AppColors.error : AppColors.terracotta)
+                                : AppColors.textSecondary,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
-                            side: BorderSide(color: isSelected ? AppColors.terracotta : AppColors.borderSubtle),
+                            side: BorderSide(
+                              color: isSelected
+                                  ? (status == 'Returned' ? AppColors.error : AppColors.terracotta)
+                                  : AppColors.borderSubtle,
+                            ),
                           ),
                         ),
                       );

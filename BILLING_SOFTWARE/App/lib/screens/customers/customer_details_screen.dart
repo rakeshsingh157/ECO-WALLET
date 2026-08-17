@@ -73,10 +73,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Giving goods on credit (Udhar) to ${liveCustomer.name}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
+              Text('${context.tr('giving_credit_to')} ${liveCustomer.name}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
               const SizedBox(height: 8),
               Text(
-                'Current Balance: ₹${liveCustomer.dueAmount.toStringAsFixed(0)}',
+                '${context.tr('current_balance')}: ₹${liveCustomer.dueAmount.toStringAsFixed(0)}',
                 style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.chaiGold),
               ),
               const SizedBox(height: 14),
@@ -86,14 +86,14 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 keyboardType: TextInputType.number,
                 autofocus: true,
                 style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                decoration: InputDecoration(labelText: 'Credit Amount (₹) *', prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.terracotta)),
+                decoration: InputDecoration(labelText: context.tr('credit_amount'), prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.terracotta)),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: noteCtrl,
                 enabled: !isSaving,
                 style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textPrimary),
-                decoration: const InputDecoration(labelText: 'Note / Item Details (Optional)', prefixIcon: Icon(Icons.note_alt_outlined)),
+                decoration: InputDecoration(labelText: context.tr('note_details'), prefixIcon: const Icon(Icons.note_alt_outlined)),
               ),
             ],
           ),
@@ -190,7 +190,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Receiving credit payment from ${liveCustomer.name}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
+              Text('${context.tr('receiving_payment_from')} ${liveCustomer.name}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -203,7 +203,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Max Payable Due:',
+                      context.tr('max_payable_due'),
                       style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
                     ),
                     Text(
@@ -221,18 +221,18 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 autofocus: true,
                 style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                 decoration: InputDecoration(
-                  labelText: 'Amount Received (₹) *',
-                  helperText: 'Must not exceed ₹${liveCustomer.dueAmount.toStringAsFixed(0)}',
+                  labelText: context.tr('amount_received'),
+                  helperText: '${context.tr('must_not_exceed')} ₹${liveCustomer.dueAmount.toStringAsFixed(0)}',
                   prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.forestMint),
                 ),
               ),
               const SizedBox(height: 12),
-              Text('PAYMENT METHOD', style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.textSecondary)),
+              Text(context.tr('payment_mode').toUpperCase(), style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.textSecondary)),
               const SizedBox(height: 6),
               Row(
                 children: [
                   ChoiceChip(
-                    label: const Text('Cash'),
+                    label: Text(context.tr('cash')),
                     selected: selectedMode == 'cash',
                     selectedColor: AppColors.forestMint,
                     labelStyle: TextStyle(color: selectedMode == 'cash' ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.w700),
@@ -240,7 +240,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   ),
                   const SizedBox(width: 8),
                   ChoiceChip(
-                    label: const Text('UPI / QR'),
+                    label: Text(context.tr('upi')),
                     selected: selectedMode == 'upi',
                     selectedColor: AppColors.forestMint,
                     labelStyle: TextStyle(color: selectedMode == 'upi' ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.w700),
@@ -248,7 +248,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   ),
                   const SizedBox(width: 8),
                   ChoiceChip(
-                    label: const Text('Bank'),
+                    label: Text(context.tr('bank')),
                     selected: selectedMode == 'bank',
                     selectedColor: AppColors.forestMint,
                     labelStyle: TextStyle(color: selectedMode == 'bank' ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.w700),
@@ -261,14 +261,14 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 controller: noteCtrl,
                 enabled: !isRecording,
                 style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textPrimary),
-                decoration: const InputDecoration(labelText: 'Note (Optional)', prefixIcon: Icon(Icons.note_alt_outlined)),
+                decoration: InputDecoration(labelText: context.tr('note_details'), prefixIcon: const Icon(Icons.note_alt_outlined)),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: isRecording ? null : () => Navigator.pop(ctx),
-              child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+              child: Text(context.tr('cancel'), style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
             ),
             ElevatedButton(
               onPressed: isRecording
@@ -330,7 +330,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.forestMint, foregroundColor: Colors.white),
               child: isRecording
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('SAVE PAYMENT'),
+                  : Text(context.tr('save_payment').toUpperCase()),
             ),
           ],
         ),
@@ -490,7 +490,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   child: ElevatedButton.icon(
                     onPressed: _giveCredit,
                     icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
-                    label: Text(context.tr('khata_credit')),
+                    label: Text(context.tr('give_credit')),
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 50),
                       backgroundColor: AppColors.terracotta,
