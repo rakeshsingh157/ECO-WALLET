@@ -50,7 +50,7 @@ async function transcribeWithSarvam(base64Audio, languageCode, format) {
   }
 
   const modelsToTry = [
-    process.env.SARVAM_MODEL || "saaras:v2",
+    process.env.SARVAM_MODEL || "saaras:v4",
     "saaras:v1",
     "saaras:v4"
   ];
@@ -275,7 +275,7 @@ Strict Response Format (ONLY return valid JSON):
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: process.env.MISTRAL_MODEL || "mistral-small-latest",
+            model: process.env.MISTRAL_MODEL || "mistral-large-latest",
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: `Spoken order: "${spokenText}" (Language: ${language || "auto"})` }
