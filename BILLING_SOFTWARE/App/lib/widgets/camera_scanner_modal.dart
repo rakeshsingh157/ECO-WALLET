@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../core/theme.dart';
@@ -52,19 +53,24 @@ class _CameraScannerModalState extends State<CameraScannerModal> with SingleTick
   late AnimationController _animController;
   bool _torchOn = false;
 
-  final double _boxWidth = 240;
-  final double _boxHeight = 140;
+  final double _boxWidth = 260;
+  final double _boxHeight = 150;
+
+  String? _lastCandidate;
+  int _candidateHits = 0;
+  DateTime _lastHitTime = DateTime.now();
+  bool _hasDispatched = false;
 
   @override
   void initState() {
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1400),
     )..repeat(reverse: true);
 
     _controller = MobileScannerController(
-      detectionSpeed: DetectionSpeed.noDuplicates,
+      detectionSpeed: DetectionSpeed.unrestricted,
       facing: CameraFacing.back,
       torchEnabled: false,
       autoStart: true,
@@ -75,13 +81,7 @@ class _CameraScannerModalState extends State<CameraScannerModal> with SingleTick
         BarcodeFormat.upcE,
         BarcodeFormat.code128,
         BarcodeFormat.code39,
-        BarcodeFormat.code93,
-        BarcodeFormat.codabar,
-        BarcodeFormat.itf,
         BarcodeFormat.qrCode,
-        BarcodeFormat.dataMatrix,
-        BarcodeFormat.pdf417,
-        BarcodeFormat.aztec,
       ],
     );
   }
@@ -91,6 +91,60 @@ class _CameraScannerModalState extends State<CameraScannerModal> with SingleTick
     _animController.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _handleDetection(BarcodeCapture capture) {
+    if (_hasDispatched && !widget.continuous) return;
+
+    for (final barcode in capture.barcodes) {
+      final raw = barcode.rawValue;
+      if (raw == null) continue;
+      final clean = raw.trim();
+      if (clean.isEmpty) continue;
+
+      final isQr = barcode.format == BarcodeFormat.qrCode || clean.length > 20;
+
+      if (isQr) {
+        _dispatchValidCode(clean);
+        break;
+      }
+
+      final now = DateTime.now();
+      if (_lastCandidate == clean && now.difference(_lastHitTime).inMilliseconds < 400) {
+        _candidateHits++;
+        if (_candidateHits >= 2) {
+          _dispatchValidCode(clean);
+          break;
+        }
+      } else {
+        _lastCandidate = clean;
+        _candidateHits = 1;
+        _lastHitTime = now;
+      }
+    }
+  }
+
+  void _dispatchValidCode(String code) {
+    if (_hasDispatched && !widget.continuous) return;
+    _hasDispatched = true;
+
+    try {
+      HapticFeedback.mediumImpact();
+    } catch (_) {}
+
+    widget.onScanned(code);
+
+    if (widget.continuous) {
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          setState(() {
+            _hasDispatched = false;
+            _lastCandidate = null;
+            _candidateHits = 0;
+          });
+        }
+      });
+    }
   }
 
   @override
@@ -172,7 +226,7 @@ class _CameraScannerModalState extends State<CameraScannerModal> with SingleTick
                 Icon(Icons.center_focus_strong_rounded, size: 16, color: AppColors.terracotta),
                 const SizedBox(width: 6),
                 Text(
-                  'Precision Focus: Aim center box at target code',
+                  'Ultra-Precision Optical Engine (EAN/UPC/Code128/QR)',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -242,18 +296,7 @@ class _CameraScannerModalState extends State<CameraScannerModal> with SingleTick
                           ),
                         );
                       },
-                      onDetect: (capture) {
-                        final List<Barcode> barcodes = capture.barcodes;
-                        for (final barcode in barcodes) {
-                          final rawValue = barcode.rawValue;
-                          if (rawValue != null && rawValue.trim().isNotEmpty) {
-                            widget.onScanned(rawValue.trim());
-                            if (!widget.continuous) {
-                              break;
-                            }
-                          }
-                        }
-                      },
+                      onDetect: _handleDetection,
                     ),
 
                     CustomPaint(

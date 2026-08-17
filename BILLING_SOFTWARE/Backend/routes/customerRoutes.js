@@ -145,7 +145,7 @@ router.post("/", async (req, res) => {
 
 router.post("/:id/credit", async (req, res) => {
   try {
-    const { amount, bill_id, note } = req.body;
+    const { amount, bill_id, note, payment_mode } = req.body;
     const creditAmount = Number(amount);
 
     if (!creditAmount || creditAmount <= 0) {
@@ -165,15 +165,19 @@ router.post("/:id/credit", async (req, res) => {
     }
 
     customer.due_amount = (customer.due_amount || 0) + creditAmount;
+    customer.total_spent = (customer.total_spent || 0) + creditAmount;
+    customer.total_orders = (customer.total_orders || 0) + 1;
     customer.last_transaction = new Date();
     await customer.save();
 
-    await KhataLedger.create({
+    const ledger = await KhataLedger.create({
       customer_id: customer.customer_id,
       type: "credit",
       amount: creditAmount,
       bill_id: bill_id || null,
-      note: note || "Khata credit",
+      note: note || "Khata credit (Udhar)",
+      payment_mode: payment_mode || "khata",
+      balance_after: customer.due_amount,
       date: new Date(),
     });
 
@@ -181,6 +185,9 @@ router.post("/:id/credit", async (req, res) => {
       success: true,
       message: "Khata credit entry recorded",
       due_amount: customer.due_amount,
+      total_spent: customer.total_spent,
+      total_orders: customer.total_orders,
+      ledger_entry: ledger,
       data: customer,
     });
   } catch (error) {
@@ -190,7 +197,7 @@ router.post("/:id/credit", async (req, res) => {
 
 router.post("/:id/payment", async (req, res) => {
   try {
-    const { amount, note } = req.body;
+    const { amount, note, payment_mode } = req.body;
     const paymentAmount = Number(amount);
 
     if (!paymentAmount || paymentAmount <= 0) {
@@ -209,16 +216,18 @@ router.post("/:id/payment", async (req, res) => {
       return res.status(404).json({ success: false, message: "Customer not found" });
     }
 
-    const newDue = Math.max(0, customer.due_amount - paymentAmount);
+    const newDue = Math.max(0, (customer.due_amount || 0) - paymentAmount);
     customer.due_amount = newDue;
     customer.last_transaction = new Date();
     await customer.save();
 
-    await KhataLedger.create({
+    const ledger = await KhataLedger.create({
       customer_id: customer.customer_id,
       type: "payment",
       amount: paymentAmount,
-      note: note || "Khata cash settlement",
+      note: note || "Khata settlement",
+      payment_mode: payment_mode || "cash",
+      balance_after: customer.due_amount,
       date: new Date(),
     });
 
@@ -226,6 +235,9 @@ router.post("/:id/payment", async (req, res) => {
       success: true,
       message: "Khata payment received and recorded",
       due_amount: customer.due_amount,
+      total_spent: customer.total_spent,
+      total_orders: customer.total_orders,
+      ledger_entry: ledger,
       data: customer,
     });
   } catch (error) {
@@ -235,8 +247,20 @@ router.post("/:id/payment", async (req, res) => {
 
 router.get("/:id/ledger", async (req, res) => {
   try {
-    const ledger = await KhataLedger.find({ customer_id: req.params.id })
-      .sort({ date: -1 })
+    const customer = await Customer.findOne({
+      $or: [
+        { customer_id: req.params.id },
+        { phone: req.params.id },
+        ...(req.params.id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: req.params.id }] : []),
+      ],
+    });
+    const custId = customer ? customer.customer_id : req.params.id;
+    const phone = customer ? customer.phone : req.params.id;
+
+    const ledger = await KhataLedger.find({
+      $or: [{ customer_id: custId }, { customer_id: phone }, { customer_id: req.params.id }],
+    })
+      .sort({ date: -1, createdAt: -1 })
       .limit(100)
       .lean();
 
@@ -260,8 +284,23 @@ router.get("/:id/transactions", async (req, res) => {
     const phone = customer ? customer.phone : req.params.id;
 
     const [ledgerEntries, bills] = await Promise.all([
-      KhataLedger.find({ customer_id: custId }).sort({ date: -1 }).limit(50).lean(),
-      Bill.find({ $or: [{ khata_customer_id: custId }, { customer_phone: phone }] }).sort({ createdAt: -1 }).limit(50).lean()
+      KhataLedger.find({
+        $or: [{ customer_id: custId }, { customer_id: phone }, { customer_id: req.params.id }],
+      })
+        .sort({ date: -1, createdAt: -1 })
+        .limit(100)
+        .lean(),
+      Bill.find({
+        $or: [
+          { khata_customer_id: custId },
+          { khata_customer_id: req.params.id },
+          { customer_phone: phone },
+          { customer_phone: req.params.id },
+        ],
+      })
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .lean(),
     ]);
 
     const combined = [];
@@ -269,9 +308,12 @@ router.get("/:id/transactions", async (req, res) => {
       combined.push({
         id: b.bill_id,
         type: "bill",
-        title: `Store Bill #${b.bill_id.substring(0, b.bill_id.length > 8 ? 8 : b.bill_id.length).toUpperCase()}`,
-        subtitle: `${b.items.length} items • ${b.payment_mode ? b.payment_mode.toUpperCase() : 'PAID'}`,
+        title: `Store Bill #${b.bill_id.substring(0, b.bill_id.length > 10 ? 10 : b.bill_id.length).toUpperCase()}`,
+        subtitle: `${b.items ? b.items.length : 0} items • ${b.payment_mode ? b.payment_mode.toUpperCase() : "PAID"}`,
         amount: b.total_amount,
+        refunded_amount: b.refunded_amount || 0,
+        net_amount: Math.max(0, (b.total_amount || 0) - (b.refunded_amount || 0)),
+        status: b.status,
         payment_mode: b.payment_mode,
         date: b.createdAt ? new Date(b.createdAt).toISOString() : new Date().toISOString(),
       });
@@ -283,7 +325,8 @@ router.get("/:id/transactions", async (req, res) => {
         title: l.type === "credit" ? "Khata Credit (Udhar)" : "Payment Received",
         subtitle: l.note || (l.type === "credit" ? "Store goods credit" : "Khata settlement"),
         amount: l.amount,
-        payment_mode: l.type === "credit" ? "Khata" : "Cash / Payment",
+        balance_after: l.balance_after,
+        payment_mode: l.payment_mode || (l.type === "credit" ? "Khata" : "Cash"),
         date: l.date ? new Date(l.date).toISOString() : (l.createdAt ? new Date(l.createdAt).toISOString() : new Date().toISOString()),
       });
     }

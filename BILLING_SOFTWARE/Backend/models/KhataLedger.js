@@ -8,6 +8,8 @@ const KhataLedgerSchema = new mongoose.Schema(
     amount: { type: Number, required: true, min: 0 },
     bill_id: { type: String, index: true },
     note: { type: String, trim: true },
+    payment_mode: { type: String, default: "cash" },
+    balance_after: { type: Number, default: 0 },
     date: { type: Date, default: Date.now, index: true },
   },
   { timestamps: true }

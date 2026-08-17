@@ -138,16 +138,45 @@ class BillProvider extends ChangeNotifier {
             if (modeStr.contains("pending") || modeStr.contains("khata")) mode = PaymentMode.pending;
 
             final statusStr = b["status"]?.toString().toLowerCase() ?? "completed";
-            BillStatus status = statusStr == "pending" ? BillStatus.pending : BillStatus.completed;
+            BillStatus status = BillStatus.completed;
+            if (statusStr == "pending") {
+              status = BillStatus.pending;
+            } else if (statusStr == "returned") {
+              status = BillStatus.returned;
+            } else if (statusStr == "partially_returned" || statusStr == "partiallyreturned") {
+              status = BillStatus.partiallyReturned;
+            }
+
+            final refundedAmt = (b["refunded_amount"] as num?)?.toDouble() ?? 0.0;
+            final totalAmt = (b["total_amount"] as num?)?.toDouble() ?? 0.0;
+            if (refundedAmt >= totalAmt && totalAmt > 0) {
+              status = BillStatus.returned;
+            } else if (refundedAmt > 0 && status != BillStatus.returned) {
+              status = BillStatus.partiallyReturned;
+            }
+
+            final rawReturns = b["return_history"] is List ? b["return_history"] as List : [];
+            final returnHistory = rawReturns.map((rh) {
+              return ReturnRecord(
+                returnId: rh["return_id"] ?? "ret_${DateTime.now().millisecondsSinceEpoch}",
+                amount: (rh["amount"] as num?)?.toDouble() ?? 0.0,
+                reason: rh["reason"] ?? "Returned",
+                refundMode: rh["refund_mode"] ?? "cash",
+                timestamp: rh["timestamp"] != null ? DateTime.tryParse(rh["timestamp"]) ?? DateTime.now() : DateTime.now(),
+              );
+            }).toList();
 
             _completedBills.add(Bill(
               billId: b["bill_id"] ?? "BILL_${DateTime.now().millisecondsSinceEpoch}",
               items: items,
-              totalAmount: (b["total_amount"] as num?)?.toDouble() ?? 0.0,
+              totalAmount: totalAmt,
+              refundedAmount: refundedAmt,
               timestamp: b["createdAt"] != null ? DateTime.tryParse(b["createdAt"]) ?? DateTime.now() : DateTime.now(),
               paymentMode: mode,
               status: status,
               customerName: b["customer_name"] ?? "Counter Customer",
+              customerPhone: b["customer_phone"],
+              returnHistory: returnHistory,
             ));
           }
         }

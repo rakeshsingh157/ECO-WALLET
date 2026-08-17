@@ -43,15 +43,22 @@ class DukaanDostApp extends StatelessWidget {
             themeMode: themeProvider.themeMode,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
+            themeAnimationDuration: const Duration(milliseconds: 400),
+            themeAnimationCurve: Curves.easeInOutCubic,
             builder: (context, child) {
-              return ScrollConfiguration(
-                behavior: const ScrollBehavior().copyWith(
-                  overscroll: false,
-                  physics: const BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
+              return AnimatedTheme(
+                data: themeProvider.isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme,
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOutCubic,
+                child: ScrollConfiguration(
+                  behavior: const ScrollBehavior().copyWith(
+                    overscroll: false,
+                    physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
+                    ),
                   ),
+                  child: child!,
                 ),
-                child: child!,
               );
             },
             home: const SplashScreen(),

@@ -49,6 +49,7 @@ class _KhataScreenState extends State<KhataScreen> {
     final addressCtrl = TextEditingController();
     final aadhaarCtrl = TextEditingController();
     bool isNewCustomer = customerProvider.customers.isEmpty;
+    bool isSaving = false;
 
     showModalBottomSheet(
       context: context,
@@ -79,7 +80,7 @@ class _KhataScreenState extends State<KhataScreen> {
                     ),
                     IconButton(
                       icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
-                      onPressed: () => Navigator.pop(ctx),
+                      onPressed: isSaving ? null : () => Navigator.pop(ctx),
                     ),
                   ],
                 ),
@@ -93,7 +94,7 @@ class _KhataScreenState extends State<KhataScreen> {
                         selected: !isNewCustomer,
                         selectedColor: AppColors.terracotta,
                         labelStyle: TextStyle(color: !isNewCustomer ? Colors.white : AppColors.textPrimary),
-                        onSelected: (val) => setModalState(() => isNewCustomer = false),
+                        onSelected: isSaving ? null : (val) => setModalState(() => isNewCustomer = false),
                       ),
                       const SizedBox(width: 8),
                       ChoiceChip(
@@ -101,7 +102,7 @@ class _KhataScreenState extends State<KhataScreen> {
                         selected: isNewCustomer,
                         selectedColor: AppColors.terracotta,
                         labelStyle: TextStyle(color: isNewCustomer ? Colors.white : AppColors.textPrimary),
-                        onSelected: (val) => setModalState(() => isNewCustomer = true),
+                        onSelected: isSaving ? null : (val) => setModalState(() => isNewCustomer = true),
                       ),
                     ],
                   ),
@@ -120,11 +121,12 @@ class _KhataScreenState extends State<KhataScreen> {
                               child: Text('${c.name} (${c.phone})', style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary)),
                             ))
                         .toList(),
-                    onChanged: (v) => setModalState(() => selectedCustomer = v),
+                    onChanged: isSaving ? null : (v) => setModalState(() => selectedCustomer = v),
                   ),
                 ] else ...[
                   TextField(
                     controller: nameCtrl,
+                    enabled: !isSaving,
                     style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
                     decoration: InputDecoration(
                       labelText: ctx.tr('customer_name'),
@@ -134,6 +136,7 @@ class _KhataScreenState extends State<KhataScreen> {
                   const SizedBox(height: 10),
                   TextField(
                     controller: phoneCtrl,
+                    enabled: !isSaving,
                     keyboardType: TextInputType.phone,
                     style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
                     decoration: InputDecoration(
@@ -144,6 +147,7 @@ class _KhataScreenState extends State<KhataScreen> {
                   const SizedBox(height: 10),
                   TextField(
                     controller: addressCtrl,
+                    enabled: !isSaving,
                     style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
                     decoration: InputDecoration(
                       labelText: ctx.tr('customer_address_optional'),
@@ -153,6 +157,7 @@ class _KhataScreenState extends State<KhataScreen> {
                   const SizedBox(height: 10),
                   TextField(
                     controller: aadhaarCtrl,
+                    enabled: !isSaving,
                     keyboardType: TextInputType.number,
                     maxLength: 12,
                     style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
@@ -167,6 +172,7 @@ class _KhataScreenState extends State<KhataScreen> {
 
                 TextField(
                   controller: amountCtrl,
+                  enabled: !isSaving,
                   keyboardType: TextInputType.number,
                   style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                   decoration: InputDecoration(labelText: '${ctx.tr('khata_credit')} (₹) *', prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.chaiGold)),
@@ -176,54 +182,88 @@ class _KhataScreenState extends State<KhataScreen> {
 
                 SizedBox(
                   width: double.infinity,
+                  height: 52,
                   child: ElevatedButton(
-                    onPressed: () async {
-                      final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
-                      if (amt <= 0) return;
+                    onPressed: isSaving
+                        ? null
+                        : () async {
+                            final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                            if (amt <= 0) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                SnackBar(content: const Text('Please enter a valid credit amount'), backgroundColor: AppColors.error),
+                              );
+                              return;
+                            }
 
-                      final auth = context.read<AuthProvider>();
+                            final auth = context.read<AuthProvider>();
+                            setModalState(() => isSaving = true);
 
-                      if (isNewCustomer) {
-                        final n = nameCtrl.text.trim();
-                        final p = phoneCtrl.text.trim();
-                        if (n.isNotEmpty && p.isNotEmpty) {
-                          final newCust = Customer(
-                            id: 'cust_${DateTime.now().millisecondsSinceEpoch}',
-                            name: n,
-                            phone: p,
-                            address: addressCtrl.text.trim(),
-                            aadhaarNumber: aadhaarCtrl.text.trim(),
-                            dueAmount: amt,
-                          );
-                          await customerProvider.addCustomer(auth.apiService, newCust);
-                          await customerProvider.addCredit(auth.apiService, newCust.id, amt);
-                          if (ctx.mounted) {
-                            Navigator.pop(ctx);
-                          }
-                        }
-                      } else if (selectedCustomer != null) {
-                        await customerProvider.addCredit(auth.apiService, selectedCustomer!.id, amt);
-                        if (ctx.mounted) {
-                          Navigator.pop(ctx);
-                        }
-                      }
-                    },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.terracotta,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            try {
+                              if (isNewCustomer) {
+                                final n = nameCtrl.text.trim();
+                                final p = phoneCtrl.text.trim();
+                                if (n.isEmpty || p.isEmpty) {
+                                  setModalState(() => isSaving = false);
+                                  ScaffoldMessenger.of(ctx).showSnackBar(
+                                    SnackBar(content: const Text('Customer name and phone are required'), backgroundColor: AppColors.error),
+                                  );
+                                  return;
+                                }
+                                final newCust = Customer(
+                                  id: 'cust_${DateTime.now().millisecondsSinceEpoch}',
+                                  name: n,
+                                  phone: p,
+                                  address: addressCtrl.text.trim(),
+                                  aadhaarNumber: aadhaarCtrl.text.trim(),
+                                  dueAmount: amt,
+                                );
+                                await customerProvider.addCustomer(auth.apiService, newCust);
+                                await customerProvider.addCredit(auth.apiService, newCust.id, amt);
+                              } else if (selectedCustomer != null) {
+                                await customerProvider.addCredit(auth.apiService, selectedCustomer!.id, amt);
+                              }
+
+                              if (ctx.mounted) {
+                                Navigator.pop(ctx);
+                              }
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Recorded ₹${amt.toStringAsFixed(0)} Khata credit'), backgroundColor: AppColors.success),
+                                );
+                              }
+                            } catch (_) {
+                              if (ctx.mounted) {
+                                setModalState(() => isSaving = false);
+                                ScaffoldMessenger.of(ctx).showSnackBar(
+                                  SnackBar(content: const Text('Failed to record Khata credit. Please check connection.'), backgroundColor: AppColors.error),
+                                );
+                              }
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.terracotta,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: isSaving
+                        ? const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)),
+                              SizedBox(width: 12),
+                              Text('Saving Khata Entry...', style: TextStyle(fontWeight: FontWeight.w700)),
+                            ],
+                          )
+                        : const Text('RECORD KHATA CREDIT', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                   ),
-                  child: const Text('RECORD KHATA CREDIT'),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

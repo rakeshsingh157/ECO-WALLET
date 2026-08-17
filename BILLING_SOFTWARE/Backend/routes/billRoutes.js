@@ -3,6 +3,7 @@ const router = express.Router();
 const Bill = require("../models/Bill");
 const Product = require("../models/Product");
 const Customer = require("../models/Customer");
+const KhataLedger = require("../models/KhataLedger");
 
 router.get("/", async (req, res) => {
   try {
@@ -344,7 +345,7 @@ router.post("/", async (req, res) => {
     }
 
     if (customer_phone && customer_phone.trim().length >= 10) {
-      await Customer.findOneAndUpdate(
+      const cust = await Customer.findOneAndUpdate(
         { phone: customer_phone.trim() },
         {
           $setOnInsert: { customer_id: `cust_${Date.now()}` },
@@ -355,11 +356,24 @@ router.post("/", async (req, res) => {
           $inc: {
             total_spent: Number(total_amount) || 0,
             total_orders: 1,
-            due_amount: payment_mode === "pending" ? Number(total_amount) || 0 : 0,
+            due_amount: (payment_mode === "pending" || payment_mode === "khata") ? Number(total_amount) || 0 : 0,
           },
         },
-        { upsert: true }
+        { upsert: true, new: true }
       );
+
+      if (cust && (payment_mode === "pending" || payment_mode === "khata")) {
+        await KhataLedger.create({
+          customer_id: cust.customer_id,
+          type: "credit",
+          amount: Number(total_amount) || 0,
+          bill_id: billId,
+          note: `Store Bill #${billId.substring(0, billId.length > 10 ? 10 : billId.length).toUpperCase()}`,
+          payment_mode: "khata",
+          balance_after: cust.due_amount,
+          date: new Date(),
+        });
+      }
     }
 
     res.status(201).json({

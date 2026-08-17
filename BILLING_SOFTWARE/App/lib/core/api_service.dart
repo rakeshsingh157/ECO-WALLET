@@ -321,31 +321,51 @@ class ApiService {
     }
   }
 
-  Future<bool> recordCustomerPayment(String customerId, double amount) async {
+  Future<bool> recordCustomerPayment(
+    String customerId,
+    double amount, {
+    String? note,
+    String? paymentMode,
+  }) async {
     final url = Uri.parse("$_cleanBase/customers/$customerId/payment");
     try {
       final response = await http.post(
         url,
         headers: _headers,
-        body: jsonEncode({"amount": amount}),
+        body: jsonEncode({
+          "amount": amount,
+          "note": note ?? "Khata cash settlement",
+          "payment_mode": paymentMode ?? "cash",
+        }),
       ).timeout(requestTimeout);
 
-      return response.statusCode == 200;
+      return response.statusCode == 200 || response.statusCode == 201;
     } catch (_) {
       return false;
     }
   }
 
-  Future<bool> addCustomerCredit(String customerId, double amount) async {
+  Future<bool> addCustomerCredit(
+    String customerId,
+    double amount, {
+    String? note,
+    String? billId,
+    String? paymentMode,
+  }) async {
     final url = Uri.parse("$_cleanBase/customers/$customerId/credit");
     try {
       final response = await http.post(
         url,
         headers: _headers,
-        body: jsonEncode({"amount": amount}),
+        body: jsonEncode({
+          "amount": amount,
+          "note": note ?? "Khata credit (Udhar)",
+          "bill_id": billId,
+          "payment_mode": paymentMode ?? "khata",
+        }),
       ).timeout(requestTimeout);
 
-      return response.statusCode == 200;
+      return response.statusCode == 200 || response.statusCode == 201;
     } catch (_) {
       return false;
     }

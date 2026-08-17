@@ -18,6 +18,7 @@ import '../customers/khata_screen.dart';
 import '../reports/reports_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../sales/return_order_screen.dart';
+import '../sales/sale_details_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -541,52 +542,135 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildRecentInvoiceTile(Bill bill) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderSubtle),
+    final isReturned = bill.isReturned;
+    final isPartial = bill.isPartiallyReturned;
+
+    return InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => SaleDetailsScreen(bill: bill)),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.primaryContainer,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(Icons.receipt_rounded, color: AppColors.terracotta, size: 18),
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isReturned
+                ? AppColors.error.withAlpha(80)
+                : (isPartial ? AppColors.warning.withAlpha(80) : AppColors.borderSubtle),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isReturned
+                    ? AppColors.error.withAlpha(25)
+                    : (isPartial ? AppColors.warning.withAlpha(25) : AppColors.primaryContainer),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                isReturned ? Icons.assignment_return_rounded : Icons.receipt_rounded,
+                color: isReturned ? AppColors.error : (isPartial ? AppColors.warning : AppColors.terracotta),
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          bill.customerName ?? 'Counter Customer',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isReturned) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withAlpha(25),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'RETURNED',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 8,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.error,
+                            ),
+                          ),
+                        ),
+                      ] else if (isPartial) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.warning.withAlpha(25),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'PARTIAL',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 8,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.warning,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${bill.paymentMode.name.toUpperCase()} • ${DateFormat('hh:mm a').format(bill.timestamp)}',
+                    style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  bill.customerName ?? 'Counter Customer',
+                  NumberFormat.currency(locale: 'en_IN', symbol: '₹').format(isReturned ? bill.refundedAmount : (isPartial ? bill.netAmount : bill.totalAmount)),
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: isReturned ? AppColors.error : AppColors.textPrimary,
                   ),
                 ),
-                Text(
-                  '${bill.paymentMode.name.toUpperCase()} • ${DateFormat('hh:mm a').format(bill.timestamp)}',
-                  style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textSecondary),
-                ),
+                if (isReturned)
+                  Text(
+                    'Refunded',
+                    style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.error),
+                  )
+                else if (isPartial)
+                  Text(
+                    'Orig: ₹${bill.totalAmount.toStringAsFixed(0)}',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 10,
+                      decoration: TextDecoration.lineThrough,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
               ],
             ),
-          ),
-          Text(
-            NumberFormat.currency(locale: 'en_IN', symbol: '₹').format(bill.totalAmount),
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

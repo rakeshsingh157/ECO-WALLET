@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:intl/intl.dart';
 import '../../core/theme.dart';
 import '../../core/localization.dart';
 import '../../models/customer.dart';
@@ -48,6 +49,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   void _giveCredit() {
     final amountCtrl = TextEditingController();
+    final noteCtrl = TextEditingController(text: 'Store goods on credit');
 
     showDialog(
       context: context,
@@ -76,6 +78,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               decoration: InputDecoration(labelText: 'Credit Amount (₹) *', prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.terracotta)),
             ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: noteCtrl,
+              style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textPrimary),
+              decoration: const InputDecoration(labelText: 'Note / Item Details (Optional)', prefixIcon: Icon(Icons.note_alt_outlined)),
+            ),
           ],
         ),
         actions: [
@@ -88,9 +96,17 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
               if (amt > 0) {
                 final auth = context.read<AuthProvider>();
-                await context.read<CustomerProvider>().addCredit(auth.apiService, _customer.id, amt);
+                final note = noteCtrl.text.trim().isNotEmpty ? noteCtrl.text.trim() : 'Store goods credit';
+                await context.read<CustomerProvider>().addCredit(
+                  auth.apiService,
+                  _customer.id,
+                  amt,
+                  note: note,
+                );
                 setState(() {
                   _customer.dueAmount = _customer.dueAmount + amt;
+                  _customer.totalSpent = _customer.totalSpent + amt;
+                  _customer.totalOrders = _customer.totalOrders + 1;
                 });
                 _loadTransactions();
                 if (ctx.mounted) {
@@ -113,65 +129,112 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   void _recordPayment() {
     final amountCtrl = TextEditingController();
+    final noteCtrl = TextEditingController(text: 'Khata settlement');
+    String selectedMode = 'cash';
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Collect Khata Payment',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Receiving credit payment from ${_customer.name}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
-            const SizedBox(height: 8),
-            Text(
-              'Current Balance: ₹${_customer.dueAmount.toStringAsFixed(0)}',
-              style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.chaiGold),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            'Collect Khata Payment',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Receiving credit payment from ${_customer.name}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
+              const SizedBox(height: 8),
+              Text(
+                'Current Outstanding Due: ₹${_customer.dueAmount.toStringAsFixed(0)}',
+                style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.chaiGold),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: amountCtrl,
+                keyboardType: TextInputType.number,
+                autofocus: true,
+                style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: 'Amount Received (₹) *', prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.forestMint)),
+              ),
+              const SizedBox(height: 12),
+              Text('PAYMENT METHOD', style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.textSecondary)),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  ChoiceChip(
+                    label: const Text('Cash'),
+                    selected: selectedMode == 'cash',
+                    selectedColor: AppColors.forestMint,
+                    labelStyle: TextStyle(color: selectedMode == 'cash' ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.w700),
+                    onSelected: (_) => setDialogState(() => selectedMode = 'cash'),
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: const Text('UPI / QR'),
+                    selected: selectedMode == 'upi',
+                    selectedColor: AppColors.forestMint,
+                    labelStyle: TextStyle(color: selectedMode == 'upi' ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.w700),
+                    onSelected: (_) => setDialogState(() => selectedMode = 'upi'),
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: const Text('Bank'),
+                    selected: selectedMode == 'bank',
+                    selectedColor: AppColors.forestMint,
+                    labelStyle: TextStyle(color: selectedMode == 'bank' ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.w700),
+                    onSelected: (_) => setDialogState(() => selectedMode = 'bank'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: noteCtrl,
+                style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textPrimary),
+                decoration: const InputDecoration(labelText: 'Note (Optional)', prefixIcon: Icon(Icons.note_alt_outlined)),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
             ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: amountCtrl,
-              keyboardType: TextInputType.number,
-              autofocus: true,
-              style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-              decoration: InputDecoration(labelText: 'Amount Received (₹)', prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.forestMint)),
+            ElevatedButton(
+              onPressed: () async {
+                final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                if (amt > 0) {
+                  final auth = context.read<AuthProvider>();
+                  final note = noteCtrl.text.trim().isNotEmpty ? noteCtrl.text.trim() : 'Khata settlement';
+                  await context.read<CustomerProvider>().recordPayment(
+                    auth.apiService,
+                    _customer.id,
+                    amt,
+                    note: note,
+                    paymentMode: selectedMode,
+                  );
+                  setState(() {
+                    _customer.dueAmount = (_customer.dueAmount - amt) < 0 ? 0 : _customer.dueAmount - amt;
+                  });
+                  _loadTransactions();
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                  }
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Received ₹${amt.toStringAsFixed(0)} from ${_customer.name} via ${selectedMode.toUpperCase()}'), backgroundColor: AppColors.success),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.forestMint, foregroundColor: Colors.white),
+              child: const Text('SAVE PAYMENT'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
-              if (amt > 0) {
-                final auth = context.read<AuthProvider>();
-                await context.read<CustomerProvider>().recordPayment(auth.apiService, _customer.id, amt);
-                setState(() {
-                  _customer.dueAmount = (_customer.dueAmount - amt) < 0 ? 0 : _customer.dueAmount - amt;
-                });
-                _loadTransactions();
-                if (ctx.mounted) {
-                  Navigator.pop(ctx);
-                }
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Received ₹${amt.toStringAsFixed(0)} from ${_customer.name}'), backgroundColor: AppColors.success),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.forestMint, foregroundColor: Colors.white),
-            child: const Text('SAVE PAYMENT'),
-          ),
-        ],
       ),
     );
   }
@@ -302,7 +365,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                             '₹${_customer.dueAmount.toStringAsFixed(0)}',
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 18,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w900,
                               color: _customer.dueAmount > 0 ? AppColors.chaiGold : AppColors.forestMint,
                             ),
                           ),
@@ -384,17 +447,22 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'RECENT TRANSACTIONS',
-                        style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
+                        'KHATA & TRANSACTION HISTORY',
+                        style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2, color: AppColors.textSecondary),
                       ),
                       if (_isLoadingTransactions)
-                        SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.terracotta)),
+                        SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.terracotta))
+                      else
+                        Text(
+                          '${_transactions.length} Records',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textMuted),
+                        ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   if (_transactions.isEmpty && !_isLoadingTransactions)
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       child: Center(
                         child: Text(
                           'No transactions recorded yet for this customer.',
@@ -412,34 +480,102 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         final tx = _transactions[i];
                         final isCredit = tx['type'] == 'credit';
                         final isPayment = tx['type'] == 'payment';
+                        final isBill = tx['type'] == 'bill';
                         final amount = (tx['amount'] as num?)?.toDouble() ?? 0.0;
+                        final balanceAfter = (tx['balance_after'] as num?)?.toDouble();
+
+                        String formattedDate = '';
+                        if (tx['date'] != null) {
+                          final parsedDate = DateTime.tryParse(tx['date']);
+                          if (parsedDate != null) {
+                            formattedDate = DateFormat('dd MMM yyyy, hh:mm a').format(parsedDate);
+                          }
+                        }
 
                         return Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: isPayment
+                                    ? AppColors.forestMint.withAlpha(25)
+                                    : (isCredit ? AppColors.chaiGold.withAlpha(25) : AppColors.primaryContainer),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                isPayment
+                                    ? Icons.arrow_downward_rounded
+                                    : (isCredit ? Icons.arrow_upward_rounded : Icons.receipt_long_rounded),
+                                color: isPayment ? AppColors.forestMint : (isCredit ? AppColors.chaiGold : AppColors.terracotta),
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    tx['title'] ?? 'Transaction',
-                                    style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        tx['title'] ?? 'Transaction',
+                                        style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: isPayment
+                                              ? AppColors.forestMint.withAlpha(30)
+                                              : (isCredit ? AppColors.chaiGold.withAlpha(30) : AppColors.secondaryContainer),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          (tx['payment_mode'] ?? (isCredit ? 'KHATA' : 'CASH')).toString().toUpperCase(),
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w800,
+                                            color: isPayment ? AppColors.forestMint : (isCredit ? AppColors.chaiGold : AppColors.textSecondary),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    tx['subtitle'] ?? (tx['payment_mode'] ?? 'Khata'),
-                                    style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
+                                    tx['subtitle'] ?? '',
+                                    style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textSecondary),
                                   ),
+                                  if (formattedDate.isNotEmpty) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      formattedDate,
+                                      style: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppColors.textMuted),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
-                            Text(
-                              '${isCredit ? "+" : isPayment ? "-" : ""}₹${amount.toStringAsFixed(0)}',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                                color: isCredit ? AppColors.chaiGold : (isPayment ? AppColors.forestMint : AppColors.textPrimary),
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '${isCredit ? "+" : isPayment ? "-" : ""}₹${amount.toStringAsFixed(0)}',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w900,
+                                    color: isCredit ? AppColors.chaiGold : (isPayment ? AppColors.forestMint : AppColors.textPrimary),
+                                  ),
+                                ),
+                                if (balanceAfter != null) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Bal: ₹${balanceAfter.toStringAsFixed(0)}',
+                                    style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textMuted),
+                                  ),
+                                ],
+                              ],
                             ),
                           ],
                         );

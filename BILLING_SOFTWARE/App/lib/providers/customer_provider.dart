@@ -44,18 +44,39 @@ class CustomerProvider with ChangeNotifier {
     return success;
   }
 
-  Future<bool> recordPayment(ApiService apiService, String customerId, double amount) async {
+  Future<bool> recordPayment(
+    ApiService apiService,
+    String customerId,
+    double amount, {
+    String? note,
+    String? paymentMode,
+  }) async {
     final idx = _customers.indexWhere((c) => c.id == customerId);
     if (idx >= 0) {
       _customers[idx].dueAmount = (_customers[idx].dueAmount - amount) < 0 ? 0 : (_customers[idx].dueAmount - amount);
       notifyListeners();
     }
 
-    final success = await apiService.recordCustomerPayment(customerId, amount);
+    final success = await apiService.recordCustomerPayment(
+      customerId,
+      amount,
+      note: note,
+      paymentMode: paymentMode,
+    );
+    if (success) {
+      await fetchCustomers(apiService);
+    }
     return success;
   }
 
-  Future<bool> addCredit(ApiService apiService, String customerId, double amount) async {
+  Future<bool> addCredit(
+    ApiService apiService,
+    String customerId,
+    double amount, {
+    String? note,
+    String? billId,
+    String? paymentMode,
+  }) async {
     final idx = _customers.indexWhere((c) => c.id == customerId);
     if (idx >= 0) {
       _customers[idx].dueAmount += amount;
@@ -64,7 +85,16 @@ class CustomerProvider with ChangeNotifier {
       notifyListeners();
     }
 
-    final success = await apiService.addCustomerCredit(customerId, amount);
+    final success = await apiService.addCustomerCredit(
+      customerId,
+      amount,
+      note: note,
+      billId: billId,
+      paymentMode: paymentMode,
+    );
+    if (success) {
+      await fetchCustomers(apiService);
+    }
     return success;
   }
 }
