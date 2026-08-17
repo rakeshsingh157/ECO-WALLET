@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme.dart';
+import '../../core/localization.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/theme_provider.dart';
 
@@ -23,7 +24,7 @@ class ExpiryAlertsScreen extends StatelessWidget {
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          'EXPIRY ALERTS',
+          context.tr('expiry_alerts_title'),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -42,7 +43,7 @@ class ExpiryAlertsScreen extends StatelessWidget {
                     Image.asset(MascotAssets.box, width: 90, height: 90),
                     const SizedBox(height: 16),
                     Text(
-                      'No Expiring Batches',
+                      context.tr('no_expiring_batches_title'),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -51,7 +52,7 @@ class ExpiryAlertsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'All batch inventories are fresh. No products approaching expiration date.',
+                      context.tr('no_expiring_batches_sub'),
                       textAlign: TextAlign.center,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,

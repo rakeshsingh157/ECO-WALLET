@@ -418,7 +418,7 @@ class _PosScreenState extends State<PosScreen> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: ChoiceChip(
-                    label: Text(category == 'All' ? context.tr('all_categories') : category),
+                    label: Text(context.trCategory(category)),
                     selected: isSelected,
                     onSelected: (_) => productProvider.setCategory(category),
                     selectedColor: AppColors.primaryContainer,

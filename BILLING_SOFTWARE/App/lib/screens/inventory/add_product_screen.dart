@@ -225,7 +225,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         prefixIcon: Icon(Icons.category_rounded, color: AppColors.terracotta),
                       ),
                       items: categories
-                          .map((c) => DropdownMenuItem(value: c, child: Text(c, style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary))))
+                          .map((c) => DropdownMenuItem(value: c, child: Text(context.trCategory(c), style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary))))
                           .toList(),
                       onChanged: (v) => setState(() => _selectedCategory = v!),
                     ),

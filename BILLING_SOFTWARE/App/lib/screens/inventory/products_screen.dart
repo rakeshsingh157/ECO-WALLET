@@ -187,7 +187,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: ChoiceChip(
-                    label: Text(cat == 'All' ? context.tr('all_categories') : cat),
+                    label: Text(context.trCategory(cat)),
                     selected: isSelected,
                     onSelected: (_) => productProvider.setCategory(cat),
                     selectedColor: AppColors.primaryContainer,

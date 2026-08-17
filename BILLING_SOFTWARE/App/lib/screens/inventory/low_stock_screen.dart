@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme.dart';
+import '../../core/localization.dart';
 import '../../models/product.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -66,7 +67,7 @@ class _LowStockScreenState extends State<LowStockScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+            child: Text(context.tr('cancel'), style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -86,7 +87,7 @@ class _LowStockScreenState extends State<LowStockScreen> {
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.terracotta, foregroundColor: Colors.white),
-            child: const Text('Add Stock'),
+            child: Text(context.tr('save')),
           ),
         ],
       ),
@@ -99,22 +100,22 @@ class _LowStockScreenState extends State<LowStockScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
         title: Text(
-          'Delete Product',
+          context.tr('delete'),
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.textPrimary),
         ),
         content: Text(
-          'Are you sure you want to delete "${product.name}" from inventory?',
+          '${context.tr('confirm')}: "${product.name}"?',
           style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+            child: Text(context.tr('cancel'), style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
-            child: const Text('Delete'),
+            child: Text(context.tr('delete')),
           ),
         ],
       ),
@@ -130,7 +131,7 @@ class _LowStockScreenState extends State<LowStockScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${product.name} deleted from inventory'),
+          content: Text('${product.name} ${context.tr('delete')}'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -157,7 +158,7 @@ class _LowStockScreenState extends State<LowStockScreen> {
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          'LOW STOCK ALERTS',
+          context.tr('low_stock_alerts_title'),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -176,13 +177,13 @@ class _LowStockScreenState extends State<LowStockScreen> {
               physics: const BouncingScrollPhysics(),
               child: Row(
                 children: [
-                  _buildFilterChip('All', 'All (${allLowStock.length})'),
+                  _buildFilterChip('All', '${context.tr('all_categories')} (${allLowStock.length})'),
                   const SizedBox(width: 8),
-                  _buildFilterChip('Out of Stock', 'Out of Stock ($outCount)', isError: true),
+                  _buildFilterChip('Out of Stock', '${context.tr('out_of_stock')} ($outCount)', isError: true),
                   const SizedBox(width: 8),
-                  _buildFilterChip('Critical (<= 2)', 'Critical ($criticalCount)', isWarning: true),
+                  _buildFilterChip('Critical (<= 2)', '${context.tr('critical_filter')} ($criticalCount)', isWarning: true),
                   const SizedBox(width: 8),
-                  _buildFilterChip('Moderate', 'Moderate'),
+                  _buildFilterChip('Moderate', context.tr('moderate_filter')),
                 ],
               ),
             ),
@@ -198,7 +199,7 @@ class _LowStockScreenState extends State<LowStockScreen> {
                           Image.asset(MascotAssets.box, width: 90, height: 90),
                           const SizedBox(height: 16),
                           Text(
-                            'Sab Badhiya Hai!',
+                            context.tr('all_good_title'),
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
@@ -208,7 +209,7 @@ class _LowStockScreenState extends State<LowStockScreen> {
                           const SizedBox(height: 6),
                           Text(
                             _selectedFilter == 'All'
-                                ? 'All products have sufficient inventory stock.'
+                                ? context.tr('all_good_stock_sub')
                                 : 'No products found matching the "$_selectedFilter" filter.',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.plusJakartaSans(

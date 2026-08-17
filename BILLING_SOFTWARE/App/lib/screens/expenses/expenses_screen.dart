@@ -399,7 +399,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: ChoiceChip(
-                        label: Text(cat),
+                        label: Text(cat == 'All' ? context.tr('all_categories') : cat),
                         selected: isSelected,
                         onSelected: (_) => setState(() => _selectedCategory = cat),
                         selectedColor: AppColors.primaryContainer,
