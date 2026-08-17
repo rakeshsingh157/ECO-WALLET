@@ -451,9 +451,9 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                         height: 20,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                       )
-                    : Row(
+                    : const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(Icons.save_rounded, size: 18),
                           SizedBox(width: 8),
                           Text('SAVE STORE PROFILE & QR'),
