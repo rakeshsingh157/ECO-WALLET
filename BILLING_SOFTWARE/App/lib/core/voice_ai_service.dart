@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class VoiceAiItem {
   final String id;
@@ -91,13 +90,12 @@ class VoiceAiResult {
 }
 
 class VoiceAiService {
-  final stt.SpeechToText _speech = stt.SpeechToText();
   final AudioRecorder _audioRecorder = AudioRecorder();
-  bool _isSpeechInitialized = false;
   bool _hasAudioPermission = false;
   String? _currentRecordingPath;
+  bool _isCurrentlyRecording = false;
 
-  bool get isListening => _speech.isListening;
+  bool get isListening => _isCurrentlyRecording;
   String? get lastRecordedPath => _currentRecordingPath;
 
   Future<bool> initRecorder() async {
@@ -109,42 +107,7 @@ class VoiceAiService {
     }
   }
 
-  Future<bool> initSpeech() async {
-    if (_isSpeechInitialized) return true;
-    try {
-      _isSpeechInitialized = await _speech.initialize(
-        onError: (err) {},
-        onStatus: (status) {},
-      );
-      return _isSpeechInitialized;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  String getLocaleForLanguage(String langCode) {
-    switch (langCode.toLowerCase()) {
-      case 'hi':
-        return 'hi_IN';
-      case 'mr':
-        return 'mr_IN';
-      case 'gu':
-        return 'gu_IN';
-      case 'ta':
-        return 'ta_IN';
-      case 'te':
-        return 'te_IN';
-      case 'en':
-      default:
-        return 'en_IN';
-    }
-  }
-
-  Future<void> startRecording({
-    required String languageCode,
-    required Function(String liveText) onLiveText,
-    required Function() onDone,
-  }) async {
+  Future<void> startRecording() async {
     try {
       final tempDir = await getTemporaryDirectory();
       _currentRecordingPath = '${tempDir.path}/voice_order_${DateTime.now().millisecondsSinceEpoch}.m4a';
@@ -165,40 +128,15 @@ class VoiceAiService {
           ),
           path: _currentRecordingPath!,
         );
+        _isCurrentlyRecording = true;
       }
     } catch (_) {
-    }
-
-    try {
-      final speechReady = await initSpeech();
-      if (speechReady) {
-        final localeId = getLocaleForLanguage(languageCode);
-        await _speech.listen(
-          onResult: (result) {
-            onLiveText(result.recognizedWords);
-            if (result.finalResult) {
-              onDone();
-            }
-          },
-          listenOptions: stt.SpeechListenOptions(
-            localeId: localeId,
-            listenMode: stt.ListenMode.dictation,
-            pauseFor: const Duration(seconds: 4),
-          ),
-        );
-      }
-    } catch (_) {
+      _isCurrentlyRecording = false;
     }
   }
 
   Future<String?> stopRecording() async {
-    try {
-      if (_speech.isListening) {
-        await _speech.stop();
-      }
-    } catch (_) {
-    }
-
+    _isCurrentlyRecording = false;
     try {
       final isRec = await _audioRecorder.isRecording();
       String? path;

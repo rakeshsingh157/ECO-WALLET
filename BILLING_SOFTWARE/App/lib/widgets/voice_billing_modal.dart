@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -38,6 +39,8 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
 
+  Timer? _recordTimer;
+  int _recordDuration = 0;
   bool _isListening = false;
   bool _isProcessing = false;
   bool _isPlayingAudio = false;
@@ -66,6 +69,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
 
   @override
   void dispose() {
+    _recordTimer?.cancel();
     _audioPlayer.dispose();
     _voiceService.stopRecording();
     _animController.dispose();
@@ -76,29 +80,22 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
   void _startVoiceListening() async {
     setState(() {
       _isListening = true;
+      _recordDuration = 0;
       _errorMessage = null;
     });
 
-    final currentLocale = context.read<LocaleProvider>().locale;
+    _recordTimer?.cancel();
+    _recordTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (mounted && _isListening) {
+        setState(() => _recordDuration++);
+      }
+    });
 
-    await _voiceService.startRecording(
-      languageCode: currentLocale,
-      onLiveText: (text) {
-        if (mounted) {
-          setState(() {
-            _textCtrl.text = text;
-          });
-        }
-      },
-      onDone: () {
-        if (mounted) {
-          _stopVoiceAndProcess();
-        }
-      },
-    );
+    await _voiceService.startRecording();
   }
 
   void _stopVoiceAndProcess() async {
+    _recordTimer?.cancel();
     if (!_isListening && !_isProcessing) return;
 
     final auth = context.read<AuthProvider>();
@@ -674,9 +671,11 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
                 const SizedBox(height: 12),
                 Center(
                   child: Text(
-                    _isListening ? context.tr('listening_active') : context.tr('tap_and_hold_to_speak'),
+                    _isListening
+                        ? 'Recording... ${(_recordDuration ~/ 60).toString().padLeft(1, '0')}:${(_recordDuration % 60).toString().padLeft(2, '0')}'
+                        : context.tr('tap_and_hold_to_speak'),
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: _isListening ? AppColors.terracotta : AppColors.textSecondary,
                     ),
