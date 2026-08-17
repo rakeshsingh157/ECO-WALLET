@@ -57,7 +57,7 @@ async function transcribeWithSarvam(base64Audio, languageCode, format) {
     const blob = new Blob([audioBuffer], { type: mimeType });
     const formData = new FormData();
     formData.append("file", blob, fileName);
-    formData.append("model", "saaras:v1");
+    formData.append("model", "saaras:v4");
     if (languageCode && languageCode !== "unknown") {
       formData.append("language_code", languageCode);
     }
