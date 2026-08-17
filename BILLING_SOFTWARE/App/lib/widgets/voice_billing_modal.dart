@@ -51,10 +51,6 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.25).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
     );
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startVoiceListening();
-    });
   }
 
   @override
@@ -95,13 +91,21 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
     );
   }
 
-  void _toggleListening() async {
+  void _stopVoiceAndProcess() async {
     if (_isListening) {
       await _voiceService.stopListening();
-      setState(() => _isListening = false);
-      if (_textCtrl.text.trim().isNotEmpty) {
-        _processAiOrder();
+      if (mounted) {
+        setState(() => _isListening = false);
+        if (_textCtrl.text.trim().isNotEmpty) {
+          _processAiOrder();
+        }
       }
+    }
+  }
+
+  void _toggleListening() async {
+    if (_isListening) {
+      _stopVoiceAndProcess();
     } else {
       _startVoiceListening();
     }
@@ -435,23 +439,25 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
               Center(
                 child: GestureDetector(
                   onTap: _toggleListening,
+                  onLongPressStart: (_) => _startVoiceListening(),
+                  onLongPressEnd: (_) => _stopVoiceAndProcess(),
                   child: AnimatedBuilder(
                     animation: _scaleAnimation,
                     builder: (context, child) {
                       return Transform.scale(
                         scale: _isListening ? _scaleAnimation.value : 1.0,
                         child: Container(
-                          width: 72,
-                          height: 72,
+                          width: 78,
+                          height: 78,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: _isListening ? AppColors.terracotta : AppColors.terracotta.withValues(alpha: 0.12),
                             boxShadow: _isListening
                                 ? [
                                     BoxShadow(
-                                      color: AppColors.terracotta.withValues(alpha: 0.4),
-                                      blurRadius: 20,
-                                      spreadRadius: 4,
+                                      color: AppColors.terracotta.withValues(alpha: 0.45),
+                                      blurRadius: 24,
+                                      spreadRadius: 6,
                                     ),
                                   ]
                                 : [],
@@ -459,7 +465,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
                           child: Icon(
                             _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
                             color: _isListening ? Colors.white : AppColors.terracotta,
-                            size: 32,
+                            size: 34,
                           ),
                         ),
                       );
@@ -470,12 +476,13 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
               const SizedBox(height: 12),
               Center(
                 child: Text(
-                  _isListening ? 'Listening...' : 'Tap to speak or edit text above',
+                  _isListening ? context.tr('listening_active') : context.tr('tap_and_hold_to_speak'),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: _isListening ? AppColors.terracotta : AppColors.textSecondary,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ),
               const SizedBox(height: 14),
@@ -483,7 +490,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
                 ElevatedButton.icon(
                   onPressed: _processAiOrder,
                   icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                  label: const Text('Process Order with AI'),
+                  label: Text(context.tr('process_order_ai_btn')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.terracotta,
                     foregroundColor: Colors.white,

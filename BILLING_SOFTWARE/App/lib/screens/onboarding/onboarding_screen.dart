@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme.dart';
+import '../../core/localization.dart';
 import '../../widgets/mascot_badge.dart';
 import '../../widgets/language_picker_button.dart';
 import '../auth/login_screen.dart';
@@ -17,24 +18,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  final List<Map<String, String>> _pages = [
+  static const List<Map<String, String>> _pagesConfig = [
     {
-      'title': 'Namaste! Welcome to Dukaan Dost',
-      'subtitle': 'Made with love for Indian retail shops, kiranas, and local businesses.',
+      'titleKey': 'onboarding_title_1',
+      'subtitleKey': 'onboarding_subtitle_1',
       'mascot': MascotAssets.shopkeeper,
-      'bubble': 'Aapki dukaan ka digital saathi!',
+      'bubbleKey': 'onboarding_bubble_1',
     },
     {
-      'title': 'Lightning Fast Billing & Barcode POS',
-      'subtitle': 'Scan barcodes, create invoices in seconds, and print receipts for your customers.',
+      'titleKey': 'onboarding_title_2',
+      'subtitleKey': 'onboarding_subtitle_2',
       'mascot': MascotAssets.receipt,
-      'bubble': 'Tez billing, khush grahak!',
+      'bubbleKey': 'onboarding_bubble_2',
     },
     {
-      'title': 'Zero-Fee UPI & Digital Khata',
-      'subtitle': 'Track customer credit, send gentle WhatsApp reminders, and receive payments seamlessly.',
+      'titleKey': 'onboarding_title_3',
+      'subtitleKey': 'onboarding_subtitle_3',
       'mascot': MascotAssets.coin,
-      'bubble': 'Khata aur payment dono aasan!',
+      'bubbleKey': 'onboarding_bubble_3',
     },
   ];
 
@@ -65,7 +66,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       );
                     },
                     child: Text(
-                      'Skip',
+                      context.tr('skip'),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -80,20 +81,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: PageView.builder(
                   controller: _pageController,
                   onPageChanged: (idx) => setState(() => _currentPage = idx),
-                  itemCount: _pages.length,
+                  itemCount: _pagesConfig.length,
                   itemBuilder: (context, index) {
-                    final item = _pages[index];
+                    final item = _pagesConfig[index];
                     return Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         MascotBadge(
                           assetPath: item['mascot']!,
                           size: 140,
-                          speechBubbleText: item['bubble'],
+                          speechBubbleText: context.tr(item['bubbleKey']!),
                         ),
                         const SizedBox(height: 32),
                         Text(
-                          item['title']!,
+                          context.tr(item['titleKey']!),
                           textAlign: TextAlign.center,
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 22,
@@ -106,7 +107,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
-                            item['subtitle']!,
+                            context.tr(item['subtitleKey']!),
                             textAlign: TextAlign.center,
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 14,
@@ -124,7 +125,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
-                  _pages.length,
+                  _pagesConfig.length,
                   (index) => AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
                     margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -156,7 +157,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       child: Text(
-                        'SIGN IN',
+                        context.tr('sign_in'),
                         style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                       ),
                     ),
@@ -165,7 +166,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        if (_currentPage < _pages.length - 1) {
+                        if (_currentPage < _pagesConfig.length - 1) {
                           _pageController.nextPage(
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeInOut,
@@ -184,7 +185,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       child: Text(
-                        _currentPage == _pages.length - 1 ? 'GET STARTED' : 'NEXT',
+                        _currentPage == _pagesConfig.length - 1 ? context.tr('get_started') : context.tr('next'),
                         style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
                       ),
                     ),

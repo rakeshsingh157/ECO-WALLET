@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme.dart';
+import '../../core/localization.dart';
 import '../../widgets/language_picker_button.dart';
 import '../../providers/auth_provider.dart';
 import '../main_shell.dart';
@@ -15,10 +16,10 @@ class ShopSetupScreen extends StatefulWidget {
 
 class _ShopSetupScreenState extends State<ShopSetupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _shopNameCtrl = TextEditingController(text: 'Ramesh Kirana Store');
-  final _ownerNameCtrl = TextEditingController(text: 'Ramesh Sharma');
+  late final TextEditingController _shopNameCtrl;
+  late final TextEditingController _ownerNameCtrl;
   final _gstinCtrl = TextEditingController();
-  final _addressCtrl = TextEditingController(text: 'Main Market, City Center');
+  final _addressCtrl = TextEditingController();
 
   String _businessCategory = 'Kirana & Grocery';
   final List<String> _categories = [
@@ -30,6 +31,14 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
     'Hardware & Sanitary',
     'General Retail',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    final auth = context.read<AuthProvider>();
+    _shopNameCtrl = TextEditingController(text: auth.shopName);
+    _ownerNameCtrl = TextEditingController(text: auth.ownerName);
+  }
 
   @override
   void dispose() {
@@ -69,7 +78,7 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          'STORE SETUP',
+          context.tr('store_setup_title'),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -93,7 +102,7 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Configure your billing parameters and business profile for thermal tax invoices.',
+                context.tr('store_setup_desc'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 13,
                   color: AppColors.textSecondary,
@@ -106,10 +115,11 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
                 controller: _shopNameCtrl,
                 style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                 decoration: InputDecoration(
-                  labelText: 'Shop / Brand Name *',
+                  labelText: context.tr('shop_brand_name'),
+                  hintText: context.tr('shop_name_hint'),
                   prefixIcon: Icon(Icons.store_rounded, color: AppColors.terracotta),
                 ),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Enter shop name' : null,
+                validator: (v) => v == null || v.trim().isEmpty ? context.trRead('enter_shop_name') : null,
               ),
 
               const SizedBox(height: 14),
@@ -118,10 +128,11 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
                 controller: _ownerNameCtrl,
                 style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
                 decoration: InputDecoration(
-                  labelText: 'Proprietor / Owner Name *',
+                  labelText: context.tr('proprietor'),
+                  hintText: context.tr('owner_name_hint'),
                   prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta),
                 ),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Enter owner name' : null,
+                validator: (v) => v == null || v.trim().isEmpty ? context.trRead('enter_owner_name') : null,
               ),
 
               const SizedBox(height: 14),
@@ -129,7 +140,7 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
               DropdownButtonFormField<String>(
                 initialValue: _businessCategory,
                 decoration: InputDecoration(
-                  labelText: 'Business Category',
+                  labelText: context.tr('business_category'),
                   prefixIcon: Icon(Icons.category_rounded, color: AppColors.terracotta),
                 ),
                 items: _categories
@@ -144,7 +155,7 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
                 controller: _gstinCtrl,
                 style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                 decoration: InputDecoration(
-                  labelText: 'GSTIN (Optional)',
+                  labelText: context.tr('gstin_optional'),
                   hintText: '29AAAAA0000A1Z5',
                   prefixIcon: Icon(Icons.badge_rounded, color: AppColors.forestMint),
                 ),
@@ -157,10 +168,11 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
                 maxLines: 2,
                 style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
                 decoration: InputDecoration(
-                  labelText: 'Store Address (Printed on Invoices) *',
+                  labelText: context.tr('store_address_label'),
+                  hintText: context.tr('store_address_receipt'),
                   prefixIcon: Icon(Icons.location_on_rounded, color: AppColors.textSecondary),
                 ),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Enter store address' : null,
+                validator: (v) => v == null || v.trim().isEmpty ? context.trRead('enter_store_address') : null,
               ),
 
               const SizedBox(height: 32),
@@ -170,7 +182,7 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _finishSetup,
                   icon: const Icon(Icons.check_circle_rounded, size: 18),
-                  label: const Text('COMPLETE SETUP & LAUNCH POS'),
+                  label: Text(context.tr('complete_setup_launch')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.terracotta,
                     foregroundColor: Colors.white,
