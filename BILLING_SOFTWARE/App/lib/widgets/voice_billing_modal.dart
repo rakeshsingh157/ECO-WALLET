@@ -385,7 +385,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.sunlitGold,
+                            color: AppColors.chaiGold,
                           ),
                         ),
                         const SizedBox(height: 4),
