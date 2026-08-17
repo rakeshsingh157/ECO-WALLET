@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../core/theme.dart';
+import '../core/app_notifier.dart';
 import '../core/constants.dart';
 import '../core/api_service.dart';
 import '../providers/auth_provider.dart';
@@ -105,15 +106,11 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
         _members.removeWhere((m) => m.id == member.id);
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${member.name} removed from staff roster'), backgroundColor: AppColors.forestMint),
-        );
+        AppNotifier.success(context, '${member.name} removed from staff roster', title: 'MEMBER REMOVED');
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: const Text('Failed to remove staff member'), backgroundColor: AppColors.error),
-        );
+        AppNotifier.error(context, 'Failed to remove staff member', title: 'ACTION FAILED');
       }
     }
   }
@@ -213,21 +210,15 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                           final pin = pinCtrl.text.trim();
 
                           if (name.isEmpty) {
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              SnackBar(content: const Text('Staff name is required'), backgroundColor: AppColors.error),
-                            );
+                            AppNotifier.warning(ctx, 'Staff name is required', title: 'FIELD REQUIRED');
                             return;
                           }
                           if (phone.length < 10) {
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              SnackBar(content: const Text('Enter valid 10-digit mobile number'), backgroundColor: AppColors.error),
-                            );
+                            AppNotifier.warning(ctx, 'Enter valid 10-digit mobile number', title: 'INVALID NUMBER');
                             return;
                           }
                           if (pin.length != 4) {
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              SnackBar(content: const Text('Enter a 4-digit security PIN'), backgroundColor: AppColors.error),
-                            );
+                            AppNotifier.warning(ctx, 'Enter a 4-digit security PIN', title: 'INVALID PIN');
                             return;
                           }
 
@@ -252,19 +243,16 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                               Navigator.pop(ctx);
                             }
                             if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('$name added to store staff. They can now log in using PIN $pin.'),
-                                  backgroundColor: AppColors.forestMint,
-                                ),
+                              AppNotifier.success(
+                                context,
+                                '$name added to store staff. They can now log in using PIN $pin.',
+                                title: 'STAFF ADDED',
                               );
                             }
                           } else {
                             setModalState(() => isSaving = false);
                             if (ctx.mounted) {
-                              ScaffoldMessenger.of(ctx).showSnackBar(
-                                SnackBar(content: const Text('Failed to add staff member'), backgroundColor: AppColors.error),
-                              );
+                              AppNotifier.error(ctx, 'Failed to add staff member', title: 'SERVER ERROR');
                             }
                           }
                         },

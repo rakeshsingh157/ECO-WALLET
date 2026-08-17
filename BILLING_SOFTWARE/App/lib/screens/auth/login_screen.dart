@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme.dart';
+import '../../core/app_notifier.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/mascot_badge.dart';
 import '../main_shell.dart';
@@ -63,22 +64,20 @@ class _LoginScreenState extends State<LoginScreen> {
             ? 'Logged in as ${auth.staffName} (${auth.staffRole})'
             : 'Welcome back to ${auth.shopName}!';
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(welcomeMsg),
-            backgroundColor: AppColors.forestMint,
-          ),
+        AppNotifier.success(
+          context,
+          welcomeMsg,
+          title: _selectedLoginType == 1 ? 'STAFF AUTHENTICATED' : 'STORE ACCESS GRANTED',
         );
 
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const MainShell()),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(auth.authError ?? 'Login failed. Please check mobile/PIN.'),
-            backgroundColor: AppColors.error,
-          ),
+        AppNotifier.error(
+          context,
+          auth.authError ?? 'Login failed. Please check mobile/PIN.',
+          title: 'LOGIN FAILED',
         );
       }
     }

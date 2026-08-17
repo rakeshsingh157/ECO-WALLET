@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme.dart';
+import '../../core/app_notifier.dart';
 import '../../core/localization.dart';
 import '../../models/customer.dart';
 import '../../providers/auth_provider.dart';
@@ -113,8 +114,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   Navigator.pop(ctx);
                 }
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Added ₹${amt.toStringAsFixed(0)} credit for ${_customer.name}'), backgroundColor: AppColors.success),
+                  AppNotifier.success(
+                    context,
+                    'Added ₹${amt.toStringAsFixed(0)} credit for ${_customer.name}',
+                    title: 'KHATA UPDATED',
                   );
                 }
               }
@@ -129,11 +132,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   void _recordPayment() {
     if (_customer.dueAmount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${_customer.name} has no outstanding pending dues'),
-          backgroundColor: AppColors.forestMint,
-        ),
+      AppNotifier.info(
+        context,
+        '${_customer.name} has no outstanding pending dues',
+        title: 'NO DUES',
       );
       return;
     }
@@ -243,18 +245,15 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   : () async {
                       final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
                       if (amt <= 0) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          SnackBar(content: const Text('Please enter a valid payment amount'), backgroundColor: AppColors.error),
-                        );
+                        AppNotifier.warning(ctx, 'Please enter a valid payment amount', title: 'INVALID AMOUNT');
                         return;
                       }
 
                       if (amt > _customer.dueAmount) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          SnackBar(
-                            content: Text('Payment amount (₹${amt.toStringAsFixed(0)}) cannot exceed pending due of ₹${_customer.dueAmount.toStringAsFixed(0)}'),
-                            backgroundColor: AppColors.error,
-                          ),
+                        AppNotifier.warning(
+                          ctx,
+                          'Payment amount (₹${amt.toStringAsFixed(0)}) cannot exceed pending due of ₹${_customer.dueAmount.toStringAsFixed(0)}',
+                          title: 'EXCEEDS DUE AMOUNT',
                         );
                         return;
                       }
@@ -280,16 +279,16 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                           Navigator.pop(ctx);
                         }
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Received ₹${amt.toStringAsFixed(0)} from ${_customer.name} via ${selectedMode.toUpperCase()}'), backgroundColor: AppColors.success),
+                          AppNotifier.success(
+                            context,
+                            'Received ₹${amt.toStringAsFixed(0)} from ${_customer.name} via ${selectedMode.toUpperCase()}',
+                            title: 'PAYMENT RECORDED',
                           );
                         }
                       } else {
                         setDialogState(() => isRecording = false);
                         if (ctx.mounted) {
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            SnackBar(content: const Text('Failed to record payment. Please try again.'), backgroundColor: AppColors.error),
-                          );
+                          AppNotifier.error(ctx, 'Failed to record payment. Please try again.', title: 'PAYMENT ERROR');
                         }
                       }
                     },

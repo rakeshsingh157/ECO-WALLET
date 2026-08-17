@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme.dart';
+import '../../core/app_notifier.dart';
 import '../../core/localization.dart';
 import '../../models/customer.dart';
 import '../../providers/auth_provider.dart';
@@ -189,9 +190,7 @@ class _KhataScreenState extends State<KhataScreen> {
                         : () async {
                             final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
                             if (amt <= 0) {
-                              ScaffoldMessenger.of(ctx).showSnackBar(
-                                SnackBar(content: const Text('Please enter a valid credit amount'), backgroundColor: AppColors.error),
-                              );
+                              AppNotifier.warning(ctx, 'Please enter a valid credit amount', title: 'INVALID AMOUNT');
                               return;
                             }
 
@@ -204,9 +203,7 @@ class _KhataScreenState extends State<KhataScreen> {
                                 final p = phoneCtrl.text.trim();
                                 if (n.isEmpty || p.isEmpty) {
                                   setModalState(() => isSaving = false);
-                                  ScaffoldMessenger.of(ctx).showSnackBar(
-                                    SnackBar(content: const Text('Customer name and phone are required'), backgroundColor: AppColors.error),
-                                  );
+                                  AppNotifier.warning(ctx, 'Customer name and phone are required', title: 'REQUIRED FIELDS');
                                   return;
                                 }
                                 final newCust = Customer(
@@ -227,15 +224,19 @@ class _KhataScreenState extends State<KhataScreen> {
                                 Navigator.pop(ctx);
                               }
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Recorded ₹${amt.toStringAsFixed(0)} Khata credit'), backgroundColor: AppColors.success),
+                                AppNotifier.success(
+                                  context,
+                                  'Recorded ₹${amt.toStringAsFixed(0)} Khata credit successfully',
+                                  title: 'KHATA RECORDED',
                                 );
                               }
                             } catch (_) {
                               if (ctx.mounted) {
                                 setModalState(() => isSaving = false);
-                                ScaffoldMessenger.of(ctx).showSnackBar(
-                                  SnackBar(content: const Text('Failed to record Khata credit. Please check connection.'), backgroundColor: AppColors.error),
+                                AppNotifier.error(
+                                  ctx,
+                                  'Failed to record Khata credit. Please check connection.',
+                                  title: 'SYNC ERROR',
                                 );
                               }
                             }

@@ -498,6 +498,7 @@ async function renderInvoiceHtml(req, res) {
     const refundedAmount = bill && bill.refunded_amount ? bill.refunded_amount : 0;
     const netAmount = Math.max(0, totalAmount - refundedAmount);
     const paymentMode = bill ? (bill.payment_mode || "CASH").toUpperCase() : "PAID";
+    const status = bill && bill.status ? bill.status : "completed";
     const dateStr = bill ? new Date(bill.createdAt).toLocaleString("en-IN") : new Date().toLocaleString("en-IN");
     const customerName = bill && bill.customer_name ? bill.customer_name : "Counter Customer";
     const customerPhone = bill && bill.customer_phone ? bill.customer_phone : "";

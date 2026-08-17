@@ -106,6 +106,11 @@ class AppTheme {
         labelStyle: GoogleFonts.plusJakartaSans(fontSize: 13, color: const Color(0xFF5A645A)),
       ),
       dividerTheme: const DividerThemeData(color: Color(0xFFE8E4DC), thickness: 1, space: 1),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
     );
   }
 
@@ -170,6 +175,11 @@ class AppTheme {
         labelStyle: GoogleFonts.plusJakartaSans(fontSize: 13, color: const Color(0xFF9EAAB7)),
       ),
       dividerTheme: const DividerThemeData(color: Color(0xFF293649), thickness: 1, space: 1),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
     );
   }
 }
