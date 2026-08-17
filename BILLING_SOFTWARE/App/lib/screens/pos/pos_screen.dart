@@ -8,9 +8,11 @@ import '../../providers/product_provider.dart';
 import '../../providers/bill_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../models/product.dart';
 import '../../widgets/product_grid_item.dart';
 import '../../widgets/camera_scanner_modal.dart';
 import '../../widgets/quantity_selector_modal.dart';
+import '../../widgets/voice_billing_modal.dart';
 import '../inventory/add_product_screen.dart';
 import 'cart_screen.dart';
 
@@ -339,6 +341,42 @@ class _PosScreenState extends State<PosScreen> {
     controller.dispose();
   }
 
+  void _openVoiceAssistant() {
+    VoiceBillingModal.show(
+      context,
+      onAddToCart: (matched, unmatched) {
+        final billProvider = context.read<BillProvider>();
+        final productProvider = context.read<ProductProvider>();
+
+        for (final item in matched) {
+          Product? product = productProvider.products.cast<Product?>().firstWhere(
+            (p) => p?.id == item.id,
+            orElse: () => null,
+          );
+
+          product ??= Product(
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            category: item.category,
+            unit: item.unit,
+            stock: item.stock,
+          );
+
+          billProvider.addItem(product, quantity: item.quantity);
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${matched.length} ${context.trRead('items_added_to_cart')}'),
+            backgroundColor: AppColors.forestMint,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     context.watch<ThemeProvider>();
@@ -358,6 +396,18 @@ class _PosScreenState extends State<PosScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            icon: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppColors.terracotta.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.mic_rounded, color: AppColors.terracotta, size: 18),
+            ),
+            onPressed: _openVoiceAssistant,
+            tooltip: context.tr('voice_billing_title'),
+          ),
           IconButton(
             icon: Icon(Icons.qr_code_scanner_rounded, color: AppColors.terracotta),
             onPressed: _openBarcodeScanner,
@@ -393,6 +443,11 @@ class _PosScreenState extends State<PosScreen> {
                           productProvider.setSearchQuery('');
                         },
                       ),
+                    IconButton(
+                      icon: Icon(Icons.mic_rounded, size: 20, color: AppColors.terracotta),
+                      onPressed: _openVoiceAssistant,
+                      tooltip: context.tr('voice_billing_title'),
+                    ),
                     IconButton(
                       icon: Icon(Icons.qr_code_scanner_rounded, size: 20, color: AppColors.terracotta),
                       onPressed: _openBarcodeScanner,

@@ -28,6 +28,7 @@ app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/staff", require("./routes/staffRoutes"));
 app.use("/api/merchant", require("./routes/merchantRoutes"));
 app.use("/api/backup", require("./routes/backupRoutes"));
+app.use("/api/ai", require("./routes/aiRoutes"));
 
 app.post("/api/merchant/create-payment", async (req, res) => {
   const { order_id, amount, description, shop_name, owner_name } = req.body;
