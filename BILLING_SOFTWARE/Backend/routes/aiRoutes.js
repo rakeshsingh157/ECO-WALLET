@@ -52,8 +52,7 @@ async function transcribeWithSarvam(base64Audio, languageCode, format) {
   const modelsToTry = [
     process.env.SARVAM_MODEL || "saarika:v2.5",
     "saaras:v4",
-    "saaras:v3",
-    "saarika:flash"
+    "saaras:v3"
   ];
 
   const audioBuffer = Buffer.from(base64Audio, "base64");
