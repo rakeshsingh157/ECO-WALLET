@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:audioplayers/audioplayers.dart';
 import '../core/theme.dart';
 import '../core/localization.dart';
 import '../core/voice_ai_service.dart';
@@ -35,7 +33,6 @@ class VoiceBillingModal extends StatefulWidget {
 class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTickerProviderStateMixin {
   final VoiceAiService _voiceService = VoiceAiService();
   final TextEditingController _textCtrl = TextEditingController();
-  final AudioPlayer _audioPlayer = AudioPlayer();
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
 
@@ -43,7 +40,6 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
   int _recordDuration = 0;
   bool _isListening = false;
   bool _isProcessing = false;
-  bool _isPlayingAudio = false;
   VoiceAiResult? _result;
   String? _errorMessage;
 
@@ -59,18 +55,11 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.25).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
     );
-
-    _audioPlayer.onPlayerComplete.listen((_) {
-      if (mounted) {
-        setState(() => _isPlayingAudio = false);
-      }
-    });
   }
 
   @override
   void dispose() {
     _recordTimer?.cancel();
-    _audioPlayer.dispose();
     _voiceService.stopRecording();
     _animController.dispose();
     _textCtrl.dispose();
@@ -191,35 +180,9 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
     }
   }
 
-  void _toggleAudioPlayback() async {
-    final path = _voiceService.lastRecordedPath;
-    if (path == null || !File(path).existsSync()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'No recorded audio file found on device',
-            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    if (_isPlayingAudio) {
-      await _audioPlayer.pause();
-      setState(() => _isPlayingAudio = false);
-    } else {
-      setState(() => _isPlayingAudio = true);
-      await _audioPlayer.play(DeviceFileSource(path));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final lastPath = _voiceService.lastRecordedPath;
-    final hasAudioFile = lastPath != null && File(lastPath).existsSync();
 
     return Container(
       decoration: BoxDecoration(
@@ -365,52 +328,6 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
               ),
               const SizedBox(height: 14),
 
-              if (hasAudioFile)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.canvas,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.borderStrong),
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          _isPlayingAudio ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded,
-                          color: AppColors.terracotta,
-                          size: 32,
-                        ),
-                        onPressed: _toggleAudioPlayback,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'My Recorded Voice Audio',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            Text(
-                              _isPlayingAudio ? 'Playing back recorded speech...' : 'Tap play to listen to what mic recorded',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 11,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
               if (_isProcessing)
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 24),
@@ -430,76 +347,6 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
                   ),
                 )
               else if (_result != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.canvas,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.borderStrong),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Voice Transcript (${_result!.provider ?? "AI"}):',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.terracotta,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      SelectableText(
-                        _result!.rawText.isNotEmpty ? _result!.rawText : '(No transcript captured)',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      if (_result!.sarvamRaw != null && _result!.sarvamRaw!.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          'Sarvam ASR Response:',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.chaiGold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        SelectableText(
-                          _result!.sarvamRaw!,
-                          style: GoogleFonts.firaCode(
-                            fontSize: 10,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                      if (_result!.mistralRaw != null && _result!.mistralRaw!.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          'Mistral AI Raw Data:',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.forestMint,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        SelectableText(
-                          _result!.mistralRaw!,
-                          style: GoogleFonts.firaCode(
-                            fontSize: 11,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
                 if (_result!.matched.isNotEmpty) ...[
                   Container(
                     padding: const EdgeInsets.all(12),

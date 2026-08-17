@@ -234,12 +234,10 @@ router.post("/voice-to-cart", async (req, res) => {
     let sarvamUsed = false;
     let sarvamModelUsed = null;
     let sarvamError = null;
-    let sarvamRaw = null;
 
     if (audio && typeof audio === "string" && audio.trim().length > 20) {
       const sarvamLang = mapLanguageToSarvam(language);
       const sarvamRes = await transcribeWithSarvam(audio.trim(), sarvamLang, format || "m4a");
-      sarvamRaw = sarvamRes.rawResponse;
       sarvamModelUsed = sarvamRes.model;
       if (sarvamRes.transcript && sarvamRes.transcript.length > 0) {
         spokenText = sarvamRes.transcript;
@@ -258,11 +256,7 @@ router.post("/voice-to-cart", async (req, res) => {
       return res.json({
         success: false,
         message: errMsg,
-        sarvamError,
-        sarvamRaw,
-        sarvamModel: sarvamModelUsed,
         rawText: text || "",
-        mistralRaw: "",
         matched: [],
         unmatched: []
       });
@@ -275,10 +269,7 @@ router.post("/voice-to-cart", async (req, res) => {
         success: true,
         rawText: spokenText,
         sarvamUsed,
-        sarvamModel: sarvamModelUsed,
-        sarvamRaw,
         provider: "none",
-        mistralRaw: "No products in database",
         matched: [],
         unmatched: [{ name: spokenText, quantity: 1, unit: "pcs", reason: "inventory_empty" }]
       });
