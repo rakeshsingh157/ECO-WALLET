@@ -22,10 +22,10 @@ class PdfInvoiceService {
     final fontExtraBold = await PdfGoogleFonts.plusJakartaSansExtraBold();
 
     final dateFormatted = DateFormat('dd MMM yyyy, hh:mm a').format(bill.timestamp);
-    final displayShopName = (shopName != null && shopName.trim().isNotEmpty) ? shopName.trim() : 'Dukaan Dost Retail Store';
-    final displayPhone = (phone != null && phone.trim().isNotEmpty) ? phone.trim() : '+91 98765 43210';
-    final displayAddress = (address != null && address.trim().isNotEmpty) ? address.trim() : 'Market Area, Main Road, India';
-    final displayOwner = (ownerName != null && ownerName.trim().isNotEmpty) ? ownerName.trim() : 'Store Merchant';
+    final displayShopName = (shopName != null && shopName.trim().isNotEmpty) ? shopName.trim() : '';
+    final displayPhone = (phone != null && phone.trim().isNotEmpty) ? phone.trim() : '';
+    final displayAddress = (address != null && address.trim().isNotEmpty) ? address.trim() : '';
+    final displayOwner = (ownerName != null && ownerName.trim().isNotEmpty) ? ownerName.trim() : '';
 
     final cleanBase = (baseUrl != null && baseUrl.trim().isNotEmpty)
         ? baseUrl.trim().replaceAll(RegExp(r'/api/?$'), '')

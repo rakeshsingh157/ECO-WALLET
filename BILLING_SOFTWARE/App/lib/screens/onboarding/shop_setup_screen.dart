@@ -54,13 +54,13 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
 
     final auth = context.read<AuthProvider>();
     await auth.saveCredentials(
-      apiKey: auth.apiKey.isNotEmpty ? auth.apiKey : 'merchant_live_demo_123',
-      webhookSecret: auth.webhookSecret.isNotEmpty ? auth.webhookSecret : 'whsec_demo',
-      merchantId: auth.merchantId.isNotEmpty ? auth.merchantId : 'mch_demo_123',
+      apiKey: auth.apiKey.isNotEmpty ? auth.apiKey : '',
+      webhookSecret: auth.webhookSecret.isNotEmpty ? auth.webhookSecret : '',
+      merchantId: auth.merchantId.isNotEmpty ? auth.merchantId : '',
       shopName: _shopNameCtrl.text.trim(),
       ownerName: _ownerNameCtrl.text.trim(),
-      mobileNumber: auth.mobileNumber.isNotEmpty ? auth.mobileNumber : '9876543210',
-      securityPin: auth.securityPin.isNotEmpty ? auth.securityPin : '1234',
+      mobileNumber: auth.mobileNumber.isNotEmpty ? auth.mobileNumber : '',
+      securityPin: auth.securityPin.isNotEmpty ? auth.securityPin : '',
       baseUrl: auth.baseUrl,
     );
 
