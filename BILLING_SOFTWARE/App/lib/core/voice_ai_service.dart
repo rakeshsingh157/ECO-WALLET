@@ -98,6 +98,7 @@ class VoiceAiService {
   String? _currentRecordingPath;
 
   bool get isListening => _speech.isListening;
+  String? get lastRecordedPath => _currentRecordingPath;
 
   Future<bool> initRecorder() async {
     try {
