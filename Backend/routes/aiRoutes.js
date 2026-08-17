@@ -254,7 +254,7 @@ router.post("/voice-to-cart", async (req, res) => {
     }
 
     if (!spokenText || spokenText.length === 0) {
-      const errMsg = sarvamError || "Spoken audio recording or transcript text is required. Please check SARVAM_API_KEY in Render environment.";
+      const errMsg = sarvamError || (audio ? "No speech recognized in audio. Please speak clearly into the microphone." : "No audio recording received from device.");
       return res.json({
         success: false,
         message: errMsg,
