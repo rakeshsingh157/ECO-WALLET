@@ -382,26 +382,15 @@ Strict Response Format (ONLY return valid JSON without commentary):
             return res.json({
               success: true,
               sarvamUsed,
-              sarvamModel: sarvamModelUsed,
-              sarvamRaw,
               provider: `mistral (${mistralModel})`,
               rawText: spokenText,
-              mistralRaw: mistralRawOutput,
               matched: matchedList,
               unmatched: unmatchedList
             });
           }
-        } else {
-          const errText = await mistralResponse.text();
-          mistralErrorMsg = `Mistral API error (${mistralResponse.status}): ${errText}`;
-          mistralRawOutput = mistralErrorMsg;
         }
       } catch (e) {
-        mistralErrorMsg = e.message;
-        mistralRawOutput = `Mistral execution failed: ${e.message}`;
       }
-    } else {
-      mistralRawOutput = "MISTRAL_API_KEY not set in backend .env";
     }
 
     const { matched, unmatched } = fallbackFuzzyMatch(spokenText, products);
@@ -409,13 +398,8 @@ Strict Response Format (ONLY return valid JSON without commentary):
     return res.json({
       success: true,
       sarvamUsed,
-      sarvamModel: sarvamModelUsed,
-      sarvamError,
-      sarvamRaw,
       provider: "fallback_fuzzy",
       rawText: spokenText,
-      mistralRaw: mistralRawOutput,
-      mistralError: mistralErrorMsg,
       matched,
       unmatched
     });

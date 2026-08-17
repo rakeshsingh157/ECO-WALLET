@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -30,11 +31,13 @@ class VoiceBillingModal extends StatefulWidget {
   State<VoiceBillingModal> createState() => _VoiceBillingModalState();
 }
 
-class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTickerProviderStateMixin {
+class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProviderStateMixin {
   final VoiceAiService _voiceService = VoiceAiService();
   final TextEditingController _textCtrl = TextEditingController();
-  late AnimationController _animController;
-  late Animation<double> _scaleAnimation;
+
+  late AnimationController _pulseController;
+  late AnimationController _waveController;
+  late Animation<double> _coreScaleAnimation;
 
   Timer? _recordTimer;
   int _recordDuration = 0;
@@ -47,13 +50,19 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
   void initState() {
     super.initState();
     _voiceService.initRecorder();
-    _animController = AnimationController(
+
+    _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 1400),
     )..repeat(reverse: true);
 
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.25).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
+    _waveController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat();
+
+    _coreScaleAnimation = Tween<double>(begin: 1.0, end: 1.12).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOutSine),
     );
   }
 
@@ -61,7 +70,8 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
   void dispose() {
     _recordTimer?.cancel();
     _voiceService.stopRecording();
-    _animController.dispose();
+    _pulseController.dispose();
+    _waveController.dispose();
     _textCtrl.dispose();
     super.dispose();
   }
@@ -326,15 +336,15 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
                   color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
 
               if (_isProcessing)
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  padding: const EdgeInsets.symmetric(vertical: 28),
                   child: Column(
                     children: [
                       CircularProgressIndicator(color: AppColors.terracotta, strokeWidth: 3),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
                       Text(
                         context.tr('processing_voice_ai'),
                         style: GoogleFonts.plusJakartaSans(
@@ -483,52 +493,138 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
                     },
                     onLongPressStart: (_) => _startVoiceListening(),
                     onLongPressEnd: (_) => _stopVoiceAndProcess(),
-                    child: AnimatedBuilder(
-                      animation: _scaleAnimation,
-                      builder: (context, child) {
-                        return Transform.scale(
-                          scale: _isListening ? _scaleAnimation.value : 1.0,
-                          child: Container(
-                            width: 82,
-                            height: 82,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _isListening ? AppColors.terracotta : AppColors.terracotta.withValues(alpha: 0.12),
-                              boxShadow: _isListening
-                                  ? [
-                                      BoxShadow(
-                                        color: AppColors.terracotta.withValues(alpha: 0.5),
-                                        blurRadius: 26,
-                                        spreadRadius: 8,
-                                      ),
-                                    ]
-                                  : [],
+                    child: SizedBox(
+                      width: 140,
+                      height: 140,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          if (_isListening) ...[
+                            AnimatedBuilder(
+                              animation: _waveController,
+                              builder: (context, child) {
+                                return CustomPaint(
+                                  size: const Size(140, 140),
+                                  painter: _VoiceWaveRipplesPainter(
+                                    progress: _waveController.value,
+                                    color: AppColors.terracotta,
+                                  ),
+                                );
+                              },
                             ),
-                            child: Icon(
-                              _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                              color: _isListening ? Colors.white : AppColors.terracotta,
-                              size: 36,
+                          ],
+                          AnimatedBuilder(
+                            animation: _coreScaleAnimation,
+                            builder: (context, child) {
+                              return Transform.scale(
+                                scale: _isListening ? _coreScaleAnimation.value : 1.0,
+                                child: Container(
+                                  width: 82,
+                                  height: 82,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: _isListening
+                                          ? [
+                                              AppColors.terracotta,
+                                              const Color(0xFFD34724),
+                                            ]
+                                          : [
+                                              AppColors.canvas,
+                                              AppColors.surface,
+                                            ],
+                                    ),
+                                    border: Border.all(
+                                      color: _isListening
+                                          ? Colors.white.withValues(alpha: 0.35)
+                                          : AppColors.terracotta.withValues(alpha: 0.4),
+                                      width: _isListening ? 2 : 1.5,
+                                    ),
+                                    boxShadow: _isListening
+                                        ? [
+                                            BoxShadow(
+                                              color: AppColors.terracotta.withValues(alpha: 0.45),
+                                              blurRadius: 28,
+                                              spreadRadius: 6,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ]
+                                        : [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.08),
+                                              blurRadius: 10,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                  ),
+                                  child: Center(
+                                    child: Icon(
+                                      _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
+                                      color: _isListening ? Colors.white : AppColors.terracotta,
+                                      size: 34,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+
+                if (_isListening)
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.canvas,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: AppColors.terracotta,
+                              shape: BoxShape.circle,
                             ),
                           ),
-                        );
-                      },
+                          const SizedBox(width: 8),
+                          Text(
+                            'Recording ${(_recordDuration ~/ 60).toString().padLeft(1, '0')}:${(_recordDuration % 60).toString().padLeft(2, '0')}',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.terracotta,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          _VoiceVisualizerBars(animation: _pulseController, color: AppColors.terracotta),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  Center(
+                    child: Text(
+                      context.tr('tap_and_hold_to_speak'),
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Center(
-                  child: Text(
-                    _isListening
-                        ? 'Recording... ${(_recordDuration ~/ 60).toString().padLeft(1, '0')}:${(_recordDuration % 60).toString().padLeft(2, '0')}'
-                        : context.tr('tap_and_hold_to_speak'),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: _isListening ? AppColors.terracotta : AppColors.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
+
                 const SizedBox(height: 14),
                 if (_textCtrl.text.trim().isNotEmpty)
                   ElevatedButton.icon(
@@ -567,6 +663,86 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _VoiceWaveRipplesPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  _VoiceWaveRipplesPainter({
+    required this.progress,
+    required this.color,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    const minRadius = 42.0;
+    const maxRadius = 68.0;
+
+    for (int i = 0; i < 3; i++) {
+      final ringProgress = (progress + (i * 0.33)) % 1.0;
+      final radius = minRadius + (maxRadius - minRadius) * ringProgress;
+      final opacity = (1.0 - ringProgress).clamp(0.0, 1.0) * 0.45;
+
+      final paint = Paint()
+        ..color = color.withValues(alpha: opacity)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0 * (1.0 - ringProgress * 0.4);
+
+      canvas.drawCircle(center, radius, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _VoiceWaveRipplesPainter oldDelegate) {
+    return oldDelegate.progress != progress;
+  }
+}
+
+class _VoiceVisualizerBars extends StatelessWidget {
+  final Animation<double> animation;
+  final Color color;
+
+  const _VoiceVisualizerBars({
+    required this.animation,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        final val = animation.value;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildBar(6.0 + (math.sin(val * math.pi) * 8.0).abs()),
+            const SizedBox(width: 3),
+            _buildBar(8.0 + (math.sin((val + 0.3) * math.pi) * 10.0).abs()),
+            const SizedBox(width: 3),
+            _buildBar(10.0 + (math.sin((val + 0.6) * math.pi) * 12.0).abs()),
+            const SizedBox(width: 3),
+            _buildBar(8.0 + (math.sin((val + 0.9) * math.pi) * 9.0).abs()),
+            const SizedBox(width: 3),
+            _buildBar(5.0 + (math.sin((val + 1.2) * math.pi) * 7.0).abs()),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildBar(double height) {
+    return Container(
+      width: 3,
+      height: height.clamp(4.0, 20.0),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(2),
       ),
     );
   }
