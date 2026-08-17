@@ -46,7 +46,7 @@ function mapLanguageToSarvam(langCode) {
 async function transcribeWithSarvam(base64Audio, languageCode, format) {
   const sarvamKey = process.env.SARVAM_API_KEY;
   if (!sarvamKey || sarvamKey.trim().length < 5) {
-    return { transcript: null, error: "SARVAM_API_KEY is not configured in backend environment variables" };
+    return { transcript: null, error: "SARVAM_API_KEY is not configured in backend environment variables", rawResponse: null };
   }
 
   const modelName = process.env.SARVAM_MODEL || "saaras:v4";
@@ -73,17 +73,17 @@ async function transcribeWithSarvam(base64Audio, languageCode, format) {
 
     if (response.ok) {
       const data = await response.json();
-      const transcriptText = data.transcript || data.text || (data.results && data.results[0] && data.results[0].transcript);
+      const transcriptText = data.transcript || data.translated_text || data.text || (data.results && data.results[0] && (data.results[0].transcript || data.results[0].text));
       if (transcriptText && transcriptText.trim().length > 0) {
-        return { transcript: transcriptText.trim(), error: null, model: modelName };
+        return { transcript: transcriptText.trim(), error: null, model: modelName, rawResponse: JSON.stringify(data) };
       }
-      return { transcript: null, error: "No speech recognized in audio", model: modelName };
+      return { transcript: null, error: `No speech recognized by ${modelName}`, model: modelName, rawResponse: JSON.stringify(data) };
     } else {
       const errText = await response.text();
-      return { transcript: null, error: `Sarvam API (${modelName}) returned ${response.status}: ${errText}`, model: modelName };
+      return { transcript: null, error: `Sarvam API (${modelName}) returned ${response.status}: ${errText}`, model: modelName, rawResponse: errText };
     }
   } catch (e) {
-    return { transcript: null, error: e.message, model: modelName };
+    return { transcript: null, error: e.message, model: modelName, rawResponse: null };
   }
 }
 
@@ -234,14 +234,16 @@ router.post("/voice-to-cart", async (req, res) => {
     let sarvamUsed = false;
     let sarvamModelUsed = null;
     let sarvamError = null;
+    let sarvamRaw = null;
 
     if (audio && typeof audio === "string" && audio.trim().length > 20) {
       const sarvamLang = mapLanguageToSarvam(language);
       const sarvamRes = await transcribeWithSarvam(audio.trim(), sarvamLang, format || "m4a");
+      sarvamRaw = sarvamRes.rawResponse;
+      sarvamModelUsed = sarvamRes.model;
       if (sarvamRes.transcript && sarvamRes.transcript.length > 0) {
         spokenText = sarvamRes.transcript;
         sarvamUsed = true;
-        sarvamModelUsed = sarvamRes.model;
       } else {
         sarvamError = sarvamRes.error;
       }
@@ -257,7 +259,9 @@ router.post("/voice-to-cart", async (req, res) => {
         success: false,
         message: errMsg,
         sarvamError,
-        rawText: "",
+        sarvamRaw,
+        sarvamModel: sarvamModelUsed,
+        rawText: text || "",
         mistralRaw: "",
         matched: [],
         unmatched: []
@@ -272,6 +276,7 @@ router.post("/voice-to-cart", async (req, res) => {
         rawText: spokenText,
         sarvamUsed,
         sarvamModel: sarvamModelUsed,
+        sarvamRaw,
         provider: "none",
         mistralRaw: "No products in database",
         matched: [],
@@ -387,6 +392,7 @@ Strict Response Format (ONLY return valid JSON without commentary):
               success: true,
               sarvamUsed,
               sarvamModel: sarvamModelUsed,
+              sarvamRaw,
               provider: `mistral (${mistralModel})`,
               rawText: spokenText,
               mistralRaw: mistralRawOutput,
@@ -414,6 +420,7 @@ Strict Response Format (ONLY return valid JSON without commentary):
       sarvamUsed,
       sarvamModel: sarvamModelUsed,
       sarvamError,
+      sarvamRaw,
       provider: "fallback_fuzzy",
       rawText: spokenText,
       mistralRaw: mistralRawOutput,

@@ -67,6 +67,7 @@ class VoiceAiResult {
   final bool sarvamUsed;
   final String? sarvamModel;
   final String? sarvamError;
+  final String? sarvamRaw;
   final String? mistralRaw;
   final String? mistralError;
   final List<VoiceAiItem> matched;
@@ -80,6 +81,7 @@ class VoiceAiResult {
     this.sarvamUsed = false,
     this.sarvamModel,
     this.sarvamError,
+    this.sarvamRaw,
     this.mistralRaw,
     this.mistralError,
     required this.matched,
@@ -264,6 +266,7 @@ class VoiceAiService {
         final sarvamUsed = data['sarvamUsed'] == true;
         final sarvamModel = data['sarvamModel']?.toString();
         final sarvamError = data['sarvamError']?.toString();
+        final sarvamRaw = data['sarvamRaw']?.toString();
         final mistralRaw = data['mistralRaw']?.toString();
         final mistralError = data['mistralError']?.toString();
         final isSuccess = data['success'] == true;
@@ -274,6 +277,7 @@ class VoiceAiService {
             rawText: rawText,
             sarvamModel: sarvamModel,
             sarvamError: sarvamError,
+            sarvamRaw: sarvamRaw,
             mistralRaw: mistralRaw,
             mistralError: mistralError,
             matched: [],
@@ -307,6 +311,7 @@ class VoiceAiService {
           sarvamUsed: sarvamUsed,
           sarvamModel: sarvamModel,
           sarvamError: sarvamError,
+          sarvamRaw: sarvamRaw,
           mistralRaw: mistralRaw,
           mistralError: mistralError,
           matched: matched,

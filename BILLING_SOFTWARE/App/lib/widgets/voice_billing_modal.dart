@@ -378,6 +378,25 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
                           color: AppColors.textPrimary,
                         ),
                       ),
+                      if (_result!.sarvamRaw != null && _result!.sarvamRaw!.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Sarvam ASR Response:',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.sunlitGold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        SelectableText(
+                          _result!.sarvamRaw!,
+                          style: GoogleFonts.firaCode(
+                            fontSize: 10,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
                       if (_result!.mistralRaw != null && _result!.mistralRaw!.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         Text(
