@@ -5,6 +5,7 @@ import '../core/theme.dart';
 import '../core/app_notifier.dart';
 import '../core/constants.dart';
 import '../core/api_service.dart';
+import '../core/localization.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 
@@ -282,7 +283,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          'STAFF & CASHIERS',
+          context.tr('staff_members').toUpperCase(),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -296,7 +297,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
         backgroundColor: AppColors.terracotta,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.person_add_rounded, size: 20),
-        label: Text('Add Staff', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        label: Text(context.tr('add_staff'), style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
       ),
       body: RefreshIndicator(
         onRefresh: () async => _loadMembers(),
