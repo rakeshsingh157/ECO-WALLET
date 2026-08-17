@@ -19,6 +19,7 @@ import '../reports/reports_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../sales/return_order_screen.dart';
 import '../sales/sale_details_screen.dart';
+import '../sales/payments_history_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -432,15 +433,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    if (billProvider.completedBills.isNotEmpty)
-                      Text(
-                        '${billProvider.completedBills.length} total',
+                    InkWell(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentsHistoryScreen())),
+                      child: Text(
+                        'View All Payments →',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.terracotta,
                         ),
                       ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 10),

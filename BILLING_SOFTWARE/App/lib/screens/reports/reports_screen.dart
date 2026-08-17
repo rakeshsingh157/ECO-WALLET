@@ -9,6 +9,7 @@ import '../../providers/bill_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/expense_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../sales/payments_history_screen.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -187,6 +188,58 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     ),
                   ),
                 ],
+              ),
+
+              const SizedBox(height: 14),
+
+              InkWell(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentsHistoryScreen())),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.borderSubtle),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(Icons.payments_rounded, color: AppColors.terracotta, size: 20),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'View Payments & Transactions History',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Search by customer, phone, payment mode & date',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.terracotta),
+                    ],
+                  ),
+                ),
               ),
 
               const SizedBox(height: 24),
