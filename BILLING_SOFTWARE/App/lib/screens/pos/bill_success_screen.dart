@@ -75,7 +75,7 @@ class BillSuccessScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '₹${bill.totalAmount.toStringAsFixed(2)} received via ${bill.paymentMode.name.toUpperCase()}',
+                  '₹${bill.totalAmount.toStringAsFixed(2)} ${context.tr('received_via')} ${bill.paymentMode.name.toUpperCase()}',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -249,7 +249,8 @@ class BillSuccessScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Scan to view & download PDF invoice on browser',
+                              context.tr('scan_qr_invoice_hint'),
+                              textAlign: TextAlign.center,
                               style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.terracotta),
                             ),
                           ],

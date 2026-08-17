@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../core/theme.dart';
 import '../core/constants.dart';
+import '../core/localization.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 
@@ -107,7 +108,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          'SERVER CONFIGURATION',
+          context.tr('server_configuration').toUpperCase(),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -145,12 +146,12 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Backend Endpoint Host',
+                          context.tr('backend_endpoint_host'),
                           style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Connect terminal to local or remote microservice.',
+                          context.tr('backend_endpoint_desc'),
                           style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
                         ),
                       ],
@@ -163,7 +164,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
             const SizedBox(height: 20),
 
             Text(
-              'QUICK PRESETS',
+              context.tr('quick_presets').toUpperCase(),
               style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 10),
@@ -202,7 +203,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
               controller: _baseUrlCtrl,
               style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
               decoration: InputDecoration(
-                labelText: 'Backend API Base URL',
+                labelText: context.tr('backend_api_base_url'),
                 hintText: 'http://10.0.2.2:5001/api',
                 prefixIcon: Icon(Icons.link_rounded, color: AppColors.forestMint),
               ),
@@ -228,7 +229,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
                   ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.forestMint))
                   : Icon(Icons.wifi_find_rounded, color: AppColors.forestMint, size: 18),
               label: Text(
-                _isTesting ? 'Testing Connectivity...' : 'TEST HOST CONNECTIVITY',
+                _isTesting ? context.tr('testing_connectivity') : context.tr('test_host_connectivity').toUpperCase(),
                 style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.forestMint),
               ),
               style: OutlinedButton.styleFrom(
@@ -269,7 +270,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
               child: ElevatedButton.icon(
                 onPressed: _saveConfig,
                 icon: const Icon(Icons.save_rounded, size: 18),
-                label: const Text('SAVE SERVER CONFIGURATION'),
+                label: Text(context.tr('save_server_configuration').toUpperCase()),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.terracotta,
                   foregroundColor: Colors.white,

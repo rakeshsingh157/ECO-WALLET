@@ -292,7 +292,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      '${billProvider.itemCount} Items',
+                      '${billProvider.itemCount} ${billProvider.itemCount == 1 ? context.tr('item_unit') : context.tr('items_unit')}',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -323,7 +323,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   child: _buildModeCard(
                     mode: PaymentMode.cash,
                     title: context.tr('cash'),
-                    subtitle: 'Drawer / Tender',
+                    subtitle: context.tr('cash_tender_sub'),
                     icon: Icons.payments_rounded,
                     color: AppColors.forestMint,
                   ),
@@ -333,7 +333,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   child: _buildModeCard(
                     mode: PaymentMode.ecoWallet,
                     title: context.tr('eco_wallet'),
-                    subtitle: 'Dynamic QR',
+                    subtitle: context.tr('dynamic_qr'),
                     icon: Icons.account_balance_wallet_rounded,
                     color: AppColors.terracotta,
                     onTap: () {
@@ -351,7 +351,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   child: _buildModeCard(
                     mode: PaymentMode.upi,
                     title: context.tr('upi'),
-                    subtitle: 'GPay/PhonePe',
+                    subtitle: 'GPay / PhonePe',
                     icon: Icons.qr_code_rounded,
                     color: AppColors.info,
                     onTap: () {
@@ -365,7 +365,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   child: _buildModeCard(
                     mode: PaymentMode.pending,
                     title: context.tr('khata_credit'),
-                    subtitle: 'Credit Book',
+                    subtitle: context.tr('credit_book'),
                     icon: Icons.menu_book_rounded,
                     color: AppColors.chaiGold,
                   ),
@@ -440,7 +440,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 10),
                             ),
                             child: Text(
-                              'Exact: ₹${total.toStringAsFixed(0)}',
+                              '${context.tr('exact')}: ₹${total.toStringAsFixed(0)}',
                               style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.forestMint),
                             ),
                           ),
@@ -455,7 +455,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 10),
                             ),
                             child: Text(
-                              'Round: ₹${((total / 100).ceil() * 100).toStringAsFixed(0)}',
+                              '${context.tr('round')}: ₹${((total / 100).ceil() * 100).toStringAsFixed(0)}',
                               style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                             ),
                           ),
@@ -465,7 +465,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     const SizedBox(height: 16),
 
                     Text(
-                      'ADD CURRENCY NOTES',
+                      context.tr('add_currency_notes').toUpperCase(),
                       style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.0, color: AppColors.textMuted),
                     ),
                     const SizedBox(height: 8),
@@ -484,7 +484,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     const SizedBox(height: 14),
 
                     Text(
-                      'ADD COINS',
+                      context.tr('add_coins').toUpperCase(),
                       style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.0, color: AppColors.textMuted),
                     ),
                     const SizedBox(height: 8),
@@ -492,11 +492,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _buildAddDenominationChip('+₹20 coin', 20, AppColors.borderSubtle, isCoin: true),
-                        _buildAddDenominationChip('+₹10 coin', 10, AppColors.borderSubtle, isCoin: true),
-                        _buildAddDenominationChip('+₹5 coin', 5, AppColors.borderSubtle, isCoin: true),
-                        _buildAddDenominationChip('+₹2 coin', 2, AppColors.borderSubtle, isCoin: true),
-                        _buildAddDenominationChip('+₹1 coin', 1, AppColors.borderSubtle, isCoin: true),
+                        _buildAddDenominationChip('+₹20 ${context.tr('coin')}', 20, AppColors.borderSubtle, isCoin: true),
+                        _buildAddDenominationChip('+₹10 ${context.tr('coin')}', 10, AppColors.borderSubtle, isCoin: true),
+                        _buildAddDenominationChip('+₹5 ${context.tr('coin')}', 5, AppColors.borderSubtle, isCoin: true),
+                        _buildAddDenominationChip('+₹2 ${context.tr('coin')}', 2, AppColors.borderSubtle, isCoin: true),
+                        _buildAddDenominationChip('+₹1 ${context.tr('coin')}', 1, AppColors.borderSubtle, isCoin: true),
                       ],
                     ),
 
