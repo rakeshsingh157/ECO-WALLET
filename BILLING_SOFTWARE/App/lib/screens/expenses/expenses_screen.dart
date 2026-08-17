@@ -237,7 +237,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Delete Expense',
+          context.tr('delete_expense'),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 16,
             fontWeight: FontWeight.w800,
@@ -245,13 +245,13 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           ),
         ),
         content: Text(
-          'Are you sure you want to delete "${expense.title}" (₹${expense.amount.toStringAsFixed(0)})?',
+          '${context.tr('confirm_delete_expense')} "${expense.title}" (₹${expense.amount.toStringAsFixed(0)})',
           style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
-            child: Text('CANCEL', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, fontWeight: FontWeight.w700)),
+            child: Text(context.tr('cancel').toUpperCase(), style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, fontWeight: FontWeight.w700)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -270,7 +270,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
             ),
-            child: const Text('DELETE'),
+            child: Text(context.tr('delete').toUpperCase()),
           ),
         ],
       ),
@@ -330,7 +330,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'TODAY EXPENSES',
+                            '${context.tr('today').toUpperCase()} ${context.tr('store_expenses').toUpperCase()}',
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
@@ -364,7 +364,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'TOTAL EXPENSES',
+                            context.tr('total_expenses').toUpperCase(),
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,

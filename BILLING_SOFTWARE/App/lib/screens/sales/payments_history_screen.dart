@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme.dart';
+import '../../core/localization.dart';
 import '../../models/bill.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/bill_provider.dart';
@@ -147,7 +148,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          'PAYMENTS & INVOICES',
+          context.tr('payments_invoices').toUpperCase(),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -179,7 +180,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                     color: AppColors.textPrimary,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Search by customer, phone, bill ID...',
+                    hintText: context.tr('search_payment_placeholder'),
                     hintStyle: GoogleFonts.plusJakartaSans(
                       fontSize: 13,
                       color: AppColors.textMuted,
@@ -217,7 +218,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'COLLECTED',
+                            context.tr('collected'),
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
@@ -253,7 +254,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'PENDING KHATA',
+                            context.tr('pending_khata'),
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
@@ -290,7 +291,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'REFUNDED',
+                              context.tr('refunded'),
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
@@ -411,7 +412,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                             Image.asset(MascotAssets.receipt, width: 72, height: 72),
                             const SizedBox(height: 12),
                             Text(
-                              'No transactions found',
+                              context.tr('no_transactions'),
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
@@ -420,7 +421,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Try changing search term or filter options',
+                              context.tr('change_filter'),
                               style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
                             ),
                           ],

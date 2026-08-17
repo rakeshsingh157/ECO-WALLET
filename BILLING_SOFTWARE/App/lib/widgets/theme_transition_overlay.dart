@@ -22,7 +22,6 @@ class _ThemeTransitionOverlayState extends State<ThemeTransitionOverlay>
 
   bool _isAnimating = false;
   bool _targetDarkMode = false;
-  bool _initialized = false;
 
   @override
   void initState() {
@@ -92,12 +91,12 @@ class _ThemeTransitionOverlayState extends State<ThemeTransitionOverlay>
     final themeProvider = Provider.of<ThemeProvider>(context);
     final currentDark = themeProvider.isDarkMode;
 
-    if (!_initialized) {
+    if (themeProvider.isUserTriggered && _targetDarkMode != currentDark) {
       _targetDarkMode = currentDark;
-      _initialized = true;
-    } else if (_targetDarkMode != currentDark) {
-      _targetDarkMode = currentDark;
+      themeProvider.consumeUserTrigger();
       _startTransitionAnimation();
+    } else {
+      _targetDarkMode = currentDark;
     }
   }
 
