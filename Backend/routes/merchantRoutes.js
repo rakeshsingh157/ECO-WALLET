@@ -307,18 +307,44 @@ const renderInvoice = async (req, res) => {
           backgroundColor: '#FFFFFF',
           logging: false,
           onclone: function(clonedDoc) {
+            const style = clonedDoc.createElement('style');
+            style.innerHTML = `
+              * {
+                background: #FFFFFF !important;
+                background-color: #FFFFFF !important;
+                color: #000000 !important;
+                -webkit-text-fill-color: #000000 !important;
+                border-color: #000000 !important;
+              }
+              html, body, #invoice-capture, .card, .container {
+                background: #FFFFFF !important;
+                background-color: #FFFFFF !important;
+                color: #000000 !important;
+                -webkit-text-fill-color: #000000 !important;
+              }
+              table, tr, td, th, div, span, p, h1, h2, h3 {
+                background: #FFFFFF !important;
+                background-color: #FFFFFF !important;
+                color: #000000 !important;
+                -webkit-text-fill-color: #000000 !important;
+              }
+            `;
+            clonedDoc.head.appendChild(style);
+
             const clonedElem = clonedDoc.getElementById('invoice-capture');
             if (clonedElem) {
-              clonedElem.style.backgroundColor = '#FFFFFF';
-              clonedElem.style.color = '#000000';
-              const allElements = clonedElem.querySelectorAll('*');
-              allElements.forEach(function(el) {
-                if (el.tagName !== 'BUTTON') {
-                  el.style.backgroundColor = el.style.backgroundColor === '#000000' ? '#000000' : '#FFFFFF';
-                  el.style.color = '#000000';
-                  el.style.webkitTextFillColor = '#000000';
-                }
-              });
+              clonedElem.style.setProperty('background-color', '#FFFFFF', 'important');
+              clonedElem.style.setProperty('background', '#FFFFFF', 'important');
+              clonedElem.style.setProperty('color', '#000000', 'important');
+              clonedElem.style.setProperty('-webkit-text-fill-color', '#000000', 'important');
+
+              const allElements = clonedElem.getElementsByTagName('*');
+              for (let i = 0; i < allElements.length; i++) {
+                allElements[i].style.setProperty('background-color', '#FFFFFF', 'important');
+                allElements[i].style.setProperty('background', '#FFFFFF', 'important');
+                allElements[i].style.setProperty('color', '#000000', 'important');
+                allElements[i].style.setProperty('-webkit-text-fill-color', '#000000', 'important');
+              }
             }
           }
         },
