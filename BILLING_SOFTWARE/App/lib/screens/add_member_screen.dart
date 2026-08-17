@@ -283,7 +283,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          context.tr('staff_members').toUpperCase(),
+          context.tr('staff_members'),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -334,12 +334,12 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Multi-Device Cashier Access',
+                            context.tr('multi_device_cashier_title'),
                             style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Added staff can log in on their phones to bill items, manage khata, and view inventory for your store.',
+                            context.tr('multi_device_cashier_sub'),
                             style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
                           ),
                         ],
@@ -355,11 +355,11 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'STORE STAFF ROSTER',
+                    context.tr('store_staff_roster'),
                     style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
                   ),
                   Text(
-                    '${_members.length} members',
+                    '${_members.length} ${context.tr('members_unit')}',
                     style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMuted),
                   ),
                 ],
@@ -382,12 +382,12 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                         Icon(Icons.people_outline_rounded, size: 48, color: AppColors.textSecondary),
                         const SizedBox(height: 10),
                         Text(
-                          'No Staff Members Added Yet',
+                          context.tr('no_staff_title'),
                           style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Tap "+ Add Staff" below to add cashiers or managers with 4-digit PINs.',
+                          context.tr('no_staff_sub'),
                           style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
                           textAlign: TextAlign.center,
                         ),
@@ -433,7 +433,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                               children: [
                                 Text(member.name, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                                 const SizedBox(height: 2),
-                                Text('${member.role} • ${member.phone}', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
+                                Text('${context.trRole(member.role)} • ${member.phone}', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
                               ],
                             ),
                           ),

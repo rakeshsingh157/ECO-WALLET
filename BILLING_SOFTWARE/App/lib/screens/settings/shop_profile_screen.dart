@@ -211,7 +211,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'STORE INFORMATION',
+                    context.tr('store_information'),
                     style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 14),
@@ -220,7 +220,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                     controller: _shopNameCtrl,
                     style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                     decoration: InputDecoration(
-                      labelText: 'Store / Business Name *',
+                      labelText: '${context.tr('store_name')} *',
                       prefixIcon: Icon(Icons.store_rounded, color: AppColors.terracotta),
                     ),
                   ),
@@ -239,7 +239,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                     keyboardType: TextInputType.phone,
                     style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
                     decoration: InputDecoration(
-                      labelText: 'Registered Mobile Number',
+                      labelText: context.tr('registered_mobile'),
                       prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta),
                     ),
                   ),
@@ -248,7 +248,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                     controller: _gstinCtrl,
                     style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                     decoration: InputDecoration(
-                      labelText: 'GSTIN Number (Optional)',
+                      labelText: '${context.tr('gstin')} (${context.tr('optional')})',
                       prefixIcon: Icon(Icons.badge_rounded, color: AppColors.forestMint),
                     ),
                   ),
@@ -258,7 +258,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                     maxLines: 2,
                     style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
                     decoration: InputDecoration(
-                      labelText: 'Store Address (On Receipts)',
+                      labelText: context.tr('store_address_receipt'),
                       prefixIcon: Icon(Icons.location_on_rounded, color: AppColors.textSecondary),
                     ),
                   ),
@@ -282,7 +282,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'STORE UPI QR SETUP',
+                        context.tr('store_upi_qr_setup'),
                         style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2, color: AppColors.info),
                       ),
                       Row(
@@ -290,7 +290,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                           OutlinedButton.icon(
                             onPressed: _pickQrFromGallery,
                             icon: const Icon(Icons.photo_library_rounded, size: 14),
-                            label: const Text('Gallery'),
+                            label: Text(context.tr('gallery')),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(color: AppColors.info),
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -301,7 +301,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                           OutlinedButton.icon(
                             onPressed: _scanStandeeQr,
                             icon: const Icon(Icons.qr_code_scanner_rounded, size: 14),
-                            label: const Text('Scan'),
+                            label: Text(context.tr('scan')),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(color: AppColors.info),
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -318,10 +318,10 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                     controller: _upiIdCtrl,
                     style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w800),
                     decoration: InputDecoration(
-                      labelText: 'Store UPI VPA / ID *',
+                      labelText: '${context.tr('store_upi_id')} *',
                       hintText: 'e.g. yourname@okhdfcbank, 9876543210@paytm',
                       prefixIcon: Icon(Icons.account_balance_rounded, color: AppColors.info),
-                      helperText: 'Customers will pay directly to this UPI ID on bills',
+                      helperText: context.tr('store_upi_sub'),
                       helperStyle: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppColors.textMuted),
                     ),
                   ),

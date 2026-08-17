@@ -399,7 +399,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: ChoiceChip(
-                        label: Text(cat == 'All' ? context.tr('all_categories') : cat),
+                        label: Text(context.trExpenseCategory(cat)),
                         selected: isSelected,
                         onSelected: (_) => setState(() => _selectedCategory = cat),
                         selectedColor: AppColors.primaryContainer,
@@ -433,7 +433,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                                 Icon(Icons.receipt_long_rounded, size: 54, color: AppColors.textMuted),
                                 const SizedBox(height: 12),
                                 Text(
-                                  'No expenses found',
+                                  context.tr('no_expenses_found'),
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
@@ -442,7 +442,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Tap the + button to record a store expense',
+                                  context.tr('add_expense_hint'),
                                   style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
                                 ),
                               ],
