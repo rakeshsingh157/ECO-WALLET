@@ -92,7 +92,7 @@ class _KhataScreenState extends State<KhataScreen> {
                   Row(
                     children: [
                       ChoiceChip(
-                        label: Text('Existing Customer', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
+                        label: Text(ctx.tr('existing_customer'), style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
                         selected: !isNewCustomer,
                         selectedColor: AppColors.terracotta,
                         labelStyle: TextStyle(color: !isNewCustomer ? Colors.white : AppColors.textPrimary),
@@ -100,7 +100,7 @@ class _KhataScreenState extends State<KhataScreen> {
                       ),
                       const SizedBox(width: 8),
                       ChoiceChip(
-                        label: Text('+ New Customer', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
+                        label: Text('+ ${ctx.tr('new_customer')}', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
                         selected: isNewCustomer,
                         selectedColor: AppColors.terracotta,
                         labelStyle: TextStyle(color: isNewCustomer ? Colors.white : AppColors.textPrimary),
@@ -339,7 +339,7 @@ class _KhataScreenState extends State<KhataScreen> {
                             ),
                           ),
                           Text(
-                            '${pendingCustomers.length} pending • ${settledCustomers.length} cleared',
+                            '${pendingCustomers.length} ${context.tr('pending_khata')} • ${settledCustomers.length} ${context.tr('cleared')}',
                             style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
                           ),
                         ],
@@ -438,7 +438,7 @@ class _KhataScreenState extends State<KhataScreen> {
                                 const SizedBox(height: 4),
                                 Text(
                                   _selectedFilterIndex == 0
-                                      ? context.tr('all_dues_cleared')
+                                      ? context.tr('all_dues_cleared_sub')
                                       : context.tr('no_customers_found'),
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),

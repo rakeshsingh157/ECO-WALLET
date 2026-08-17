@@ -376,7 +376,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'SEARCH OR SCAN BILL',
+              context.tr('search_or_scan_bill'),
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
@@ -393,7 +393,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
                     controller: _searchCtrl,
                     style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                     decoration: InputDecoration(
-                      hintText: 'Enter Bill ID, customer name or phone...',
+                      hintText: context.tr('search_bill_placeholder'),
                       prefixIcon: const Icon(Icons.search_rounded),
                       suffixIcon: _searchCtrl.text.isNotEmpty
                           ? IconButton(
@@ -439,7 +439,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
   List<Widget> _buildRecentBillsList(BillProvider billProvider) {
     return [
       Text(
-        'RECENT COMPLETED BILLS',
+        context.tr('recent_completed_bills'),
         style: GoogleFonts.plusJakartaSans(
           fontSize: 11,
           fontWeight: FontWeight.w800,
@@ -458,7 +458,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
           ),
           child: Center(
             child: Text(
-              'No completed bills found to return.',
+              context.tr('no_bills_to_return'),
               style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
             ),
           ),
@@ -486,7 +486,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
               Icon(Icons.block_rounded, color: AppColors.error, size: 32),
               const SizedBox(height: 6),
               Text(
-                'ALL ITEMS IN THIS ORDER ARE ALREADY RETURNED',
+                context.tr('all_items_already_returned'),
                 style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.error),
                 textAlign: TextAlign.center,
               ),
@@ -501,7 +501,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
         )
       else ...[
         Text(
-          'RETURN TYPE',
+          context.tr('return_type'),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 11,
             fontWeight: FontWeight.w800,
@@ -524,7 +524,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    'Return All Remaining',
+                    context.tr('return_all_remaining'),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
@@ -547,7 +547,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    'Select Specific Items',
+                    context.tr('select_specific_items'),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
@@ -562,7 +562,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
         const SizedBox(height: 16),
         if (!_isFullReturn) ...[
           Text(
-            'SELECT ITEMS & QUANTITY TO RETURN',
+            context.tr('select_items_to_return'),
             style: GoogleFonts.plusJakartaSans(
               fontSize: 11,
               fontWeight: FontWeight.w800,
@@ -575,7 +575,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
           const SizedBox(height: 16),
         ],
         Text(
-          'RETURN REASON',
+          context.tr('return_reason'),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 11,
             fontWeight: FontWeight.w800,
@@ -590,7 +590,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
           children: _returnReasons.map((reason) {
             final isSelected = _selectedReason == reason;
             return ChoiceChip(
-              label: Text(reason),
+              label: Text(context.trReturnReason(reason)),
               selected: isSelected,
               onSelected: (_) => setState(() => _selectedReason = reason),
               selectedColor: AppColors.primaryContainer,
@@ -620,7 +620,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Original Bill Total', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
+                  Text(context.tr('original_bill_total'), style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
                   Text('₹${_selectedBill!.totalAmount.toStringAsFixed(2)}', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                 ],
               ),
@@ -629,7 +629,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Previously Refunded', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.error)),
+                    Text(context.tr('previously_refunded'), style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.error)),
                     Text('-₹${_selectedBill!.refundedAmount.toStringAsFixed(2)}', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.error)),
                   ],
                 ),
@@ -640,7 +640,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Refund Amount', style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                  Text(context.tr('refund_amount'), style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
                   Text('₹${refundAmount.toStringAsFixed(2)}', style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.terracotta)),
                 ],
               ),
@@ -661,7 +661,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
             child: _isProcessing
                 ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                 : Text(
-                    'CONFIRM RETURN & REFUND ₹${refundAmount.toStringAsFixed(2)}',
+                    '${context.tr('confirm_return_refund')} ₹${refundAmount.toStringAsFixed(2)}',
                     style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800),
                   ),
           ),
@@ -695,14 +695,14 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(color: AppColors.error.withAlpha(30), borderRadius: BorderRadius.circular(6)),
-                child: Text('RETURNED', style: GoogleFonts.plusJakartaSans(fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.error)),
+                child: Text(context.tr('refunded').toUpperCase(), style: GoogleFonts.plusJakartaSans(fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.error)),
               ),
             ] else if (isPartial) ...[
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(color: AppColors.warning.withAlpha(30), borderRadius: BorderRadius.circular(6)),
-                child: Text('PARTIAL', style: GoogleFonts.plusJakartaSans(fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.warning)),
+                child: Text(context.tr('partial_return').toUpperCase(), style: GoogleFonts.plusJakartaSans(fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.warning)),
               ),
             ],
           ],
