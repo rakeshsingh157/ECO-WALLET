@@ -203,24 +203,24 @@ const renderInvoice = async (req, res) => {
       color-scheme: light only !important;
     }
     @media (prefers-color-scheme: dark) {
-      * {
-        background-color: #FFFFFF !important;
-        background: #FFFFFF !important;
-        color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important;
-      }
-      html, body, .container, .card, #invoice-capture {
+      html, body, .container, .card, #invoice-capture, table, tr, td {
         background-color: #FFFFFF !important;
         background: #FFFFFF !important;
         color: #000000 !important;
         -webkit-text-fill-color: #000000 !important;
       }
     }
-    .container { max-width: 560px; width: 100%; margin: 10px auto; }
+    .container { max-width: 560px; width: 100%; margin: 10px auto; background-color: #FFFFFF !important; }
     .actions { display: flex; gap: 10px; margin-bottom: 16px; width: 100%; max-width: 560px; }
-    .btn { flex: 1; padding: 14px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
-    .btn-download { background: #000000; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; border: 1px solid #000000; }
-    .btn-print { background: #FFFFFF; color: #000000 !important; -webkit-text-fill-color: #000000 !important; border: 1px solid #000000; }
+    .btn { flex: 1; padding: 14px; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: 0.2s; }
+    .btn-download { background: #000000 !important; background-color: #000000 !important; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; border: 2px solid #000000 !important; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
+    .btn-download:hover { background: #222222 !important; background-color: #222222 !important; }
+    .btn-download svg { stroke: #FFFFFF !important; }
+    .btn-download span { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; font-weight: 800 !important; }
+    .btn-print { background: #FFFFFF !important; background-color: #FFFFFF !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; border: 2px solid #000000 !important; }
+    .btn-print:hover { background: #F3F4F6 !important; background-color: #F3F4F6 !important; }
+    .btn-print svg { stroke: #000000 !important; }
+    .btn-print span { color: #000000 !important; -webkit-text-fill-color: #000000 !important; font-weight: 800 !important; }
     .card { background-color: #FFFFFF !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; border: 2px solid #000000; border-radius: 12px; padding: 24px; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
     .tax-header { text-align: center; border-bottom: 2px solid #000000; padding-bottom: 12px; margin-bottom: 16px; }
     .tax-title { font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #000000 !important; -webkit-text-fill-color: #000000 !important; margin-bottom: 4px; }
@@ -241,10 +241,13 @@ const renderInvoice = async (req, res) => {
   <div class="container">
     <div class="actions">
       <button class="btn btn-download" onclick="downloadPdf()">
-        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-        Download PDF Invoice
+        <svg width="18" height="18" fill="none" stroke="#FFFFFF" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+        <span>Download PDF Invoice</span>
       </button>
-      <button class="btn btn-print" onclick="window.print()">Print</button>
+      <button class="btn btn-print" onclick="window.print()">
+        <svg width="18" height="18" fill="none" stroke="#000000" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+        <span>Print</span>
+      </button>
     </div>
 
     <div class="card" id="invoice-capture" style="background-color: #FFFFFF !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important;">
@@ -274,7 +277,7 @@ const renderInvoice = async (req, res) => {
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin: 14px 0; padding: 12px 14px; border: 1.5px solid #000000; background-color: #FFFFFF; border-radius: 8px;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(orderId)}" style="width: 70px; height: 70px; border: 1px solid #000000; display: block; background: #FFFFFF;" alt="Invoice QR" crossOrigin="anonymous" />
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(orderId)}" style="width: 70px; height: 70px; border: none; outline: none; display: block; background: #FFFFFF;" alt="Invoice QR" crossOrigin="anonymous" />
           <div>
             <div style="font-size: 11px; font-weight: 900; color: #000000; -webkit-text-fill-color: #000000; letter-spacing: 0.5px; text-transform: uppercase;">SCAN TO RETURN / VERIFY</div>
             <div style="font-size: 10px; color: #000000; -webkit-text-fill-color: #000000; margin-top: 2px;">Scan this QR with the app to process return</div>
