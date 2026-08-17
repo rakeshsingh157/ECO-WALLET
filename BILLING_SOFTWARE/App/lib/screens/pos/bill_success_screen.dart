@@ -106,7 +106,7 @@ class BillSuccessScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'INVOICE RECEIPT',
+                            context.tr('bill_receipt').toUpperCase(),
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
@@ -129,9 +129,9 @@ class BillSuccessScreen extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Date & Time', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
+                          Text(context.tr('date_time'), style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
                           Text(
-                            DateFormat('dd MMM yyyy, hh:mm a').format(bill.timestamp),
+                            DateFormat('dd MMM yyyy, hh:mm a').format(bill.timestamp.toLocal()),
                             style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                           ),
                         ],
@@ -140,9 +140,9 @@ class BillSuccessScreen extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Customer', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
+                          Text(context.tr('customer'), style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
                           Text(
-                            bill.customerName ?? 'Counter Customer',
+                            bill.customerName ?? context.tr('counter_customer'),
                             style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                           ),
                         ],
@@ -151,7 +151,7 @@ class BillSuccessScreen extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Payment Mode', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
+                          Text(context.tr('payment_mode'), style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
@@ -199,7 +199,7 @@ class BillSuccessScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Grand Total',
+                            context.tr('grand_total'),
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
@@ -276,7 +276,7 @@ class BillSuccessScreen extends StatelessWidget {
                         },
                         icon: Icon(Icons.share_rounded, color: AppColors.terracotta, size: 18),
                         label: Text(
-                          'Share PDF',
+                          context.tr('share_pdf'),
                           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.terracotta),
                         ),
                         style: OutlinedButton.styleFrom(
@@ -299,7 +299,7 @@ class BillSuccessScreen extends StatelessWidget {
                           );
                         },
                         icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
-                        label: const Text('Download PDF'),
+                        label: Text(context.tr('download_pdf')),
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 48),
                           backgroundColor: AppColors.forestMint,

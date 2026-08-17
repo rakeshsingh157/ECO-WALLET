@@ -5,32 +5,46 @@ const Product = require("../models/Product");
 const Customer = require("../models/Customer");
 const KhataLedger = require("../models/KhataLedger");
 
+function getISTDateRange(period) {
+  const now = new Date();
+  const istTime = new Date(now.getTime() + 330 * 60 * 1000);
+  const istYear = istTime.getUTCFullYear();
+  const istMonth = istTime.getUTCMonth();
+  const istDate = istTime.getUTCDate();
+  const istDay = istTime.getUTCDay();
+
+  const startOfToday = new Date(Date.UTC(istYear, istMonth, istDate) - 330 * 60 * 1000);
+
+  if (period === "today") {
+    return startOfToday;
+  } else if (period === "this_week") {
+    const diff = istDate - istDay + (istDay === 0 ? -6 : 1);
+    return new Date(Date.UTC(istYear, istMonth, diff) - 330 * 60 * 1000);
+  } else if (period === "this_month") {
+    return new Date(Date.UTC(istYear, istMonth, 1) - 330 * 60 * 1000);
+  }
+  return startOfToday;
+}
+
 router.get("/", async (req, res) => {
   try {
-    const { period, payment_mode, search, limit, page, status } = req.query;
+    const { period, mode, status, search, page = 1, limit = 100 } = req.query;
     const query = {};
 
-    if (payment_mode) {
-      query.payment_mode = payment_mode;
+    if (mode && mode !== "all") {
+      query.payment_mode = mode;
     }
 
     if (status) {
       query.status = status;
     }
 
-    const now = new Date();
     if (period === "today") {
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      query.createdAt = { $gte: startOfDay };
+      query.createdAt = { $gte: getISTDateRange("today") };
     } else if (period === "this_week") {
-      const day = now.getDay();
-      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      const startOfWeek = new Date(now.setDate(diff));
-      startOfWeek.setHours(0, 0, 0, 0);
-      query.createdAt = { $gte: startOfWeek };
+      query.createdAt = { $gte: getISTDateRange("this_week") };
     } else if (period === "this_month") {
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      query.createdAt = { $gte: startOfMonth };
+      query.createdAt = { $gte: getISTDateRange("this_month") };
     }
 
     if (search && search.trim().length > 0) {
@@ -65,7 +79,7 @@ router.get("/", async (req, res) => {
       }
     }
 
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = getISTDateRange("today");
 
     const [bills, totalCount, todayBillsAgg, totalSalesAgg] = await Promise.all([
       Bill.find(query)

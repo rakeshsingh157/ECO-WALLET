@@ -2,6 +2,27 @@ const express = require("express");
 const router = express.Router();
 const Expense = require("../models/Expense");
 
+function getISTDateRange(period) {
+  const now = new Date();
+  const istTime = new Date(now.getTime() + 330 * 60 * 1000);
+  const istYear = istTime.getUTCFullYear();
+  const istMonth = istTime.getUTCMonth();
+  const istDate = istTime.getUTCDate();
+  const istDay = istTime.getUTCDay();
+
+  const startOfToday = new Date(Date.UTC(istYear, istMonth, istDate) - 330 * 60 * 1000);
+
+  if (period === "today") {
+    return startOfToday;
+  } else if (period === "this_week") {
+    const diff = istDate - istDay + (istDay === 0 ? -6 : 1);
+    return new Date(Date.UTC(istYear, istMonth, diff) - 330 * 60 * 1000);
+  } else if (period === "this_month") {
+    return new Date(Date.UTC(istYear, istMonth, 1) - 330 * 60 * 1000);
+  }
+  return startOfToday;
+}
+
 router.get("/", async (req, res) => {
   try {
     const { category, period, limit, page } = req.query;
@@ -11,19 +32,12 @@ router.get("/", async (req, res) => {
       query.category = category;
     }
 
-    const now = new Date();
     if (period === "today") {
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      query.date = { $gte: startOfDay };
+      query.date = { $gte: getISTDateRange("today") };
     } else if (period === "this_week") {
-      const day = now.getDay();
-      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      const startOfWeek = new Date(now.setDate(diff));
-      startOfWeek.setHours(0, 0, 0, 0);
-      query.date = { $gte: startOfWeek };
+      query.date = { $gte: getISTDateRange("this_week") };
     } else if (period === "this_month") {
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      query.date = { $gte: startOfMonth };
+      query.date = { $gte: getISTDateRange("this_month") };
     }
 
     const pageNum = Math.max(1, parseInt(page) || 1);

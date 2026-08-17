@@ -4,10 +4,18 @@ const Bill = require("../models/Bill");
 const Expense = require("../models/Expense");
 const Product = require("../models/Product");
 
+function getStartOfTodayIST() {
+  const now = new Date();
+  const istTime = new Date(now.getTime() + 330 * 60 * 1000);
+  const istYear = istTime.getUTCFullYear();
+  const istMonth = istTime.getUTCMonth();
+  const istDate = istTime.getUTCDate();
+  return new Date(Date.UTC(istYear, istMonth, istDate) - 330 * 60 * 1000);
+}
+
 router.get("/summary", async (req, res) => {
   try {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = getStartOfTodayIST();
 
     const [todaySalesAgg, totalSalesAgg, todayExpensesAgg, totalExpensesAgg, billCount, productCount] = await Promise.all([
       Bill.aggregate([
