@@ -23,6 +23,21 @@ class _ProductsScreenState extends State<ProductsScreen> {
   final _searchCtrl = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshProducts();
+    });
+  }
+
+  Future<void> _refreshProducts() async {
+    final auth = context.read<AuthProvider>();
+    if (auth.baseUrl.isNotEmpty) {
+      await context.read<ProductProvider>().fetchProducts(auth.baseUrl, auth.apiKey);
+    }
+  }
+
+  @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();

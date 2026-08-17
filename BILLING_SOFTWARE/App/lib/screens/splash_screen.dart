@@ -7,6 +7,9 @@ import '../providers/auth_provider.dart';
 import '../providers/product_provider.dart';
 import '../providers/bill_provider.dart';
 import '../providers/customer_provider.dart';
+import '../providers/expense_provider.dart';
+import '../providers/supplier_provider.dart';
+import '../providers/notification_provider.dart';
 import 'main_shell.dart';
 import 'onboarding/onboarding_screen.dart';
 
@@ -66,6 +69,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     final productProvider = Provider.of<ProductProvider>(context, listen: false);
     final billProvider = Provider.of<BillProvider>(context, listen: false);
     final customerProvider = Provider.of<CustomerProvider>(context, listen: false);
+    final expenseProvider = Provider.of<ExpenseProvider>(context, listen: false);
+    final supplierProvider = Provider.of<SupplierProvider>(context, listen: false);
+    final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
 
     if (auth.isConfigured && auth.baseUrl.isNotEmpty) {
       try {
@@ -73,6 +79,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           productProvider.fetchProducts(auth.baseUrl, auth.apiKey).timeout(const Duration(seconds: 25), onTimeout: () {}),
           billProvider.fetchBills(auth.apiService).timeout(const Duration(seconds: 25), onTimeout: () {}),
           customerProvider.fetchCustomers(auth.apiService).timeout(const Duration(seconds: 25), onTimeout: () {}),
+          expenseProvider.fetchExpenses(auth.apiService).timeout(const Duration(seconds: 25), onTimeout: () {}),
+          supplierProvider.fetchSuppliers(auth.apiService).timeout(const Duration(seconds: 25), onTimeout: () {}),
+          notificationProvider.fetchNotifications(auth.apiService).timeout(const Duration(seconds: 25), onTimeout: () {}),
         ]);
       } catch (_) {}
     } else {

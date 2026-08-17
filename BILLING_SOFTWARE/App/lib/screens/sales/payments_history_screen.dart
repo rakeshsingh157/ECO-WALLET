@@ -27,6 +27,14 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
   final List<String> _statusFilters = ['All', 'Completed', 'Pending Khata', 'Returned'];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshData();
+    });
+  }
+
+  @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();

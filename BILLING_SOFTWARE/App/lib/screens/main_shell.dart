@@ -3,7 +3,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../core/theme.dart';
 import '../providers/theme_provider.dart';
+import '../providers/auth_provider.dart';
+import '../providers/product_provider.dart';
 import '../providers/bill_provider.dart';
+import '../providers/customer_provider.dart';
+import '../providers/expense_provider.dart';
+import '../providers/supplier_provider.dart';
+import '../providers/notification_provider.dart';
 import '../providers/locale_provider.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'inventory/products_screen.dart';
@@ -20,6 +26,30 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncAllStoreData();
+    });
+  }
+
+  Future<void> _syncAllStoreData() async {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isConfigured || auth.baseUrl.isEmpty) return;
+
+    try {
+      await Future.wait([
+        context.read<ProductProvider>().fetchProducts(auth.baseUrl, auth.apiKey),
+        context.read<BillProvider>().fetchBills(auth.apiService),
+        context.read<CustomerProvider>().fetchCustomers(auth.apiService),
+        context.read<ExpenseProvider>().fetchExpenses(auth.apiService),
+        context.read<SupplierProvider>().fetchSuppliers(auth.apiService),
+        context.read<NotificationProvider>().fetchNotifications(auth.apiService),
+      ]);
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {

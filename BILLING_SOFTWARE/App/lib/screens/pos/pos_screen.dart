@@ -6,6 +6,7 @@ import '../../core/theme.dart';
 import '../../core/localization.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/bill_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/product_grid_item.dart';
 import '../../widgets/camera_scanner_modal.dart';
@@ -22,6 +23,17 @@ class PosScreen extends StatefulWidget {
 
 class _PosScreenState extends State<PosScreen> {
   final _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = context.read<AuthProvider>();
+      if (auth.baseUrl.isNotEmpty) {
+        context.read<ProductProvider>().fetchProducts(auth.baseUrl, auth.apiKey);
+      }
+    });
+  }
 
   @override
   void dispose() {
