@@ -94,6 +94,7 @@ app.use("/api/rewards", taskLimiter, rewardRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/merchant", merchantLimiter, merchantRoutes);
+app.use("/api/ai", require("./routes/aiRoutes"));
 
 if (renderInvoice) {
   app.get("/api/merchant/invoice/:bill_id", renderInvoice);

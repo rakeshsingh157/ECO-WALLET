@@ -193,8 +193,14 @@ class VoiceAiService {
     required String language,
   }) async {
     try {
-      final sanitizedBase = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
-      final uri = Uri.parse('$sanitizedBase/api/ai/voice-to-cart');
+      String cleanBase = baseUrl.trim();
+      while (cleanBase.endsWith('/')) {
+        cleanBase = cleanBase.substring(0, cleanBase.length - 1);
+      }
+      if (cleanBase.endsWith('/api')) {
+        cleanBase = cleanBase.substring(0, cleanBase.length - 4);
+      }
+      final uri = Uri.parse('$cleanBase/api/ai/voice-to-cart');
 
       final payload = <String, dynamic>{
         'language': language,
