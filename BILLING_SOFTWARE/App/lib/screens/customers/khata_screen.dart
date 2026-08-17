@@ -217,7 +217,6 @@ class _KhataScreenState extends State<KhataScreen> {
                                   dueAmount: amt,
                                 );
                                 await customerProvider.addCustomer(auth.apiService, newCust);
-                                await customerProvider.addCredit(auth.apiService, newCust.id, amt);
                               } else if (selectedCustomer != null) {
                                 await customerProvider.addCredit(auth.apiService, selectedCustomer!.id, amt);
                               }

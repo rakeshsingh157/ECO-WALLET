@@ -363,35 +363,56 @@ router.post("/", async (req, res) => {
       await Product.updateMany({ stock: { $lt: 0 } }, { $set: { stock: 0 } });
     }
 
-    if (customer_phone && customer_phone.trim().length >= 10) {
-      const cust = await Customer.findOneAndUpdate(
-        { phone: customer_phone.trim() },
-        {
-          $setOnInsert: { customer_id: `cust_${Date.now()}` },
-          $set: {
-            name: customer_name || "Customer",
-            last_transaction: new Date(),
-          },
-          $inc: {
-            total_spent: Number(total_amount) || 0,
-            total_orders: 1,
-            due_amount: (payment_mode === "pending" || payment_mode === "khata") ? Number(total_amount) || 0 : 0,
-          },
-        },
-        { upsert: true, new: true }
-      );
+    const custFilter = [];
+    if (khata_customer_id) custFilter.push({ customer_id: khata_customer_id });
+    if (customer_phone && customer_phone.trim().length >= 8) custFilter.push({ phone: customer_phone.trim() });
 
-      if (cust && (payment_mode === "pending" || payment_mode === "khata")) {
-        await KhataLedger.create({
-          customer_id: cust.customer_id,
-          type: "credit",
-          amount: Number(total_amount) || 0,
-          bill_id: billId,
-          note: `Store Bill #${billId.substring(0, billId.length > 10 ? 10 : billId.length).toUpperCase()}`,
-          payment_mode: "khata",
-          balance_after: cust.due_amount,
-          date: new Date(),
+    if (custFilter.length > 0) {
+      let cust = await Customer.findOne({ $or: custFilter });
+      if (cust) {
+        cust.total_spent = (cust.total_spent || 0) + (Number(total_amount) || 0);
+        cust.total_orders = (cust.total_orders || 0) + 1;
+        cust.last_transaction = new Date();
+        if (payment_mode === "pending" || payment_mode === "khata") {
+          cust.due_amount = (cust.due_amount || 0) + (Number(total_amount) || 0);
+        }
+        await cust.save();
+
+        if (payment_mode === "pending" || payment_mode === "khata") {
+          await KhataLedger.create({
+            customer_id: cust.customer_id,
+            type: "credit",
+            amount: Number(total_amount) || 0,
+            bill_id: billId,
+            note: `Store Bill #${billId.substring(0, billId.length > 10 ? 10 : billId.length).toUpperCase()}`,
+            payment_mode: "khata",
+            balance_after: cust.due_amount,
+            date: new Date(),
+          });
+        }
+      } else if (customer_phone && customer_phone.trim().length >= 8) {
+        cust = await Customer.create({
+          customer_id: khata_customer_id || `cust_${Date.now()}`,
+          name: customer_name || "Customer",
+          phone: customer_phone.trim(),
+          total_spent: Number(total_amount) || 0,
+          total_orders: 1,
+          due_amount: (payment_mode === "pending" || payment_mode === "khata") ? Number(total_amount) || 0 : 0,
+          last_transaction: new Date(),
         });
+
+        if (payment_mode === "pending" || payment_mode === "khata") {
+          await KhataLedger.create({
+            customer_id: cust.customer_id,
+            type: "credit",
+            amount: Number(total_amount) || 0,
+            bill_id: billId,
+            note: `Store Bill #${billId.substring(0, billId.length > 10 ? 10 : billId.length).toUpperCase()}`,
+            payment_mode: "khata",
+            balance_after: cust.due_amount,
+            date: new Date(),
+          });
+        }
       }
     }
 

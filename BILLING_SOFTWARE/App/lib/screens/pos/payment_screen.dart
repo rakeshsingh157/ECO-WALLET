@@ -185,9 +185,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
         MaterialPageRoute(builder: (_) => BillSuccessScreen(bill: bill)),
       );
     } else if (_selectedMode == PaymentMode.pending) {
-      if (_selectedCustomer != null) {
-        context.read<CustomerProvider>().addCredit(apiService, _selectedCustomer!.id, billProvider.currentTotal);
-      }
       final bill = billProvider.completeManualBill(
         PaymentMode.pending,
         customerName: _selectedCustomer?.name ?? 'Khata Customer',
