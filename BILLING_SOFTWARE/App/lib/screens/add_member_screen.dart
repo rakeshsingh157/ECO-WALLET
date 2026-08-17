@@ -93,7 +93,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
       ),
     );
 
-    if (confirm != true) return;
+    if (!mounted || confirm != true) return;
 
     final auth = context.read<AuthProvider>();
     final targetBase = auth.baseUrl.isNotEmpty ? auth.baseUrl : AppConstants.defaultEcoWalletBaseUrl;
