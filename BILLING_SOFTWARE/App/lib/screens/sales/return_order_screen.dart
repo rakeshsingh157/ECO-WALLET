@@ -60,7 +60,9 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
       _isFullReturn = true;
       _selectedItemQuantities.clear();
       for (final item in bill.items) {
-        _selectedItemQuantities[item.product.id] = item.quantity;
+        if (!item.isFullyReturned && item.remainingQuantity > 0) {
+          _selectedItemQuantities[item.product.id] = item.remainingQuantity;
+        }
       }
       _refundMode = bill.paymentMode == PaymentMode.ecoWallet ? 'wallet' : 'cash';
     });
@@ -135,15 +137,17 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
     final maxRefundable = _selectedBill!.netAmount;
     if (maxRefundable <= 0) return 0.0;
 
-    if (_isFullReturn) {
-      return maxRefundable;
-    }
-
     double total = 0.0;
     for (final item in _selectedBill!.items) {
-      final returnQty = _selectedItemQuantities[item.product.id] ?? 0.0;
-      if (returnQty > 0) {
-        total += returnQty * item.product.price;
+      if (item.isFullyReturned) continue;
+      if (_isFullReturn) {
+        total += item.remainingQuantity * item.product.price;
+      } else {
+        final returnQty = _selectedItemQuantities[item.product.id] ?? 0.0;
+        if (returnQty > 0) {
+          final validQty = returnQty > item.remainingQuantity ? item.remainingQuantity : returnQty;
+          total += validQty * item.product.price;
+        }
       }
     }
     return total > maxRefundable ? maxRefundable : total;
@@ -209,7 +213,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'This will restock returned inventory and update today\'s sales.',
+              'This will restock returned inventory and update sales records.',
               style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
             ),
           ],
@@ -235,12 +239,14 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
     List<Map<String, dynamic>> returnedItemsList = [];
     if (!_isFullReturn) {
       for (final item in _selectedBill!.items) {
+        if (item.isFullyReturned) continue;
         final returnQty = _selectedItemQuantities[item.product.id] ?? 0.0;
-        if (returnQty > 0) {
+        final validQty = returnQty > item.remainingQuantity ? item.remainingQuantity : returnQty;
+        if (validQty > 0) {
           returnedItemsList.add({
             'product_id': item.product.id,
             'name': item.product.name,
-            'quantity': returnQty,
+            'quantity': validQty,
             'price': item.product.price,
           });
         }
@@ -348,6 +354,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
     final billProvider = context.watch<BillProvider>();
     final refundAmount = _calculateRefundAmount();
     final isFullyRefunded = _selectedBill != null && (_selectedBill!.status == BillStatus.returned || _selectedBill!.netAmount <= 0);
+    final hasAnyReturnableItems = _selectedBill != null && _selectedBill!.items.any((i) => !i.isFullyReturned && i.remainingQuantity > 0);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -421,7 +428,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
             const SizedBox(height: 16),
 
             if (_selectedBill == null) ..._buildRecentBillsList(billProvider)
-            else ..._buildSelectedBillView(isFullyRefunded, refundAmount),
+            else ..._buildSelectedBillView(isFullyRefunded, hasAnyReturnableItems, refundAmount),
           ],
         ),
       ),
@@ -460,11 +467,11 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
     ];
   }
 
-  List<Widget> _buildSelectedBillView(bool isFullyRefunded, double refundAmount) {
+  List<Widget> _buildSelectedBillView(bool isFullyRefunded, bool hasAnyReturnableItems, double refundAmount) {
     return [
       _buildBillDetailsCard(_selectedBill!),
       const SizedBox(height: 16),
-      if (isFullyRefunded)
+      if (isFullyRefunded || !hasAnyReturnableItems)
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
@@ -478,12 +485,13 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
               Icon(Icons.block_rounded, color: AppColors.error, size: 32),
               const SizedBox(height: 6),
               Text(
-                'ORDER IS ALREADY 100% REFUNDED',
+                'ALL ITEMS IN THIS ORDER ARE ALREADY RETURNED',
                 style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.error),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 4),
               Text(
-                'Total ₹${_selectedBill!.refundedAmount.toStringAsFixed(2)} was already returned for this order. No further returns are allowed.',
+                'Total ₹${_selectedBill!.refundedAmount.toStringAsFixed(2)} was already refunded for this order. No items remain eligible for return.',
                 style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
@@ -515,7 +523,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    'Remaining Full Return',
+                    'Return All Remaining',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
@@ -783,57 +791,116 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
   }
 
   Widget _buildItemReturnSelector(BillItem item) {
+    final isFullyReturned = item.isFullyReturned;
+    final isPartiallyReturned = item.isPartiallyReturned;
+    final remainingQty = item.remainingQuantity;
+
     final returnQty = _selectedItemQuantities[item.product.id] ?? 0.0;
-    final isSelected = returnQty > 0;
+    final isSelected = returnQty > 0 && !isFullyReturned;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isSelected ? AppColors.primaryContainer.withAlpha(80) : AppColors.surface,
+        color: isFullyReturned
+            ? AppColors.surfaceMuted.withAlpha(50)
+            : (isSelected ? AppColors.primaryContainer.withAlpha(80) : AppColors.surface),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isSelected ? AppColors.terracotta : AppColors.borderSubtle),
+        border: Border.all(
+          color: isFullyReturned
+              ? AppColors.error.withAlpha(60)
+              : (isSelected ? AppColors.terracotta : AppColors.borderSubtle),
+        ),
       ),
       child: Row(
         children: [
           Checkbox(
-            value: isSelected,
+            value: isFullyReturned ? false : isSelected,
             activeColor: AppColors.terracotta,
-            onChanged: (val) {
-              setState(() {
-                if (val == true) {
-                  _selectedItemQuantities[item.product.id] = item.quantity;
-                } else {
-                  _selectedItemQuantities[item.product.id] = 0.0;
-                }
-              });
-            },
+            onChanged: isFullyReturned
+                ? null
+                : (val) {
+                    setState(() {
+                      if (val == true) {
+                        _selectedItemQuantities[item.product.id] = remainingQty;
+                      } else {
+                        _selectedItemQuantities[item.product.id] = 0.0;
+                      }
+                    });
+                  },
           ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.product.name,
-                  style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        item.product.name,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: isFullyReturned ? AppColors.textMuted : AppColors.textPrimary,
+                          decoration: isFullyReturned ? TextDecoration.lineThrough : null,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isFullyReturned) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withAlpha(25),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'ALREADY RETURNED',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 8, fontWeight: FontWeight.w800, color: AppColors.error),
+                        ),
+                      ),
+                    ] else if (isPartiallyReturned) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withAlpha(25),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'PARTIALLY RETURNED',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 8, fontWeight: FontWeight.w800, color: AppColors.warning),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 Text(
-                  'Original: ${item.formattedQuantity} • ₹${item.product.price.toStringAsFixed(2)} / ${item.product.unit}',
-                  style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textSecondary),
+                  isFullyReturned
+                      ? 'Total Billed: ${item.formattedQuantity} (100% Refunded)'
+                      : (isPartiallyReturned
+                          ? 'Remaining Returnable: ${item.formatQuantityValue(remainingQty)} of ${item.formattedQuantity}'
+                          : 'Billed: ${item.formattedQuantity} • ₹${item.product.price.toStringAsFixed(2)} / ${item.product.unit}'),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    color: isFullyReturned ? AppColors.error.withAlpha(180) : AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
           ),
-          if (isSelected)
+          if (!isFullyReturned && isSelected)
             GestureDetector(
               onTap: () {
                 QuantitySelectorModal.show(
                   context,
                   product: item.product,
-                  initialQuantity: returnQty,
+                  initialQuantity: returnQty > remainingQty ? remainingQty : returnQty,
                   onConfirmed: (newQty) {
                     setState(() {
-                      _selectedItemQuantities[item.product.id] = newQty > item.quantity ? item.quantity : newQty;
+                      _selectedItemQuantities[item.product.id] = newQty > remainingQty ? remainingQty : newQty;
                     });
                   },
                 );
@@ -849,7 +916,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Ret: ${returnQty.toStringAsFixed(returnQty.truncateToDouble() == returnQty ? 0 : 2)}',
+                      'Ret: ${item.formatQuantityValue(returnQty > remainingQty ? remainingQty : returnQty)}',
                       style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.terracotta),
                     ),
                     const SizedBox(width: 4),
@@ -860,8 +927,12 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
             ),
           const SizedBox(width: 8),
           Text(
-            '₹${(returnQty * item.product.price).toStringAsFixed(2)}',
-            style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+            isFullyReturned ? '₹0.00' : '₹${(returnQty * item.product.price).toStringAsFixed(2)}',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: isFullyReturned ? AppColors.textMuted : AppColors.textPrimary,
+            ),
           ),
         ],
       ),

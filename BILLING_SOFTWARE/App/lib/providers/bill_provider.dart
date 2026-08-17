@@ -128,6 +128,7 @@ class BillProvider extends ChangeNotifier {
               return BillItem(
                 product: product,
                 quantity: (item["quantity"] as num?)?.toDouble() ?? 1.0,
+                returnedQuantity: (item["returned_quantity"] as num?)?.toDouble() ?? 0.0,
               );
             }).toList();
 

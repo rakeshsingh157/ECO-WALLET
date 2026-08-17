@@ -140,24 +140,68 @@ class SaleDetailsScreen extends StatelessWidget {
                   const SizedBox(height: 10),
 
                   ...bill.items.map(
-                    (item) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${item.product.name} (x${item.formattedQuantity})',
-                              style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textPrimary),
+                    (item) {
+                      final isFullyRet = item.isFullyReturned;
+                      final isPartRet = item.isPartiallyReturned;
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          '${item.product.name} (x${item.formattedQuantity})',
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 13,
+                                            color: isFullyRet ? AppColors.textMuted : AppColors.textPrimary,
+                                            decoration: isFullyRet ? TextDecoration.lineThrough : null,
+                                          ),
+                                        ),
+                                      ),
+                                      if (isFullyRet) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                          decoration: BoxDecoration(color: AppColors.error.withAlpha(25), borderRadius: BorderRadius.circular(4)),
+                                          child: Text('RETURNED', style: GoogleFonts.plusJakartaSans(fontSize: 8, fontWeight: FontWeight.w800, color: AppColors.error)),
+                                        ),
+                                      ] else if (isPartRet) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                          decoration: BoxDecoration(color: AppColors.warning.withAlpha(25), borderRadius: BorderRadius.circular(4)),
+                                          child: Text('PARTIAL', style: GoogleFonts.plusJakartaSans(fontSize: 8, fontWeight: FontWeight.w800, color: AppColors.warning)),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  if (isPartRet)
+                                    Text(
+                                      '${item.formatQuantityValue(item.returnedQuantity)} returned',
+                                      style: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.w600),
+                                    ),
+                                ],
+                              ),
                             ),
-                          ),
-                          Text(
-                            '₹${item.totalPrice.toStringAsFixed(2)}',
-                            style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                          ),
-                        ],
-                      ),
-                    ),
+                            Text(
+                              '₹${item.totalPrice.toStringAsFixed(2)}',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: isFullyRet ? AppColors.textMuted : AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 16),
