@@ -149,7 +149,11 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
     } catch (_) {}
   }
 
+  bool _isSaving = false;
+
   void _saveProfile() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
     final messenger = ScaffoldMessenger.of(context);
     final auth = context.read<AuthProvider>();
     final success = await auth.updateProfile(
@@ -162,13 +166,16 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
     );
 
     if (mounted) {
+      setState(() => _isSaving = false);
       messenger.showSnackBar(
         SnackBar(
           content: Text(success ? 'Shop profile & UPI QR updated successfully!' : 'Failed to update profile'),
           backgroundColor: success ? AppColors.success : AppColors.error,
         ),
       );
-      Navigator.pop(context);
+      if (success) {
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -430,16 +437,28 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
 
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _saveProfile,
-                icon: const Icon(Icons.save_rounded, size: 18),
-                label: const Text('SAVE STORE PROFILE & QR'),
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _saveProfile,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.terracotta,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.save_rounded, size: 18),
+                          SizedBox(width: 8),
+                          Text('SAVE STORE PROFILE & QR'),
+                        ],
+                      ),
               ),
             ),
           ],

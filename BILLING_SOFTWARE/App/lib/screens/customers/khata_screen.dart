@@ -547,11 +547,11 @@ class _KhataScreenState extends State<KhataScreen> {
                                           ),
                                         ),
                                         Text(
-                                          isSettled ? 'Settled' : context.tr('pending_due'),
+                                          isSettled ? context.tr('settled') : context.tr('pending_due'),
                                           style: GoogleFonts.plusJakartaSans(
                                             fontSize: 11,
-                                            color: isSettled ? AppColors.forestMint : AppColors.textMuted,
-                                            fontWeight: isSettled ? FontWeight.w700 : FontWeight.normal,
+                                            color: isSettled ? AppColors.forestMint : AppColors.textSecondary,
+                                            fontWeight: FontWeight.w700,
                                           ),
                                         ),
                                       ],

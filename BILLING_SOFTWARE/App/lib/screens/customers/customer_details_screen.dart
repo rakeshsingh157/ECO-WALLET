@@ -57,76 +57,100 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     );
     final amountCtrl = TextEditingController();
     final noteCtrl = TextEditingController(text: 'Store goods on credit');
+    bool isSaving = false;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          context.tr('add_credit_entry'),
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Giving goods on credit (Udhar) to ${liveCustomer.name}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
-            const SizedBox(height: 8),
-            Text(
-              'Current Balance: ₹${liveCustomer.dueAmount.toStringAsFixed(0)}',
-              style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.chaiGold),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            context.tr('add_credit_entry'),
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Giving goods on credit (Udhar) to ${liveCustomer.name}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
+              const SizedBox(height: 8),
+              Text(
+                'Current Balance: ₹${liveCustomer.dueAmount.toStringAsFixed(0)}',
+                style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.chaiGold),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: amountCtrl,
+                enabled: !isSaving,
+                keyboardType: TextInputType.number,
+                autofocus: true,
+                style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: 'Credit Amount (₹) *', prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.terracotta)),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: noteCtrl,
+                enabled: !isSaving,
+                style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textPrimary),
+                decoration: const InputDecoration(labelText: 'Note / Item Details (Optional)', prefixIcon: Icon(Icons.note_alt_outlined)),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSaving ? null : () => Navigator.pop(ctx),
+              child: Text(context.tr('cancel'), style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
             ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: amountCtrl,
-              keyboardType: TextInputType.number,
-              autofocus: true,
-              style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-              decoration: InputDecoration(labelText: 'Credit Amount (₹) *', prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.terracotta)),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: noteCtrl,
-              style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textPrimary),
-              decoration: const InputDecoration(labelText: 'Note / Item Details (Optional)', prefixIcon: Icon(Icons.note_alt_outlined)),
+            ElevatedButton(
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                      if (amt <= 0) {
+                        AppNotifier.warning(ctx, 'Please enter a valid credit amount', title: 'INVALID AMOUNT');
+                        return;
+                      }
+
+                      setDialogState(() => isSaving = true);
+                      try {
+                        final auth = context.read<AuthProvider>();
+                        final note = noteCtrl.text.trim().isNotEmpty ? noteCtrl.text.trim() : 'Store goods credit';
+                        await context.read<CustomerProvider>().addCredit(
+                          auth.apiService,
+                          liveCustomer.id,
+                          amt,
+                          note: note,
+                        );
+                        _loadTransactions();
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                        }
+                        if (mounted) {
+                          AppNotifier.success(
+                            context,
+                            'Added ₹${amt.toStringAsFixed(0)} credit for ${liveCustomer.name}',
+                            title: 'KHATA UPDATED',
+                          );
+                        }
+                      } catch (_) {
+                        if (ctx.mounted) {
+                          setDialogState(() => isSaving = false);
+                          AppNotifier.error(
+                            ctx,
+                            'Failed to record Khata credit. Please check connection.',
+                            title: 'SYNC ERROR',
+                          );
+                        }
+                      }
+                    },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.terracotta, foregroundColor: Colors.white),
+              child: isSaving
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : Text(context.tr('save').toUpperCase()),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(context.tr('cancel'), style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
-              if (amt > 0) {
-                final auth = context.read<AuthProvider>();
-                final note = noteCtrl.text.trim().isNotEmpty ? noteCtrl.text.trim() : 'Store goods credit';
-                await context.read<CustomerProvider>().addCredit(
-                  auth.apiService,
-                  liveCustomer.id,
-                  amt,
-                  note: note,
-                );
-                _loadTransactions();
-                if (ctx.mounted) {
-                  Navigator.pop(ctx);
-                }
-                if (mounted) {
-                  AppNotifier.success(
-                    context,
-                    'Added ₹${amt.toStringAsFixed(0)} credit for ${liveCustomer.name}',
-                    title: 'KHATA UPDATED',
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.terracotta, foregroundColor: Colors.white),
-            child: Text(context.tr('save').toUpperCase()),
-          ),
-        ],
       ),
     );
   }

@@ -461,6 +461,8 @@ class AppLocalization {
       'previously_refunded': 'Previously Refunded',
       'confirm_return_refund': 'Confirm Return & Refund',
       'view_all_payments': 'View All Payments',
+      'pending_due': 'Pending Due',
+      'settled': 'Settled',
     },
     'hi': {
       'app_title': 'दुकान दोस्त',
@@ -813,6 +815,8 @@ class AppLocalization {
       'previously_refunded': 'पहले वापस किया गया',
       'confirm_return_refund': 'वापसी और रिफंड की पुष्टि करें',
       'view_all_payments': 'सभी भुगतान देखें',
+      'pending_due': 'बाकी उधारी',
+      'settled': 'चुक्ता',
     },
     'mr': {
       'app_title': 'दुकान दोस्त',
@@ -1165,6 +1169,8 @@ class AppLocalization {
       'previously_refunded': 'यापूर्वी परतावा केला',
       'confirm_return_refund': 'परतावा व रिफंड नक्की करा',
       'view_all_payments': 'सर्व पेमेंट पहा',
+      'pending_due': 'बाकी उधारी',
+      'settled': 'पूर्ण चुकते',
     },
     'gu': {
       'app_title': 'દુકાન દોસ્ત',
@@ -1517,6 +1523,8 @@ class AppLocalization {
       'previously_refunded': 'અગાઉ રિફંડ કરેલ',
       'confirm_return_refund': 'પરત અને રિફંડની ખાતરી કરો',
       'view_all_payments': 'બધા વ્યવહારો જુઓ',
+      'pending_due': 'બાકી ઉધારી',
+      'settled': 'ચુકતે',
     },
     'ta': {
       'app_title': 'துக்கான் தோஸ்த்',
@@ -1869,6 +1877,8 @@ class AppLocalization {
       'previously_refunded': 'முன்பு திரும்ப அளிக்கப்பட்டது',
       'confirm_return_refund': 'திரும்பப் பெறுதல் & ரீஃபண்ட் உறுதிசெய்',
       'view_all_payments': 'அனைத்து பரிவர்த்தனைகளும்',
+      'pending_due': 'நிலுவைத் தொகை',
+      'settled': 'செலுத்தப்பட்டது',
     },
     'te': {
       'app_title': 'దుకాణ్ దోస్త్',
@@ -2221,6 +2231,8 @@ class AppLocalization {
       'previously_refunded': 'గతంలో రీఫండ్ చేయబడింది',
       'confirm_return_refund': 'రిటర్న్ & రీఫండ్ నిర్ధారించండి',
       'view_all_payments': 'అన్ని లావాదేవీలు',
+      'pending_due': 'బాకీ బకాయి',
+      'settled': 'చెల్లించబడింది',
     },
   };
 
