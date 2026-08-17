@@ -16,6 +16,9 @@ class AuthProvider extends ChangeNotifier {
   String _upiId = '';
   String _baseUrl = AppConstants.defaultEcoWalletBaseUrl;
   bool _isConfigured = false;
+  bool _isStaff = false;
+  String _staffName = '';
+  String _staffRole = '';
   String? _authError;
 
   String get apiKey => _apiKey;
@@ -32,6 +35,9 @@ class AuthProvider extends ChangeNotifier {
   bool get hasPinSet => _securityPin.isNotEmpty;
   String get baseUrl => _baseUrl;
   bool get isConfigured => _isConfigured;
+  bool get isStaff => _isStaff;
+  String get staffName => _staffName;
+  String get staffRole => _staffRole;
   String? get authError => _authError;
 
   ApiService get apiService => ApiService(baseUrl: _baseUrl, apiKey: _apiKey);
@@ -53,6 +59,9 @@ class AuthProvider extends ChangeNotifier {
     _address = prefs.getString('shop_address') ?? '';
     _upiId = prefs.getString('shop_upi_id') ?? '';
     _baseUrl = prefs.getString(AppConstants.keyBaseUrl) ?? AppConstants.defaultEcoWalletBaseUrl;
+    _isStaff = prefs.getBool('is_staff') ?? false;
+    _staffName = prefs.getString('staff_name') ?? '';
+    _staffRole = prefs.getString('staff_role') ?? '';
 
     _isConfigured = _apiKey.isNotEmpty && _mobileNumber.isNotEmpty;
     notifyListeners();
@@ -185,6 +194,14 @@ class AuthProvider extends ChangeNotifier {
         final address = m["address"] ?? _address;
         final upiId = m["upi_id"] ?? _upiId;
 
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_staff', false);
+        await prefs.remove('staff_name');
+        await prefs.remove('staff_role');
+        _isStaff = false;
+        _staffName = '';
+        _staffRole = '';
+
         await saveCredentials(
           apiKey: apiKey,
           webhookSecret: webhookSec,
@@ -201,6 +218,62 @@ class AuthProvider extends ChangeNotifier {
         return true;
       } else {
         _authError = response["message"] ?? 'Invalid mobile number or security PIN';
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _authError = 'Cannot connect to server: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> loginStaff({
+    required String phone,
+    required String pin,
+  }) async {
+    _authError = null;
+    try {
+      final response = await apiService.loginStaff(
+        phone: phone,
+        pin: pin,
+      );
+
+      if (response["success"] == true) {
+        final staff = response["staff"] ?? {};
+        final m = response["merchant"] ?? {};
+
+        final staffName = staff["name"] ?? 'Staff Cashier';
+        final staffRole = staff["role"] ?? 'Counter Cashier';
+
+        final apiKey = m["api_key"] ?? 'key_mch_staff';
+        final mchId = m["merchant_id"] ?? 'mch_default';
+        final shopName = m["business_name"] ?? 'Store';
+        final ownerName = m["owner_name"] ?? 'Store Owner';
+        final ownerMobile = m["mobile_number"] ?? phone;
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_staff', true);
+        await prefs.setString('staff_name', staffName);
+        await prefs.setString('staff_role', staffRole);
+
+        _isStaff = true;
+        _staffName = staffName;
+        _staffRole = staffRole;
+
+        await saveCredentials(
+          apiKey: apiKey,
+          webhookSecret: 'whsec_staff',
+          merchantId: mchId,
+          shopName: shopName,
+          ownerName: ownerName,
+          mobileNumber: ownerMobile,
+          securityPin: pin,
+          baseUrl: _baseUrl,
+        );
+        return true;
+      } else {
+        _authError = response["message"] ?? 'Staff login failed. Please verify phone number and PIN.';
         notifyListeners();
         return false;
       }
@@ -233,6 +306,14 @@ class AuthProvider extends ChangeNotifier {
         final apiKey = m["api_key"] ?? 'key_mch_$mobile';
         final webhookSec = m["webhook_secret"] ?? 'whsec_$mobile';
         final mchId = m["merchant_id"] ?? 'mch_$mobile';
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_staff', false);
+        await prefs.remove('staff_name');
+        await prefs.remove('staff_role');
+        _isStaff = false;
+        _staffName = '';
+        _staffRole = '';
 
         await saveCredentials(
           apiKey: apiKey,
@@ -278,6 +359,9 @@ class AuthProvider extends ChangeNotifier {
     _address = '';
     _upiId = '';
     _isConfigured = false;
+    _isStaff = false;
+    _staffName = '';
+    _staffRole = '';
     notifyListeners();
   }
 }

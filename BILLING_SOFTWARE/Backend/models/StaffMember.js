@@ -3,10 +3,11 @@ const bcrypt = require("bcryptjs");
 
 const StaffMemberSchema = new mongoose.Schema(
   {
-    member_id: { type: String, required: true, unique: true },
+    member_id: { type: String, required: true, unique: true, index: true },
+    merchant_id: { type: String, default: "mch_default", index: true },
     name: { type: String, required: true, trim: true },
-    phone: { type: String, required: true, trim: true },
-    role: { type: String, enum: ["Owner", "Manager", "Cashier", "Helper"], default: "Cashier" },
+    phone: { type: String, required: true, trim: true, index: true },
+    role: { type: String, enum: ["Owner", "Shop Manager", "Counter Cashier", "Inventory Helper", "Cashier", "Helper", "Manager"], default: "Counter Cashier" },
     pin: { type: String, required: true, default: "1234" },
     active: { type: Boolean, default: true },
   },

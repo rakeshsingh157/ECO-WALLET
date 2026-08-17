@@ -689,6 +689,38 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> loginStaff({
+    required String phone,
+    required String pin,
+  }) async {
+    final url = Uri.parse("$_cleanBase/staff/login");
+    try {
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          "phone": phone.trim(),
+          "pin": pin.trim(),
+        }),
+      ).timeout(requestTimeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final err = jsonDecode(response.body);
+        return {
+          "success": false,
+          "message": err["message"] ?? "Staff login failed with code ${response.statusCode}",
+        };
+      }
+    } catch (e) {
+      return {
+        "success": false,
+        "message": "Connection error: ${e.toString()}",
+      };
+    }
+  }
+
 
   Future<Map<String, dynamic>> createPayment({
     required String orderId,

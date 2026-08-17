@@ -68,8 +68,14 @@ class SettingsScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '${context.tr('proprietor')}: ${auth.ownerName.isNotEmpty ? auth.ownerName : 'Store Admin'}',
-                            style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
+                            auth.isStaff
+                                ? 'Logged in as ${auth.staffName} (${auth.staffRole})'
+                                : '${context.tr('proprietor')}: ${auth.ownerName.isNotEmpty ? auth.ownerName : 'Store Admin'}',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              color: auth.isStaff ? AppColors.forestMint : AppColors.textSecondary,
+                              fontWeight: auth.isStaff ? FontWeight.w700 : FontWeight.normal,
+                            ),
                           ),
                         ],
                       ),

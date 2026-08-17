@@ -21,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _obscurePin = true;
   bool _isLoading = false;
+  int _selectedLoginType = 0;
 
   @override
   void initState() {
@@ -44,15 +45,31 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     final auth = context.read<AuthProvider>();
-    final success = await auth.loginWithPin(
-      _mobileCtrl.text.trim(),
-      _pinCtrl.text.trim(),
-    );
+    final mobile = _mobileCtrl.text.trim();
+    final pin = _pinCtrl.text.trim();
+
+    final bool success;
+    if (_selectedLoginType == 0) {
+      success = await auth.loginWithPin(mobile, pin);
+    } else {
+      success = await auth.loginStaff(phone: mobile, pin: pin);
+    }
 
     setState(() => _isLoading = false);
 
     if (mounted) {
       if (success) {
+        final welcomeMsg = _selectedLoginType == 1 && auth.staffName.isNotEmpty
+            ? 'Logged in as ${auth.staffName} (${auth.staffRole})'
+            : 'Welcome back to ${auth.shopName}!';
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(welcomeMsg),
+            backgroundColor: AppColors.forestMint,
+          ),
+        );
+
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const MainShell()),
         );
@@ -80,10 +97,12 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               children: [
                 const SizedBox(height: 10),
-                const MascotBadge(
+                MascotBadge(
                   assetPath: MascotAssets.shopkeeper,
                   size: 90,
-                  speechBubbleText: 'Swagat hai! Apni dukaan me login karein',
+                  speechBubbleText: _selectedLoginType == 0
+                      ? 'Swagat hai! Apni dukaan me login karein'
+                      : 'Namaste! Staff PIN se shop me billing shuru karein',
                 ),
                 const SizedBox(height: 16),
 
@@ -97,14 +116,105 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 Text(
-                  'Smart Retail POS & Khata Terminal',
+                  _selectedLoginType == 0
+                      ? 'Smart Retail POS & Khata Terminal'
+                      : 'Cashier & Staff Billing Terminal',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
                     color: AppColors.textSecondary,
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
+
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.borderSubtle),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedLoginType = 0;
+                              _pinCtrl.clear();
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: _selectedLoginType == 0 ? AppColors.terracotta : Colors.transparent,
+                              borderRadius: BorderRadius.circular(9),
+                            ),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.store_rounded,
+                                  size: 16,
+                                  color: _selectedLoginType == 0 ? Colors.white : AppColors.textSecondary,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'STORE OWNER',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: _selectedLoginType == 0 ? Colors.white : AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedLoginType = 1;
+                              _pinCtrl.clear();
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: _selectedLoginType == 1 ? AppColors.forestMint : Colors.transparent,
+                              borderRadius: BorderRadius.circular(9),
+                            ),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.badge_rounded,
+                                  size: 16,
+                                  color: _selectedLoginType == 1 ? Colors.white : AppColors.textSecondary,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'STAFF / CASHIER',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: _selectedLoginType == 1 ? Colors.white : AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
 
                 Container(
                   padding: const EdgeInsets.all(20),
@@ -127,9 +237,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         keyboardType: TextInputType.phone,
                         style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
                         decoration: InputDecoration(
-                          labelText: 'Mobile Number *',
+                          labelText: _selectedLoginType == 0 ? 'Owner Mobile Number *' : 'Staff Mobile Number *',
                           hintText: '9876543210',
-                          prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta),
+                          prefixIcon: Icon(
+                            Icons.phone_rounded,
+                            color: _selectedLoginType == 0 ? AppColors.terracotta : AppColors.forestMint,
+                          ),
                         ),
                         validator: (v) => v == null || v.trim().length < 10 ? 'Enter valid 10-digit mobile number' : null,
                       ),
@@ -142,9 +255,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         keyboardType: TextInputType.number,
                         style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                         decoration: InputDecoration(
-                          labelText: '4-digit Security PIN *',
+                          labelText: _selectedLoginType == 0 ? '4-digit Security PIN *' : '4-digit Staff PIN *',
                           hintText: '••••',
-                          prefixIcon: Icon(Icons.lock_rounded, color: AppColors.terracotta),
+                          prefixIcon: Icon(
+                            Icons.lock_rounded,
+                            color: _selectedLoginType == 0 ? AppColors.terracotta : AppColors.forestMint,
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePin ? Icons.visibility_off_rounded : Icons.visibility_rounded,
@@ -169,9 +285,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                 )
                               : const Icon(Icons.login_rounded, size: 18),
-                          label: Text(_isLoading ? 'SIGNING IN...' : 'LOGIN TO SHOP'),
+                          label: Text(
+                            _isLoading
+                                ? 'SIGNING IN...'
+                                : (_selectedLoginType == 0 ? 'LOGIN TO STORE' : 'LOGIN AS CASHIER'),
+                          ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.terracotta,
+                            backgroundColor: _selectedLoginType == 0 ? AppColors.terracotta : AppColors.forestMint,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -184,31 +304,41 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 24),
 
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'New to Dukaan Dost? ',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const SignupScreen()),
-                        );
-                      },
-                      child: Text(
-                        'Register Store',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.terracotta,
+                if (_selectedLoginType == 0)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'New to Dukaan Dost? ',
+                        style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const SignupScreen()),
+                          );
+                        },
+                        child: Text(
+                          'Register Store',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.terracotta,
+                          ),
                         ),
                       ),
+                    ],
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'Ask your store owner to add your mobile number and 4-digit PIN from Settings > Staff & Cashiers.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textMuted),
                     ),
-                  ],
-                ),
+                  ),
               ],
             ),
           ),

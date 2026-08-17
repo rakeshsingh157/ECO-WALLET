@@ -106,20 +106,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${_getTimeGreeting(localeProvider)}, ${auth.ownerName.isNotEmpty ? auth.ownerName : 'Dukaandar'}!',
+                              '${_getTimeGreeting(localeProvider)}, ${auth.isStaff && auth.staffName.isNotEmpty ? auth.staffName : (auth.ownerName.isNotEmpty ? auth.ownerName : 'Dukaandar')}!',
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.textSecondary,
                               ),
                             ),
-                            Text(
-                              auth.shopName.isNotEmpty ? auth.shopName : 'My Retail Store',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                              ),
+                            Row(
+                              children: [
+                                Text(
+                                  auth.shopName.isNotEmpty ? auth.shopName : 'My Retail Store',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                if (auth.isStaff) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.forestMint.withAlpha(25),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: AppColors.forestMint.withAlpha(80)),
+                                    ),
+                                    child: Text(
+                                      auth.staffRole.isNotEmpty ? auth.staffRole.toUpperCase() : 'STAFF',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.forestMint,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ],
                         ),
