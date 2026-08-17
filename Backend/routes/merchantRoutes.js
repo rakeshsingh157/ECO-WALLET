@@ -184,10 +184,15 @@ const renderInvoice = async (req, res) => {
       box-sizing: border-box;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
+      background-color: #FFFFFF !important;
+      background: #FFFFFF !important;
+      color: #000000 !important;
+      -webkit-text-fill-color: #000000 !important;
     }
     html, body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       background-color: #FFFFFF !important;
+      background: #FFFFFF !important;
       color: #000000 !important;
       -webkit-text-fill-color: #000000 !important;
       margin: 0;
@@ -198,13 +203,15 @@ const renderInvoice = async (req, res) => {
       color-scheme: light only !important;
     }
     @media (prefers-color-scheme: dark) {
-      html, body, div, table, tr, td, th, span, p, h1, h2, h3, h4, h5, h6 {
-        background-color: transparent;
+      * {
+        background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
         color: #000000 !important;
         -webkit-text-fill-color: #000000 !important;
       }
-      .card, #invoice-capture {
+      html, body, .container, .card, #invoice-capture {
         background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
         color: #000000 !important;
         -webkit-text-fill-color: #000000 !important;
       }

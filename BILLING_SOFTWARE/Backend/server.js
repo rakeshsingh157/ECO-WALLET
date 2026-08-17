@@ -550,10 +550,15 @@ async function renderInvoiceHtml(req, res) {
             box-sizing: border-box;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+            background-color: #FFFFFF !important;
+            background: #FFFFFF !important;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
           }
           html, body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: #FFFFFF !important;
+            background: #FFFFFF !important;
             color: #000000 !important;
             -webkit-text-fill-color: #000000 !important;
             padding: 16px;
@@ -564,13 +569,15 @@ async function renderInvoiceHtml(req, res) {
             color-scheme: light only !important;
           }
           @media (prefers-color-scheme: dark) {
-            html, body, div, table, tr, td, th, span, p, h1, h2, h3, h4, h5, h6 {
-              background-color: transparent;
+            * {
+              background-color: #FFFFFF !important;
+              background: #FFFFFF !important;
               color: #000000 !important;
               -webkit-text-fill-color: #000000 !important;
             }
-            .invoice-card, #invoice-capture {
+            html, body, .container, .invoice-card, #invoice-capture {
               background-color: #FFFFFF !important;
+              background: #FFFFFF !important;
               color: #000000 !important;
               -webkit-text-fill-color: #000000 !important;
             }
@@ -579,6 +586,8 @@ async function renderInvoiceHtml(req, res) {
             max-width: 600px;
             width: 100%;
             margin: 10px auto;
+            background-color: #FFFFFF !important;
+            background: #FFFFFF !important;
           }
           .actions {
             display: flex;
@@ -871,18 +880,44 @@ async function renderInvoiceHtml(req, res) {
                 backgroundColor: '#FFFFFF',
                 logging: false,
                 onclone: function(clonedDoc) {
+                  const style = clonedDoc.createElement('style');
+                  style.innerHTML = `
+                    * {
+                      background: #FFFFFF !important;
+                      background-color: #FFFFFF !important;
+                      color: #000000 !important;
+                      -webkit-text-fill-color: #000000 !important;
+                      border-color: #000000 !important;
+                    }
+                    html, body, #invoice-capture, .invoice-card, .container {
+                      background: #FFFFFF !important;
+                      background-color: #FFFFFF !important;
+                      color: #000000 !important;
+                      -webkit-text-fill-color: #000000 !important;
+                    }
+                    table, tr, td, th, div, span, p, h1, h2, h3 {
+                      background: #FFFFFF !important;
+                      background-color: #FFFFFF !important;
+                      color: #000000 !important;
+                      -webkit-text-fill-color: #000000 !important;
+                    }
+                  `;
+                  clonedDoc.head.appendChild(style);
+
                   const clonedElem = clonedDoc.getElementById('invoice-capture');
                   if (clonedElem) {
-                    clonedElem.style.backgroundColor = '#FFFFFF';
-                    clonedElem.style.color = '#000000';
-                    const allElements = clonedElem.querySelectorAll('*');
-                    allElements.forEach(function(el) {
-                      if (el.tagName !== 'BUTTON') {
-                        el.style.backgroundColor = el.style.backgroundColor === '#000000' ? '#000000' : '#FFFFFF';
-                        el.style.color = '#000000';
-                        el.style.webkitTextFillColor = '#000000';
-                      }
-                    });
+                    clonedElem.style.setProperty('background-color', '#FFFFFF', 'important');
+                    clonedElem.style.setProperty('background', '#FFFFFF', 'important');
+                    clonedElem.style.setProperty('color', '#000000', 'important');
+                    clonedElem.style.setProperty('-webkit-text-fill-color', '#000000', 'important');
+
+                    const allElements = clonedElem.getElementsByTagName('*');
+                    for (let i = 0; i < allElements.length; i++) {
+                      allElements[i].style.setProperty('background-color', '#FFFFFF', 'important');
+                      allElements[i].style.setProperty('background', '#FFFFFF', 'important');
+                      allElements[i].style.setProperty('color', '#000000', 'important');
+                      allElements[i].style.setProperty('-webkit-text-fill-color', '#000000', 'important');
+                    }
                   }
                 }
               },
