@@ -259,7 +259,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             keyboardType: TextInputType.number,
                             style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                             decoration: InputDecoration(
-                              labelText: 'Alert When <=',
+                              labelText: context.tr('alert_when_threshold'),
                               hintText: 'e.g. 5',
                               prefixIcon: Icon(Icons.warning_amber_rounded, color: AppColors.error),
                             ),

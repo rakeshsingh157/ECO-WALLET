@@ -320,7 +320,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                             keyboardType: TextInputType.number,
                             style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                             decoration: InputDecoration(
-                              labelText: 'Alert When <=',
+                              labelText: context.tr('alert_when_threshold'),
                               prefixIcon: Icon(Icons.warning_amber_rounded, color: AppColors.error),
                             ),
                             validator: (v) {
