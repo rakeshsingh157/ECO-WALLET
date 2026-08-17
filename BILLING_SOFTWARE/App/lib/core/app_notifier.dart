@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'theme.dart';
+import 'localization.dart';
+import '../providers/locale_provider.dart';
 
 enum NotificationType { success, error, warning, info }
 
@@ -19,37 +22,41 @@ class AppNotifier {
 
     scaffoldMessenger.hideCurrentSnackBar();
 
+    String currentLang = 'en';
+    try {
+      currentLang = Provider.of<LocaleProvider>(context, listen: false).locale;
+    } catch (_) {}
+
     final Color bgColor;
     final Color accentColor;
     final IconData iconData;
-    final String defaultTitle;
+    final String defaultTitle = AppLocalization.translate(type.name, locale: currentLang).toUpperCase();
 
     switch (type) {
       case NotificationType.success:
         bgColor = AppColors.isDark ? const Color(0xFF0F3823) : const Color(0xFFE8F5E9);
         accentColor = const Color(0xFF2ECC71);
         iconData = Icons.check_circle_rounded;
-        defaultTitle = 'SUCCESS';
         break;
       case NotificationType.error:
         bgColor = AppColors.isDark ? const Color(0xFF3E1B1B) : const Color(0xFFFFEBEE);
         accentColor = const Color(0xFFE74C3C);
         iconData = Icons.error_rounded;
-        defaultTitle = 'ERROR';
         break;
       case NotificationType.warning:
         bgColor = AppColors.isDark ? const Color(0xFF3D3213) : const Color(0xFFFFF8E1);
         accentColor = const Color(0xFFF39C12);
         iconData = Icons.warning_rounded;
-        defaultTitle = 'WARNING';
         break;
       case NotificationType.info:
         bgColor = AppColors.isDark ? const Color(0xFF162D42) : const Color(0xFFE1F5FE);
         accentColor = const Color(0xFF3498DB);
         iconData = Icons.info_rounded;
-        defaultTitle = 'INFORMATION';
         break;
     }
+
+    final displayTitle = title != null ? AppLocalization.translate(title, locale: currentLang) : defaultTitle;
+    final displayMessage = AppLocalization.translate(message, locale: currentLang);
 
     final snackBar = SnackBar(
       behavior: SnackBarBehavior.floating,
@@ -89,7 +96,7 @@ class AppNotifier {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title ?? defaultTitle,
+                    displayTitle,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
@@ -99,7 +106,7 @@ class AppNotifier {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    message,
+                    displayMessage,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
