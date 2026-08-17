@@ -218,7 +218,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                         Image.asset(MascotAssets.box, width: 80, height: 80),
                         const SizedBox(height: 14),
                         Text(
-                          'No products found',
+                          context.tr('no_products_found'),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -227,7 +227,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Tap + New Product to add items to your shop catalog.',
+                          context.tr('tap_to_add_product'),
                           style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
                         ),
                       ],

@@ -311,7 +311,7 @@ class _PosScreenState extends State<PosScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Align barcode / QR inside frame to auto-add',
+                        context.tr('align_barcode_hint'),
                         style: GoogleFonts.plusJakartaSans(fontSize: 11, color: Colors.white70),
                       ),
                       TextButton.icon(
@@ -323,7 +323,7 @@ class _PosScreenState extends State<PosScreen> {
                           );
                         },
                         icon: const Icon(Icons.add_rounded, size: 16),
-                        label: const Text('Add New Product'),
+                        label: Text(context.tr('add_product')),
                         style: TextButton.styleFrom(foregroundColor: AppColors.chaiGold),
                       ),
                     ],
@@ -449,7 +449,7 @@ class _PosScreenState extends State<PosScreen> {
                         Image.asset(MascotAssets.box, width: 80, height: 80),
                         const SizedBox(height: 12),
                         Text(
-                          'No products available',
+                          context.tr('no_products_available'),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -460,7 +460,7 @@ class _PosScreenState extends State<PosScreen> {
                         ElevatedButton.icon(
                           onPressed: _openBarcodeScanner,
                           icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
-                          label: const Text('SCAN BARCODE TO ADD'),
+                          label: Text(context.tr('scan_barcode_to_add')),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.terracotta,
                             foregroundColor: Colors.white,

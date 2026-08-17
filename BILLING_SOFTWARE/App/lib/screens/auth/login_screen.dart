@@ -101,8 +101,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   assetPath: MascotAssets.shopkeeper,
                   size: 90,
                   speechBubbleText: _selectedLoginType == 0
-                      ? 'Swagat hai! Apni dukaan me login karein'
-                      : 'Namaste! Staff PIN se shop me billing shuru karein',
+                      ? context.tr('login_speech_owner')
+                      : context.tr('login_speech_staff'),
                 ),
                 const SizedBox(height: 16),
 
@@ -117,8 +117,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 Text(
                   _selectedLoginType == 0
-                      ? 'Smart Retail POS & Khata Terminal'
-                      : 'Cashier & Staff Billing Terminal',
+                      ? context.tr('login_subtitle_owner')
+                      : context.tr('login_subtitle_staff'),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -237,7 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         keyboardType: TextInputType.phone,
                         style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
                         decoration: InputDecoration(
-                          labelText: _selectedLoginType == 0 ? 'Owner Mobile Number *' : 'Staff Mobile Number *',
+                          labelText: _selectedLoginType == 0 ? context.tr('owner_mobile_label') : context.tr('staff_mobile_label'),
                           hintText: '9876543210',
                           prefixIcon: Icon(
                             Icons.phone_rounded,
@@ -255,7 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         keyboardType: TextInputType.number,
                         style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                         decoration: InputDecoration(
-                          labelText: _selectedLoginType == 0 ? '4-digit Security PIN *' : '4-digit Staff PIN *',
+                          labelText: _selectedLoginType == 0 ? context.tr('security_pin_label') : context.tr('staff_pin_label'),
                           hintText: '••••',
                           prefixIcon: Icon(
                             Icons.lock_rounded,
@@ -334,7 +334,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
-                      'Ask your store owner to add your mobile number and 4-digit PIN from Settings > Staff & Cashiers.',
+                      context.tr('staff_login_help'),
                       textAlign: TextAlign.center,
                       style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textMuted),
                     ),
