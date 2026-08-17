@@ -11,6 +11,7 @@ import 'providers/supplier_provider.dart';
 import 'providers/expense_provider.dart';
 import 'providers/notification_provider.dart';
 import 'screens/splash_screen.dart';
+import 'widgets/theme_transition_overlay.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,31 +47,12 @@ class DukaanDostApp extends StatelessWidget {
             themeAnimationDuration: const Duration(milliseconds: 400),
             themeAnimationCurve: Curves.easeInOutCubic,
             builder: (context, child) {
-              return AnimatedTheme(
-                data: themeProvider.isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme,
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeInOutCubic,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 450),
-                  switchInCurve: Curves.easeInOutCubic,
-                  switchOutCurve: Curves.easeInOutCubic,
-                  layoutBuilder: (currentChild, previousChildren) {
-                    return Stack(
-                      alignment: Alignment.center,
-                      children: <Widget>[
-                        ...previousChildren,
-                        if (currentChild != null) currentChild,
-                      ],
-                    );
-                  },
-                  transitionBuilder: (Widget child, Animation<double> animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    );
-                  },
+              return ThemeTransitionOverlay(
+                child: AnimatedTheme(
+                  data: themeProvider.isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme,
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeInOutCubic,
                   child: Container(
-                    key: ValueKey<bool>(themeProvider.isDarkMode),
                     color: themeProvider.isDarkMode ? const Color(0xFF111822) : const Color(0xFFFAF8F5),
                     child: ScrollConfiguration(
                       behavior: const ScrollBehavior().copyWith(

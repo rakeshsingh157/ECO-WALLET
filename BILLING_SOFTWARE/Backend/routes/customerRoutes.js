@@ -236,6 +236,45 @@ router.post("/:id/payment", async (req, res) => {
     customer.last_transaction = new Date();
     await customer.save();
 
+    let remainingToCover = paymentAmount;
+    const pendingBills = await Bill.find({
+      $or: [
+        { khata_customer_id: customer.customer_id },
+        { customer_phone: customer.phone },
+        { customer_name: customer.name },
+      ],
+      status: "pending",
+    }).sort({ createdAt: 1 });
+
+    for (const bill of pendingBills) {
+      if (remainingToCover <= 0 && newDue > 0) break;
+      if (remainingToCover >= bill.total_amount || newDue === 0) {
+        bill.status = "completed";
+        bill.payment_mode = payment_mode || "cash";
+        await bill.save();
+        remainingToCover -= bill.total_amount;
+      }
+    }
+
+    if (newDue === 0) {
+      await Bill.updateMany(
+        {
+          $or: [
+            { khata_customer_id: customer.customer_id },
+            { customer_phone: customer.phone },
+            { customer_name: customer.name },
+          ],
+          status: "pending",
+        },
+        {
+          $set: {
+            status: "completed",
+            payment_mode: payment_mode || "cash",
+          },
+        }
+      );
+    }
+
     const ledger = await KhataLedger.create({
       customer_id: customer.customer_id,
       type: "payment",

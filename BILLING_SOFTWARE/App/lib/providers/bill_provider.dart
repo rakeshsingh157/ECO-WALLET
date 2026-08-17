@@ -132,12 +132,6 @@ class BillProvider extends ChangeNotifier {
               );
             }).toList();
 
-            final modeStr = b["payment_mode"]?.toString().toLowerCase() ?? "cash";
-            PaymentMode mode = PaymentMode.cash;
-            if (modeStr.contains("upi")) mode = PaymentMode.upi;
-            if (modeStr.contains("eco") || modeStr.contains("wallet")) mode = PaymentMode.ecoWallet;
-            if (modeStr.contains("pending") || modeStr.contains("khata")) mode = PaymentMode.pending;
-
             final statusStr = b["status"]?.toString().toLowerCase() ?? "completed";
             BillStatus status = BillStatus.completed;
             if (statusStr == "pending") {
@@ -146,6 +140,14 @@ class BillProvider extends ChangeNotifier {
               status = BillStatus.returned;
             } else if (statusStr == "partially_returned" || statusStr == "partiallyreturned") {
               status = BillStatus.partiallyReturned;
+            }
+
+            final modeStr = b["payment_mode"]?.toString().toLowerCase() ?? "cash";
+            PaymentMode mode = PaymentMode.cash;
+            if (modeStr.contains("upi")) mode = PaymentMode.upi;
+            if (modeStr.contains("eco") || modeStr.contains("wallet")) mode = PaymentMode.ecoWallet;
+            if (modeStr.contains("pending") || modeStr.contains("khata")) {
+              mode = status == BillStatus.completed ? PaymentMode.cash : PaymentMode.pending;
             }
 
             final refundedAmt = (b["refunded_amount"] as num?)?.toDouble() ?? 0.0;

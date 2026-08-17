@@ -7,6 +7,7 @@ import '../../core/localization.dart';
 import '../../models/customer.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/customer_provider.dart';
+import '../../providers/bill_provider.dart';
 import '../../providers/theme_provider.dart';
 import 'customer_details_screen.dart';
 
@@ -195,6 +196,7 @@ class _KhataScreenState extends State<KhataScreen> {
                             }
 
                             final auth = context.read<AuthProvider>();
+                            final billProvider = context.read<BillProvider>();
                             setModalState(() => isSaving = true);
 
                             try {
@@ -219,6 +221,8 @@ class _KhataScreenState extends State<KhataScreen> {
                               } else if (selectedCustomer != null) {
                                 await customerProvider.addCredit(auth.apiService, selectedCustomer!.id, amt);
                               }
+
+                              billProvider.fetchBills(auth.apiService);
 
                               if (ctx.mounted) {
                                 Navigator.pop(ctx);

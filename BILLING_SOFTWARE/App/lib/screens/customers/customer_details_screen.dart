@@ -9,6 +9,7 @@ import '../../core/localization.dart';
 import '../../models/customer.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/customer_provider.dart';
+import '../../providers/bill_provider.dart';
 import '../../providers/theme_provider.dart';
 
 class CustomerDetailsScreen extends StatefulWidget {
@@ -260,9 +261,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
                       setDialogState(() => isRecording = true);
                       final auth = context.read<AuthProvider>();
+                      final custProvider = context.read<CustomerProvider>();
+                      final billProvider = context.read<BillProvider>();
                       final note = noteCtrl.text.trim().isNotEmpty ? noteCtrl.text.trim() : 'Khata settlement';
 
-                      final success = await context.read<CustomerProvider>().recordPayment(
+                      final success = await custProvider.recordPayment(
                         auth.apiService,
                         _customer.id,
                         amt,
@@ -275,6 +278,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                           _customer.dueAmount = (_customer.dueAmount - amt) < 0 ? 0 : _customer.dueAmount - amt;
                         });
                         _loadTransactions();
+                        billProvider.fetchBills(auth.apiService);
+                        custProvider.fetchCustomers(auth.apiService);
                         if (ctx.mounted) {
                           Navigator.pop(ctx);
                         }
