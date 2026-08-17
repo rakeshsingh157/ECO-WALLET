@@ -49,52 +49,42 @@ async function transcribeWithSarvam(base64Audio, languageCode, format) {
     return { transcript: null, error: "SARVAM_API_KEY is not configured in backend environment variables" };
   }
 
-  const modelsToTry = [
-    process.env.SARVAM_MODEL || "saarika:v2.5",
-    "saaras:v4",
-    "saaras:v3"
-  ];
-
+  const modelName = process.env.SARVAM_MODEL || "saaras:v4";
   const audioBuffer = Buffer.from(base64Audio, "base64");
   const mimeType = format === "wav" ? "audio/wav" : (format === "aac" ? "audio/aac" : (format === "mp3" ? "audio/mpeg" : "audio/x-m4a"));
   const fileName = `speech.${format || "m4a"}`;
 
-  let lastError = null;
-
-  for (const modelName of modelsToTry) {
-    try {
-      const blob = new Blob([audioBuffer], { type: mimeType });
-      const formData = new FormData();
-      formData.append("file", blob, fileName);
-      formData.append("model", modelName);
-      if (languageCode && languageCode !== "unknown") {
-        formData.append("language_code", languageCode);
-      }
-
-      const response = await fetch("https://api.sarvam.ai/speech-to-text", {
-        method: "POST",
-        headers: {
-          "api-subscription-key": sarvamKey.trim()
-        },
-        body: formData
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const transcriptText = data.transcript || data.text || (data.results && data.results[0] && data.results[0].transcript);
-        if (transcriptText && transcriptText.trim().length > 0) {
-          return { transcript: transcriptText.trim(), error: null, model: modelName };
-        }
-      } else {
-        const errText = await response.text();
-        lastError = `Sarvam API (${modelName}) returned ${response.status}: ${errText}`;
-      }
-    } catch (e) {
-      lastError = e.message;
+  try {
+    const blob = new Blob([audioBuffer], { type: mimeType });
+    const formData = new FormData();
+    formData.append("file", blob, fileName);
+    formData.append("model", modelName);
+    if (languageCode && languageCode !== "unknown") {
+      formData.append("language_code", languageCode);
     }
-  }
 
-  return { transcript: null, error: lastError };
+    const response = await fetch("https://api.sarvam.ai/speech-to-text", {
+      method: "POST",
+      headers: {
+        "api-subscription-key": sarvamKey.trim()
+      },
+      body: formData
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const transcriptText = data.transcript || data.text || (data.results && data.results[0] && data.results[0].transcript);
+      if (transcriptText && transcriptText.trim().length > 0) {
+        return { transcript: transcriptText.trim(), error: null, model: modelName };
+      }
+      return { transcript: null, error: "No speech recognized in audio", model: modelName };
+    } else {
+      const errText = await response.text();
+      return { transcript: null, error: `Sarvam API (${modelName}) returned ${response.status}: ${errText}`, model: modelName };
+    }
+  } catch (e) {
+    return { transcript: null, error: e.message, model: modelName };
+  }
 }
 
 function extractJSONFromText(rawText) {
