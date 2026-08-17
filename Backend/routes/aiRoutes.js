@@ -50,11 +50,10 @@ async function transcribeWithSarvam(base64Audio, languageCode, format) {
   }
 
   const modelsToTry = [
-    process.env.SARVAM_MODEL || "saaras:v4",
+    process.env.SARVAM_MODEL || "saarika:v2.5",
+    "saaras:v4",
     "saaras:v3",
-    "saarika:v2.5",
-    "saarika:flash",
-    "saarika:v2"
+    "saarika:flash"
   ];
 
   const audioBuffer = Buffer.from(base64Audio, "base64");
@@ -83,8 +82,9 @@ async function transcribeWithSarvam(base64Audio, languageCode, format) {
 
       if (response.ok) {
         const data = await response.json();
-        if (data && data.transcript && data.transcript.trim().length > 0) {
-          return { transcript: data.transcript.trim(), error: null, model: modelName };
+        const transcriptText = data.transcript || data.text || (data.results && data.results[0] && data.results[0].transcript);
+        if (transcriptText && transcriptText.trim().length > 0) {
+          return { transcript: transcriptText.trim(), error: null, model: modelName };
         }
       } else {
         const errText = await response.text();
