@@ -208,7 +208,7 @@ class _CustomerPickerScreenState extends State<CustomerPickerScreen> {
                     InkWell(
                       onTap: _showAddNewCustomer,
                       child: Text(
-                        '+ Add New Customer',
+                        '+ ${context.tr('add_new_customer')}',
                         style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.terracotta),
                       ),
                     ),

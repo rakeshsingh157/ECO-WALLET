@@ -836,140 +836,144 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ],
             ],
 
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _selectedMode == PaymentMode.pending ? AppColors.chaiGold : AppColors.borderSubtle,
-                  width: _selectedMode == PaymentMode.pending ? 1.5 : 1,
+            if (_selectedMode != PaymentMode.ecoWallet) ...[
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _selectedMode == PaymentMode.pending ? AppColors.chaiGold : AppColors.borderSubtle,
+                    width: _selectedMode == PaymentMode.pending ? 1.5 : 1,
+                  ),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _selectedMode == PaymentMode.pending ? 'KHATA CUSTOMER (REQUIRED) *' : 'ATTACH CUSTOMER (OPTIONAL)',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.2,
-                          color: _selectedMode == PaymentMode.pending ? AppColors.chaiGold : AppColors.textSecondary,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _selectedMode == PaymentMode.pending
+                              ? context.tr('khata_customer_required').toUpperCase()
+                              : context.tr('attach_customer_optional').toUpperCase(),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.2,
+                            color: _selectedMode == PaymentMode.pending ? AppColors.chaiGold : AppColors.textSecondary,
+                          ),
                         ),
-                      ),
+                        InkWell(
+                          onTap: _openCustomerPicker,
+                          child: Text(
+                            _selectedCustomer != null ? context.tr('change_customer') : context.tr('select_customer'),
+                            style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.terracotta),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    if (_selectedCustomer != null) ...[
                       InkWell(
                         onTap: _openCustomerPicker,
-                        child: Text(
-                          _selectedCustomer != null ? 'Change Customer' : 'Select Customer',
-                          style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.terracotta),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryContainer.withAlpha(50),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.borderSubtle),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryContainer,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    _selectedCustomer!.name.isNotEmpty ? _selectedCustomer!.name[0].toUpperCase() : 'C',
+                                    style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.terracotta),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _selectedCustomer!.name,
+                                      style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                    ),
+                                    Text(
+                                      _selectedCustomer!.phone,
+                                      style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
+                                    ),
+                                    if (_selectedCustomer!.address.isNotEmpty) ...[
+                                      Text(
+                                        _selectedCustomer!.address,
+                                        style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  if (_selectedCustomer!.dueAmount > 0) ...[
+                                    Text(
+                                      'Due: ₹${_selectedCustomer!.dueAmount.toStringAsFixed(0)}',
+                                      style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.chaiGold),
+                                    ),
+                                  ],
+                                  const SizedBox(height: 2),
+                                  Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textSecondary),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      OutlinedButton.icon(
+                        onPressed: _openCustomerPicker,
+                        icon: const Icon(Icons.person_search_rounded, size: 18),
+                        label: Text(context.tr('search_customer')),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 48),
+                          side: BorderSide(color: AppColors.borderSubtle),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  if (_selectedCustomer != null) ...[
-                    InkWell(
-                      onTap: _openCustomerPicker,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryContainer.withAlpha(50),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.borderSubtle),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryContainer,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  _selectedCustomer!.name.isNotEmpty ? _selectedCustomer!.name[0].toUpperCase() : 'C',
-                                  style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.terracotta),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _selectedCustomer!.name,
-                                    style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                                  ),
-                                  Text(
-                                    _selectedCustomer!.phone,
-                                    style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
-                                  ),
-                                  if (_selectedCustomer!.address.isNotEmpty) ...[
-                                    Text(
-                                      _selectedCustomer!.address,
-                                      style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                if (_selectedCustomer!.dueAmount > 0) ...[
-                                  Text(
-                                    'Due: ₹${_selectedCustomer!.dueAmount.toStringAsFixed(0)}',
-                                    style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.chaiGold),
-                                  ),
-                                ],
-                                const SizedBox(height: 2),
-                                Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textSecondary),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ] else ...[
-                    OutlinedButton.icon(
-                      onPressed: _openCustomerPicker,
-                      icon: const Icon(Icons.person_search_rounded, size: 18),
-                      label: Text(context.tr('search_customer')),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 48),
-                        side: BorderSide(color: AppColors.borderSubtle),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
                   ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _processPayment,
-                icon: const Icon(Icons.check_circle_rounded, size: 18),
-                label: Text(context.tr('pay_now').toUpperCase()),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.terracotta,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _processPayment,
+                  icon: const Icon(Icons.check_circle_rounded, size: 18),
+                  label: Text(context.tr('pay_now').toUpperCase()),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.terracotta,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
           ],
         ),
       ),
