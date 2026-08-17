@@ -58,7 +58,7 @@ async function transcribeWithSarvam(base64Audio, languageCode, format) {
   ];
 
   const audioBuffer = Buffer.from(base64Audio, "base64");
-  const mimeType = format === "wav" ? "audio/wav" : (format === "m4a" ? "audio/m4a" : "audio/aac");
+  const mimeType = format === "wav" ? "audio/wav" : (format === "aac" ? "audio/aac" : (format === "mp3" ? "audio/mpeg" : "audio/x-m4a"));
   const fileName = `speech.${format || "m4a"}`;
 
   let lastError = null;
