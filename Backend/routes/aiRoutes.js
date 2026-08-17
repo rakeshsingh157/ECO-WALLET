@@ -50,10 +50,10 @@ async function transcribeWithSarvam(base64Audio, languageCode, format) {
   }
 
   const modelsToTry = [
-    process.env.SARVAM_MODEL || "saarika:v2.5",
-    "saarika:flash",
+    process.env.SARVAM_MODEL || "saaras:v4",
     "saaras:v3",
-    "saaras:v4",
+    "saarika:v2.5",
+    "saarika:flash",
     "saarika:v2"
   ];
 
