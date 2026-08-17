@@ -236,14 +236,23 @@ router.post("/:id/payment", async (req, res) => {
     customer.last_transaction = new Date();
     await customer.save();
 
+    const cleanName = (customer.name || "").trim();
+    const escapedName = cleanName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const nameRegex = cleanName ? new RegExp(`^${escapedName}`, "i") : null;
+    const cleanPhone = (customer.phone || "").trim();
+
+    const customerMatchConditions = [
+      ...(customer.customer_id ? [{ khata_customer_id: customer.customer_id }] : []),
+      ...(customer._id ? [{ khata_customer_id: customer._id.toString() }] : []),
+      ...(cleanPhone.length >= 8 ? [{ customer_phone: cleanPhone }] : []),
+      ...(cleanName ? [{ customer_name: cleanName }] : []),
+      ...(nameRegex ? [{ customer_name: { $regex: nameRegex } }] : []),
+    ];
+
     let remainingToCover = paymentAmount;
     const pendingBills = await Bill.find({
-      $or: [
-        { khata_customer_id: customer.customer_id },
-        { customer_phone: customer.phone },
-        { customer_name: customer.name },
-      ],
       status: "pending",
+      ...(customerMatchConditions.length > 0 ? { $or: customerMatchConditions } : {}),
     }).sort({ createdAt: 1 });
 
     for (const bill of pendingBills) {
@@ -256,15 +265,11 @@ router.post("/:id/payment", async (req, res) => {
       }
     }
 
-    if (newDue === 0) {
+    if (newDue === 0 && customerMatchConditions.length > 0) {
       await Bill.updateMany(
         {
-          $or: [
-            { khata_customer_id: customer.customer_id },
-            { customer_phone: customer.phone },
-            { customer_name: customer.name },
-          ],
           status: "pending",
+          $or: customerMatchConditions,
         },
         {
           $set: {

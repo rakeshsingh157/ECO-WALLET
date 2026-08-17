@@ -114,6 +114,48 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.put("/:id", async (req, res) => {
+  try {
+    const { title, amount, category, payment_mode, paymentMode, notes } = req.body;
+    const query = {
+      $or: [
+        { expense_id: req.params.id },
+        ...(req.params.id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: req.params.id }] : []),
+      ],
+    };
+
+    const updateData = {};
+    if (title) updateData.title = title.trim();
+    if (amount !== undefined) updateData.amount = Number(amount);
+    if (category) updateData.category = category;
+    if (payment_mode || paymentMode) updateData.payment_mode = payment_mode || paymentMode;
+    if (notes !== undefined) updateData.notes = notes ? notes.trim() : "";
+
+    const updated = await Expense.findOneAndUpdate(query, { $set: updateData }, { new: true });
+    if (!updated) {
+      return res.status(404).json({ success: false, message: "Expense not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Expense updated successfully",
+      data: {
+        id: updated.expense_id,
+        expense_id: updated.expense_id,
+        title: updated.title,
+        amount: updated.amount,
+        category: updated.category,
+        payment_mode: updated.payment_mode,
+        paymentMode: updated.payment_mode,
+        notes: updated.notes,
+        date: updated.date,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 router.delete("/:id", async (req, res) => {
   try {
     const query = {

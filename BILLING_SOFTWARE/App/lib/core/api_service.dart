@@ -503,6 +503,27 @@ class ApiService {
     }
   }
 
+  Future<bool> updateExpense(Expense expense) async {
+    final url = Uri.parse("$_cleanBase/expenses/${expense.id}");
+    try {
+      final response = await http.put(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          "title": expense.title,
+          "amount": expense.amount,
+          "category": expense.category,
+          "payment_mode": expense.paymentMode,
+          "notes": expense.notes,
+        }),
+      ).timeout(requestTimeout);
+
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<bool> deleteExpense(String expenseId) async {
     final url = Uri.parse("$_cleanBase/expenses/$expenseId");
     try {

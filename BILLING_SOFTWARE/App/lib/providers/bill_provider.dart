@@ -16,11 +16,39 @@ class BillProvider extends ChangeNotifier {
   List<BillItem> get currentItems => List.unmodifiable(_currentItems);
   List<Bill> get completedBills => List.unmodifiable(_completedBills);
 
-  double get todaySales => _todaySales > 0 ? _todaySales : _completedBills
-      .where((b) => b.status == BillStatus.completed)
-      .fold(0, (sum, b) => sum + b.totalAmount);
+  double get todaySales {
+    if (_todaySales > 0) return _todaySales;
+    final now = DateTime.now();
+    return _completedBills
+        .where((b) =>
+            b.status == BillStatus.completed ||
+            b.status == BillStatus.partiallyReturned)
+        .where((b) =>
+            b.timestamp.year == now.year &&
+            b.timestamp.month == now.month &&
+            b.timestamp.day == now.day)
+        .fold(0.0, (sum, b) => sum + (b.totalAmount - b.refundedAmount));
+  }
 
-  int get todayBillCount => _todayBillCount > 0 ? _todayBillCount : _completedBills.length;
+  double get totalSales => _completedBills
+      .where((b) =>
+          b.status == BillStatus.completed ||
+          b.status == BillStatus.partiallyReturned)
+      .fold(0.0, (sum, b) => sum + (b.totalAmount - b.refundedAmount));
+
+  int get todayBillCount {
+    if (_todayBillCount > 0) return _todayBillCount;
+    final now = DateTime.now();
+    return _completedBills
+        .where((b) =>
+            b.status == BillStatus.completed ||
+            b.status == BillStatus.partiallyReturned)
+        .where((b) =>
+            b.timestamp.year == now.year &&
+            b.timestamp.month == now.month &&
+            b.timestamp.day == now.day)
+        .length;
+  }
   bool get isLoadingBills => _isLoadingBills;
 
   double get currentTotal => _currentItems.fold(0, (sum, item) => sum + item.totalPrice);
@@ -344,6 +372,8 @@ class BillProvider extends ChangeNotifier {
   Bill completeManualBill(
     PaymentMode mode, {
     String? customerName,
+    String? customerPhone,
+    String? khataCustomerId,
     ApiService? apiService,
     String? shopName,
     String? ownerName,
@@ -360,6 +390,7 @@ class BillProvider extends ChangeNotifier {
       paymentMode: mode,
       status: mode == PaymentMode.pending ? BillStatus.pending : BillStatus.completed,
       customerName: customerName ?? "Counter Customer",
+      customerPhone: customerPhone,
     );
 
     _completedBills.insert(0, newBill);
@@ -375,6 +406,8 @@ class BillProvider extends ChangeNotifier {
         totalAmount: newBill.totalAmount,
         paymentMode: mode.name,
         customerName: newBill.customerName,
+        customerPhone: customerPhone,
+        khataCustomerId: khataCustomerId,
         shopName: shopName,
         ownerName: ownerName,
         shopPhone: phone,

@@ -46,6 +46,25 @@ router.get("/", async (req, res) => {
     const limitNum = Math.min(500, Math.max(1, parseInt(limit) || 100));
     const skip = (pageNum - 1) * limitNum;
 
+    const clearedCustomers = await Customer.find({ due_amount: { $lte: 0 } }).lean();
+    if (clearedCustomers.length > 0) {
+      const matchQueries = [];
+      for (const cust of clearedCustomers) {
+        if (cust.customer_id) matchQueries.push({ khata_customer_id: cust.customer_id });
+        if (cust.phone && cust.phone.length >= 8) matchQueries.push({ customer_phone: cust.phone });
+        if (cust.name && cust.name.trim().length > 0) {
+          const esc = cust.name.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          matchQueries.push({ customer_name: new RegExp(`^${esc}`, "i") });
+        }
+      }
+      if (matchQueries.length > 0) {
+        await Bill.updateMany(
+          { status: "pending", $or: matchQueries },
+          { $set: { status: "completed", payment_mode: "cash" } }
+        );
+      }
+    }
+
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     const [bills, totalCount, todayBillsAgg, totalSalesAgg] = await Promise.all([

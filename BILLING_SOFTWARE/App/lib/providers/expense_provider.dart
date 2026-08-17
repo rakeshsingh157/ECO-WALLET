@@ -36,6 +36,17 @@ class ExpenseProvider with ChangeNotifier {
     return success;
   }
 
+  Future<bool> updateExpense(ApiService apiService, Expense expense) async {
+    final idx = _expenses.indexWhere((e) => e.id == expense.id);
+    if (idx >= 0) {
+      _expenses[idx] = expense;
+      notifyListeners();
+    }
+
+    final success = await apiService.updateExpense(expense);
+    return success;
+  }
+
   Future<bool> removeExpense(ApiService apiService, String id) async {
     _expenses.removeWhere((e) => e.id == id);
     notifyListeners();

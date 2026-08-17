@@ -170,6 +170,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
       final bill = billProvider.completeManualBill(
         PaymentMode.upi,
         customerName: _selectedCustomer?.name,
+        customerPhone: _selectedCustomer?.phone,
+        khataCustomerId: _selectedCustomer?.id,
         apiService: apiService,
         shopName: auth.shopName,
         ownerName: auth.ownerName,
@@ -188,7 +190,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
       }
       final bill = billProvider.completeManualBill(
         PaymentMode.pending,
-        customerName: _selectedCustomer != null ? '${_selectedCustomer!.name} (Khata)' : 'Khata Customer',
+        customerName: _selectedCustomer?.name ?? 'Khata Customer',
+        customerPhone: _selectedCustomer?.phone,
+        khataCustomerId: _selectedCustomer?.id,
         apiService: apiService,
         shopName: auth.shopName,
         ownerName: auth.ownerName,
@@ -205,6 +209,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
       final bill = billProvider.completeManualBill(
         _selectedMode,
         customerName: _selectedCustomer?.name,
+        customerPhone: _selectedCustomer?.phone,
+        khataCustomerId: _selectedCustomer?.id,
         apiService: apiService,
         shopName: auth.shopName,
         ownerName: auth.ownerName,

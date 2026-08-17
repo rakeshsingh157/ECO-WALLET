@@ -19,7 +19,6 @@ class _ThemeTransitionOverlayState extends State<ThemeTransitionOverlay>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<double> _rotationAnimation;
-  late Animation<double> _progressAnimation;
 
   bool _isAnimating = false;
   bool _targetDarkMode = false;
@@ -30,39 +29,39 @@ class _ThemeTransitionOverlayState extends State<ThemeTransitionOverlay>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 4000),
+      duration: const Duration(milliseconds: 2000),
     );
 
     _fadeAnimation = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween<double>(begin: 0.0, end: 1.0).chain(CurveTween(curve: Curves.easeOutCubic)),
-        weight: 12,
+        weight: 15,
       ),
       TweenSequenceItem(
         tween: ConstantTween<double>(1.0),
-        weight: 76,
+        weight: 70,
       ),
       TweenSequenceItem(
         tween: Tween<double>(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.easeInCubic)),
-        weight: 12,
+        weight: 15,
       ),
     ]).animate(_controller);
 
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.2, end: 1.1).chain(CurveTween(curve: Curves.easeOutBack)),
-        weight: 25,
+        tween: Tween<double>(begin: 0.3, end: 1.08).chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 30,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.1, end: 1.0).chain(CurveTween(curve: Curves.easeInOut)),
-        weight: 15,
+        tween: Tween<double>(begin: 1.08, end: 1.0).chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 20,
       ),
       TweenSequenceItem(
         tween: ConstantTween<double>(1.0),
-        weight: 45,
+        weight: 35,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 1.3).chain(CurveTween(curve: Curves.easeInQuad)),
+        tween: Tween<double>(begin: 1.0, end: 1.25).chain(CurveTween(curve: Curves.easeInQuad)),
         weight: 15,
       ),
     ]).animate(_controller);
@@ -73,14 +72,6 @@ class _ThemeTransitionOverlayState extends State<ThemeTransitionOverlay>
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeInOutCubic,
-    ));
-
-    _progressAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.linear,
     ));
 
     _controller.addStatusListener((status) {
@@ -134,7 +125,6 @@ class _ThemeTransitionOverlayState extends State<ThemeTransitionOverlay>
               animation: _controller,
               builder: (context, _) {
                 final isDark = _targetDarkMode;
-                final primaryColor = isDark ? const Color(0xFFFF8A65) : const Color(0xFFFF6E40);
                 final bgColor = isDark
                     ? const Color(0xFF111822).withValues(alpha: 0.96 * _fadeAnimation.value)
                     : const Color(0xFFFAF8F5).withValues(alpha: 0.96 * _fadeAnimation.value);
@@ -217,7 +207,7 @@ class _ThemeTransitionOverlayState extends State<ThemeTransitionOverlay>
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 28),
+                            const SizedBox(height: 24),
                             Text(
                               isDark ? 'SWITCHING TO DARK MODE' : 'SWITCHING TO LIGHT MODE',
                               style: GoogleFonts.plusJakartaSans(
@@ -228,7 +218,7 @@ class _ThemeTransitionOverlayState extends State<ThemeTransitionOverlay>
                                 decoration: TextDecoration.none,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 6),
                             Text(
                               isDark ? 'Optimizing for low-light comfort' : 'Optimizing for daytime clarity',
                               style: GoogleFonts.plusJakartaSans(
@@ -236,31 +226,6 @@ class _ThemeTransitionOverlayState extends State<ThemeTransitionOverlay>
                                 fontWeight: FontWeight.w500,
                                 color: subTextColor,
                                 decoration: TextDecoration.none,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            Container(
-                              width: 180,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF293649) : const Color(0xFFE8E4DC),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              alignment: Alignment.centerLeft,
-                              child: FractionallySizedBox(
-                                widthFactor: _progressAnimation.value.clamp(0.0, 1.0),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: primaryColor,
-                                    borderRadius: BorderRadius.circular(10),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: primaryColor.withValues(alpha: 0.5),
-                                        blurRadius: 6,
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ),
                             ),
                           ],
