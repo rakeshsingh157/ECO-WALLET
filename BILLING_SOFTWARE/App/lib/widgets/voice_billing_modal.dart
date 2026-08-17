@@ -45,7 +45,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
 
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.25).animate(
@@ -127,14 +127,6 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
       if (result.success && result.matched.isNotEmpty) {
         widget.onAddToCart(result.matched, result.unmatched);
       }
-    }
-  }
-
-  void _toggleListening() async {
-    if (_isListening) {
-      _stopVoiceAndProcess();
-    } else {
-      _startVoiceListening();
     }
   }
 
@@ -469,7 +461,18 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
             ] else ...[
               Center(
                 child: GestureDetector(
-                  onTap: _toggleListening,
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          context.tr('tap_and_hold_to_speak'),
+                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+                        ),
+                        duration: const Duration(seconds: 2),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
                   onLongPressStart: (_) => _startVoiceListening(),
                   onLongPressEnd: (_) => _stopVoiceAndProcess(),
                   child: AnimatedBuilder(
@@ -478,17 +481,17 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
                       return Transform.scale(
                         scale: _isListening ? _scaleAnimation.value : 1.0,
                         child: Container(
-                          width: 78,
-                          height: 78,
+                          width: 82,
+                          height: 82,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: _isListening ? AppColors.terracotta : AppColors.terracotta.withValues(alpha: 0.12),
                             boxShadow: _isListening
                                 ? [
                                     BoxShadow(
-                                      color: AppColors.terracotta.withValues(alpha: 0.45),
-                                      blurRadius: 24,
-                                      spreadRadius: 6,
+                                      color: AppColors.terracotta.withValues(alpha: 0.5),
+                                      blurRadius: 26,
+                                      spreadRadius: 8,
                                     ),
                                   ]
                                 : [],
@@ -496,7 +499,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
                           child: Icon(
                             _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
                             color: _isListening ? Colors.white : AppColors.terracotta,
-                            size: 34,
+                            size: 36,
                           ),
                         ),
                       );
