@@ -379,7 +379,7 @@ class _KhataScreenState extends State<KhataScreen> {
               child: Row(
                 children: [
                   ChoiceChip(
-                    label: Text('Pending Dues (${pendingCustomers.length})'),
+                    label: Text('${context.tr('pending_khata')} (${pendingCustomers.length})'),
                     selected: _selectedFilterIndex == 0,
                     selectedColor: AppColors.terracotta,
                     labelStyle: TextStyle(
@@ -391,7 +391,7 @@ class _KhataScreenState extends State<KhataScreen> {
                   ),
                   const SizedBox(width: 8),
                   ChoiceChip(
-                    label: Text('Cleared / Paid (${settledCustomers.length})'),
+                    label: Text('${context.tr('settled')} (${settledCustomers.length})'),
                     selected: _selectedFilterIndex == 1,
                     selectedColor: AppColors.forestMint,
                     labelStyle: TextStyle(
@@ -403,7 +403,7 @@ class _KhataScreenState extends State<KhataScreen> {
                   ),
                   const SizedBox(width: 8),
                   ChoiceChip(
-                    label: Text('All (${allCustomers.length})'),
+                    label: Text('${context.tr('all')} (${allCustomers.length})'),
                     selected: _selectedFilterIndex == 2,
                     selectedColor: AppColors.textPrimary,
                     labelStyle: TextStyle(
@@ -432,14 +432,14 @@ class _KhataScreenState extends State<KhataScreen> {
                                 Image.asset(MascotAssets.shopkeeper, width: 80, height: 80),
                                 const SizedBox(height: 14),
                                 Text(
-                                  _selectedFilterIndex == 0 ? 'No Pending Udhar!' : 'No Customers Found',
+                                  _selectedFilterIndex == 0 ? context.tr('all_dues_cleared') : context.tr('no_customers_found'),
                                   style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   _selectedFilterIndex == 0
-                                      ? 'All customer dues have been cleared. Outstanding credit balance is zero.'
-                                      : 'Add customers or record khata transactions to get started.',
+                                      ? context.tr('all_dues_cleared')
+                                      : context.tr('no_customers_found'),
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
                                 ),

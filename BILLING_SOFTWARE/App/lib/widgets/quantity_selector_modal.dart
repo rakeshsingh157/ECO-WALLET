@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/product.dart';
 import '../core/theme.dart';
+import '../core/localization.dart';
 
 class QuantitySelectorModal extends StatefulWidget {
   final Product product;
@@ -344,7 +345,7 @@ class _QuantitySelectorModalState extends State<QuantitySelectorModal> {
                 ),
               ] else ...[
                 Text(
-                  'ENTER CUSTOMER RUPEES (₹)',
+                  context.tr('enter_amount').toUpperCase(),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
@@ -373,7 +374,7 @@ class _QuantitySelectorModalState extends State<QuantitySelectorModal> {
                   autofocus: true,
                   style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                   decoration: InputDecoration(
-                    labelText: 'Rupees Amount (₹)',
+                    labelText: context.tr('amount'),
                     hintText: 'e.g. 20',
                     prefixText: '₹ ',
                     filled: true,
@@ -400,7 +401,7 @@ class _QuantitySelectorModalState extends State<QuantitySelectorModal> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'CALCULATED QUANTITY',
+                          context.tr('quantity').toUpperCase(),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
@@ -422,7 +423,7 @@ class _QuantitySelectorModalState extends State<QuantitySelectorModal> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          'TOTAL AMOUNT',
+                          context.tr('total').toUpperCase(),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
@@ -461,7 +462,7 @@ class _QuantitySelectorModalState extends State<QuantitySelectorModal> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   child: Text(
-                    'ADD TO BILL - ₹${_computedPrice.toStringAsFixed(2)}',
+                    '${context.tr('add_to_bill').toUpperCase()} - ₹${_computedPrice.toStringAsFixed(2)}',
                     style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                   ),
                 ),

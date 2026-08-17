@@ -50,6 +50,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   void _giveCredit() {
+    final customerProvider = context.read<CustomerProvider>();
+    final liveCustomer = customerProvider.customers.firstWhere(
+      (c) => c.id == _customer.id || c.phone == _customer.phone,
+      orElse: () => _customer,
+    );
     final amountCtrl = TextEditingController();
     final noteCtrl = TextEditingController(text: 'Store goods on credit');
 
@@ -59,17 +64,17 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Add Credit / Khata Entry',
+          context.tr('add_credit_entry'),
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Giving goods on credit (Udhar) to ${_customer.name}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
+            Text('Giving goods on credit (Udhar) to ${liveCustomer.name}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
             const SizedBox(height: 8),
             Text(
-              'Current Balance: ₹${_customer.dueAmount.toStringAsFixed(0)}',
+              'Current Balance: ₹${liveCustomer.dueAmount.toStringAsFixed(0)}',
               style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.chaiGold),
             ),
             const SizedBox(height: 14),
@@ -91,7 +96,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+            child: Text(context.tr('cancel'), style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -101,15 +106,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 final note = noteCtrl.text.trim().isNotEmpty ? noteCtrl.text.trim() : 'Store goods credit';
                 await context.read<CustomerProvider>().addCredit(
                   auth.apiService,
-                  _customer.id,
+                  liveCustomer.id,
                   amt,
                   note: note,
                 );
-                setState(() {
-                  _customer.dueAmount = _customer.dueAmount + amt;
-                  _customer.totalSpent = _customer.totalSpent + amt;
-                  _customer.totalOrders = _customer.totalOrders + 1;
-                });
                 _loadTransactions();
                 if (ctx.mounted) {
                   Navigator.pop(ctx);
@@ -117,14 +117,14 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 if (mounted) {
                   AppNotifier.success(
                     context,
-                    'Added ₹${amt.toStringAsFixed(0)} credit for ${_customer.name}',
+                    'Added ₹${amt.toStringAsFixed(0)} credit for ${liveCustomer.name}',
                     title: 'KHATA UPDATED',
                   );
                 }
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.terracotta, foregroundColor: Colors.white),
-            child: const Text('SAVE KHATA ENTRY'),
+            child: Text(context.tr('save').toUpperCase()),
           ),
         ],
       ),
@@ -132,16 +132,22 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   void _recordPayment() {
-    if (_customer.dueAmount <= 0) {
+    final customerProvider = context.read<CustomerProvider>();
+    final liveCustomer = customerProvider.customers.firstWhere(
+      (c) => c.id == _customer.id || c.phone == _customer.phone,
+      orElse: () => _customer,
+    );
+
+    if (liveCustomer.dueAmount <= 0) {
       AppNotifier.info(
         context,
-        '${_customer.name} has no outstanding pending dues',
+        '${liveCustomer.name} has no outstanding pending dues',
         title: 'NO DUES',
       );
       return;
     }
 
-    final amountCtrl = TextEditingController(text: _customer.dueAmount > 0 ? _customer.dueAmount.toStringAsFixed(0) : '');
+    final amountCtrl = TextEditingController(text: liveCustomer.dueAmount > 0 ? liveCustomer.dueAmount.toStringAsFixed(0) : '');
     final noteCtrl = TextEditingController(text: 'Khata settlement');
     String selectedMode = 'cash';
     bool isRecording = false;
@@ -153,14 +159,14 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
-            'Collect Khata Payment',
+            context.tr('collect_due'),
             style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Receiving credit payment from ${_customer.name}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
+              Text('Receiving credit payment from ${liveCustomer.name}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -177,7 +183,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
                     ),
                     Text(
-                      '₹${_customer.dueAmount.toStringAsFixed(0)}',
+                      '₹${liveCustomer.dueAmount.toStringAsFixed(0)}',
                       style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.chaiGold),
                     ),
                   ],
@@ -192,7 +198,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Amount Received (₹) *',
-                  helperText: 'Must not exceed ₹${_customer.dueAmount.toStringAsFixed(0)}',
+                  helperText: 'Must not exceed ₹${liveCustomer.dueAmount.toStringAsFixed(0)}',
                   prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.forestMint),
                 ),
               ),
@@ -316,11 +322,17 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     context.watch<ThemeProvider>();
+    final customerProvider = context.watch<CustomerProvider>();
+    final liveCustomer = customerProvider.customers.firstWhere(
+      (c) => c.id == _customer.id || c.phone == _customer.phone,
+      orElse: () => _customer,
+    );
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
-          'CUSTOMER PROFILE',
+          context.tr('customers').toUpperCase(),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -353,21 +365,21 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        _customer.name.isNotEmpty ? _customer.name[0].toUpperCase() : 'C',
+                        liveCustomer.name.isNotEmpty ? liveCustomer.name[0].toUpperCase() : 'C',
                         style: GoogleFonts.plusJakartaSans(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.terracotta),
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    _customer.name,
+                    liveCustomer.name,
                     style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                   ),
                   Text(
-                    _customer.phone,
+                    liveCustomer.phone,
                     style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
                   ),
-                  if (_customer.address.isNotEmpty) ...[
+                  if (liveCustomer.address.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -375,13 +387,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         Icon(Icons.location_on_rounded, size: 14, color: AppColors.textMuted),
                         const SizedBox(width: 4),
                         Text(
-                          _customer.address,
+                          liveCustomer.address,
                           style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textMuted),
                         ),
                       ],
                     ),
                   ],
-                  if (_customer.aadhaarNumber.isNotEmpty) ...[
+                  if (liveCustomer.aadhaarNumber.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -395,7 +407,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                           Icon(Icons.badge_rounded, size: 13, color: AppColors.forestMint),
                           const SizedBox(width: 6),
                           Text(
-                            'Aadhaar: ${_customer.aadhaarNumber}',
+                            '${context.tr('aadhaar_number')}: ${liveCustomer.aadhaarNumber}',
                             style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.forestMint),
                           ),
                         ],
@@ -414,7 +426,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         children: [
                           Text(context.tr('total_spent'), style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted)),
                           const SizedBox(height: 2),
-                          Text('₹${_customer.totalSpent.toStringAsFixed(0)}', style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                          Text('₹${liveCustomer.totalSpent.toStringAsFixed(0)}', style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
                         ],
                       ),
                       Container(width: 1, height: 28, color: AppColors.borderSubtle),
@@ -422,7 +434,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         children: [
                           Text(context.tr('purchases'), style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted)),
                           const SizedBox(height: 2),
-                          Text('${_customer.totalOrders}', style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                          Text('${liveCustomer.totalOrders}', style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
                         ],
                       ),
                       Container(width: 1, height: 28, color: AppColors.borderSubtle),
@@ -431,11 +443,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                           Text(context.tr('pending_due'), style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted)),
                           const SizedBox(height: 2),
                           Text(
-                            '₹${_customer.dueAmount.toStringAsFixed(0)}',
+                            '₹${liveCustomer.dueAmount.toStringAsFixed(0)}',
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 18,
                               fontWeight: FontWeight.w900,
-                              color: _customer.dueAmount > 0 ? AppColors.chaiGold : AppColors.forestMint,
+                              color: liveCustomer.dueAmount > 0 ? AppColors.chaiGold : AppColors.forestMint,
                             ),
                           ),
                         ],
@@ -454,7 +466,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   child: ElevatedButton.icon(
                     onPressed: _giveCredit,
                     icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
-                    label: const Text('ADD KHATA DUE'),
+                    label: Text(context.tr('khata_credit')),
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 50),
                       backgroundColor: AppColors.terracotta,
@@ -480,7 +492,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               ],
             ),
 
-            if (_customer.dueAmount > 0) ...[
+            if (liveCustomer.dueAmount > 0) ...[
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
@@ -488,7 +500,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   onPressed: _sendWhatsAppReminder,
                   icon: Icon(Icons.send_rounded, size: 18, color: AppColors.forestMint),
                   label: Text(
-                    'SEND PAYMENT REMINDER',
+                    context.tr('reminder').toUpperCase(),
                     style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.forestMint),
                   ),
                   style: OutlinedButton.styleFrom(
