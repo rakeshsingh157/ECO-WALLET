@@ -1,5 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class VoiceAiItem {
@@ -61,6 +64,7 @@ class VoiceAiResult {
   final bool success;
   final String rawText;
   final String? provider;
+  final bool sarvamUsed;
   final List<VoiceAiItem> matched;
   final List<VoiceAiUnmatched> unmatched;
   final String? errorMessage;
@@ -69,6 +73,7 @@ class VoiceAiResult {
     required this.success,
     required this.rawText,
     this.provider,
+    this.sarvamUsed = false,
     required this.matched,
     required this.unmatched,
     this.errorMessage,
@@ -77,19 +82,20 @@ class VoiceAiResult {
 
 class VoiceAiService {
   final stt.SpeechToText _speech = stt.SpeechToText();
-  bool _isInitialized = false;
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  bool _isSpeechInitialized = false;
+  String? _currentRecordingPath;
 
-  bool get isInitialized => _isInitialized;
   bool get isListening => _speech.isListening;
 
   Future<bool> initSpeech() async {
-    if (_isInitialized) return true;
+    if (_isSpeechInitialized) return true;
     try {
-      _isInitialized = await _speech.initialize(
+      _isSpeechInitialized = await _speech.initialize(
         onError: (err) {},
         onStatus: (status) {},
       );
-      return _isInitialized;
+      return _isSpeechInitialized;
     } catch (_) {
       return false;
     }
@@ -113,40 +119,76 @@ class VoiceAiService {
     }
   }
 
-  Future<void> startListening({
+  Future<void> startRecording({
     required String languageCode,
-    required Function(String text) onResult,
+    required Function(String liveText) onLiveText,
     required Function() onDone,
   }) async {
-    final available = await initSpeech();
-    if (!available) return;
+    try {
+      final tempDir = await getTemporaryDirectory();
+      _currentRecordingPath = '${tempDir.path}/voice_order_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
-    final localeId = getLocaleForLanguage(languageCode);
+      final hasPermission = await _audioRecorder.hasPermission();
+      if (hasPermission) {
+        await _audioRecorder.start(
+          const RecordConfig(
+            encoder: AudioEncoder.aacLc,
+            bitRate: 128000,
+            sampleRate: 44100,
+          ),
+          path: _currentRecordingPath!,
+        );
+      }
+    } catch (_) {
+    }
 
-    await _speech.listen(
-      onResult: (result) {
-        onResult(result.recognizedWords);
-        if (result.finalResult) {
-          onDone();
-        }
-      },
-      listenOptions: stt.SpeechListenOptions(
-        localeId: localeId,
-        listenMode: stt.ListenMode.dictation,
-        pauseFor: const Duration(seconds: 3),
-      ),
-    );
+    try {
+      final speechReady = await initSpeech();
+      if (speechReady) {
+        final localeId = getLocaleForLanguage(languageCode);
+        await _speech.listen(
+          onResult: (result) {
+            onLiveText(result.recognizedWords);
+            if (result.finalResult) {
+              onDone();
+            }
+          },
+          listenOptions: stt.SpeechListenOptions(
+            localeId: localeId,
+            listenMode: stt.ListenMode.dictation,
+            pauseFor: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (_) {
+    }
   }
 
-  Future<void> stopListening() async {
-    if (_speech.isListening) {
-      await _speech.stop();
+  Future<String?> stopRecording() async {
+    try {
+      if (_speech.isListening) {
+        await _speech.stop();
+      }
+    } catch (_) {
     }
+
+    try {
+      final path = await _audioRecorder.stop();
+      if (path != null && File(path).existsSync()) {
+        final bytes = await File(path).readAsBytes();
+        if (bytes.isNotEmpty) {
+          return base64Encode(bytes);
+        }
+      }
+    } catch (_) {
+    }
+    return null;
   }
 
   Future<VoiceAiResult> processVoiceOrder({
     required String baseUrl,
     required String apiKey,
+    String? audioBase64,
     required String text,
     required String language,
   }) async {
@@ -154,22 +196,32 @@ class VoiceAiService {
       final sanitizedBase = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
       final uri = Uri.parse('$sanitizedBase/api/ai/voice-to-cart');
 
+      final payload = <String, dynamic>{
+        'language': language,
+        'format': 'm4a',
+      };
+
+      if (audioBase64 != null && audioBase64.isNotEmpty) {
+        payload['audio'] = audioBase64;
+      }
+      if (text.isNotEmpty) {
+        payload['text'] = text;
+      }
+
       final response = await http.post(
         uri,
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': apiKey,
         },
-        body: jsonEncode({
-          'text': text,
-          'language': language,
-        }),
-      ).timeout(const Duration(seconds: 15));
+        body: jsonEncode(payload),
+      ).timeout(const Duration(seconds: 25));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final rawText = data['rawText']?.toString() ?? text;
         final provider = data['provider']?.toString();
+        final sarvamUsed = data['sarvamUsed'] == true;
 
         final List<VoiceAiItem> matched = [];
         if (data['matched'] is List) {
@@ -193,6 +245,7 @@ class VoiceAiService {
           success: true,
           rawText: rawText,
           provider: provider,
+          sarvamUsed: sarvamUsed,
           matched: matched,
           unmatched: unmatched,
         );
@@ -202,7 +255,7 @@ class VoiceAiService {
           rawText: text,
           matched: [],
           unmatched: [],
-          errorMessage: 'Server returned ${response.statusCode}',
+          errorMessage: 'Server communication error (${response.statusCode})',
         );
       }
     } catch (e) {

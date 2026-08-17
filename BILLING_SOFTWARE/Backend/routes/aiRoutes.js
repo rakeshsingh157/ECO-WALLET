@@ -11,18 +11,75 @@ const NUMBER_WORDS = {
 };
 
 const MULTI_LANG_SYNONYMS = {
-  "sugar": ["chini", "cheeni", "shakkar", "sakhar", "khand", "sarkarai", "chakkara", "cheeni"],
-  "milk": ["doodh", "dudh", "dhoodh", "paal", "paalu", "dood"],
-  "water": ["pani", "paani", "neer", "neellu", "thanner", "jal"],
-  "oil": ["tel", "tail", "telam", "yennai", "nunne", "telu"],
-  "rice": ["chawal", "tandul", "chokha", "arisi", "biyyam", "tandool"],
-  "flour": ["atta", "aata", "pith", "maida", "ravai", "godhumai", "pindi"],
-  "salt": ["namak", "meeth", "mithu", "uppu", "lavan"],
-  "tea": ["chai", "chaha", "cha", "theeneer", "tea"],
-  "soap": ["sabun", "saabu", "soap", "sabbu"],
-  "biscuit": ["biscuit", "biscuits", "parle", "cookies"],
-  "dal": ["dal", "daal", "paruppu", "pappu", "pulse", "lentils"]
+  "sugar": ["chini", "cheeni", "shakkar", "sakhar", "khand", "sarkarai", "chakkara", "cheeni", "ખાંડ", "साखर", "चीनी", "சர்க்கரை", "చక్కెర"],
+  "milk": ["doodh", "dudh", "dhoodh", "paal", "paalu", "dood", "દૂધ", "दूध", "பால்", "పాలు"],
+  "water": ["pani", "paani", "neer", "neellu", "thanner", "jal", "પાણી", "पाणी", "पानी", "தண்ணீர்", "నీళ్లు"],
+  "oil": ["tel", "tail", "telam", "yennai", "nunne", "telu", "તેલ", "तेल", "எண்ணெய்", "నూనె"],
+  "rice": ["chawal", "tandul", "chokha", "arisi", "biyyam", "tandool", "ચોખા", "तांदूळ", "चावल", "அரிசி", "బియ్యం"],
+  "flour": ["atta", "aata", "pith", "maida", "ravai", "godhumai", "pindi", "લોટ", "पीठ", "आटा", "மாவு", "పిండి"],
+  "salt": ["namak", "meeth", "mithu", "uppu", "lavan", "મીઠું", "मीठ", "नमक", "உப்பு", "ఉప్పు"],
+  "tea": ["chai", "chaha", "cha", "theeneer", "tea", "ચા", "चहा", "चाय", "தேநீர்", "టీ"],
+  "soap": ["sabun", "saabu", "soap", "sabbu", "સાબુ", "साबण", "साबुन", "சோப்பு", "సబ్బు"],
+  "biscuit": ["biscuit", "biscuits", "parle", "cookies", "બિસ્કિટ", "बिस्कीट", "बिस्कुट", "பிஸ்கட்", "బిస్కెట్"],
+  "dal": ["dal", "daal", "paruppu", "pappu", "pulse", "lentils", "દાળ", "डाळ", "दाल", "பருப்பு", "పప్పు"]
 };
+
+function mapLanguageToSarvam(langCode) {
+  switch ((langCode || "").toLowerCase().trim()) {
+    case "hi":
+      return "hi-IN";
+    case "mr":
+      return "mr-IN";
+    case "gu":
+      return "gu-IN";
+    case "ta":
+      return "ta-IN";
+    case "te":
+      return "te-IN";
+    case "en":
+      return "en-IN";
+    default:
+      return "unknown";
+  }
+}
+
+async function transcribeWithSarvam(base64Audio, languageCode, format) {
+  const sarvamKey = process.env.SARVAM_API_KEY;
+  if (!sarvamKey || sarvamKey.trim().length < 5) {
+    return null;
+  }
+
+  try {
+    const audioBuffer = Buffer.from(base64Audio, "base64");
+    const mimeType = format === "wav" ? "audio/wav" : (format === "m4a" ? "audio/m4a" : "audio/aac");
+    const fileName = `speech.${format || "m4a"}`;
+
+    const blob = new Blob([audioBuffer], { type: mimeType });
+    const formData = new FormData();
+    formData.append("file", blob, fileName);
+    formData.append("model", "saaras:v1");
+    if (languageCode && languageCode !== "unknown") {
+      formData.append("language_code", languageCode);
+    }
+
+    const response = await fetch("https://api.sarvam.ai/speech-to-text", {
+      method: "POST",
+      headers: {
+        "api-subscription-key": sarvamKey.trim()
+      },
+      body: formData
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.transcript && data.transcript.trim().length > 0) {
+        return data.transcript.trim();
+      }
+    }
+  } catch (_) {
+  }
+  return null;
+}
 
 function fallbackFuzzyMatch(spokenText, products) {
   const words = spokenText.toLowerCase().replace(/[,.-]/g, " ").split(/\s+/).filter(Boolean);
@@ -65,7 +122,7 @@ function fallbackFuzzyMatch(spokenText, products) {
       }
     }
 
-    if (!token || ["kg", "gm", "bottle", "packet", "and", "aur", "aur1", "mathe", "evam"].includes(token)) {
+    if (!token || ["kg", "gm", "bottle", "packet", "and", "aur", "aur1", "mathe", "evam", "to", "ke", "ka", "ki"].includes(token)) {
       continue;
     }
 
@@ -114,24 +171,40 @@ function fallbackFuzzyMatch(spokenText, products) {
 
 router.post("/voice-to-cart", async (req, res) => {
   try {
-    const { text, language } = req.body;
+    const { audio, text, language, format } = req.body;
+    let spokenText = "";
+    let sarvamUsed = false;
 
-    if (!text || typeof text !== "string" || text.trim().length === 0) {
+    if (audio && typeof audio === "string" && audio.trim().length > 20) {
+      const sarvamLang = mapLanguageToSarvam(language);
+      const transcribed = await transcribeWithSarvam(audio.trim(), sarvamLang, format || "m4a");
+      if (transcribed && transcribed.length > 0) {
+        spokenText = transcribed;
+        sarvamUsed = true;
+      }
+    }
+
+    if (!spokenText && text && typeof text === "string" && text.trim().length > 0) {
+      spokenText = text.trim();
+    }
+
+    if (!spokenText || spokenText.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Spoken voice transcript text is required",
+        message: "Spoken audio recording or transcript text is required",
         matched: [],
         unmatched: []
       });
     }
 
-    const spokenText = text.trim();
     const products = await Product.find({}).lean();
 
     if (!products || products.length === 0) {
       return res.json({
         success: true,
         rawText: spokenText,
+        sarvamUsed,
+        provider: "none",
         matched: [],
         unmatched: [{ name: spokenText, quantity: 1, unit: "pcs", reason: "inventory_empty" }]
       });
@@ -218,14 +291,14 @@ Strict Response Format (ONLY return valid JSON):
 
           return res.json({
             success: true,
+            sarvamUsed,
             provider: "mistral",
             rawText: spokenText,
             matched: matchedList,
             unmatched: Array.isArray(parsedContent.unmatched) ? parsedContent.unmatched : []
           });
         }
-      } catch (err) {
-        // Fallback to fuzzy dictionary matching
+      } catch (_) {
       }
     }
 
@@ -233,6 +306,7 @@ Strict Response Format (ONLY return valid JSON):
 
     return res.json({
       success: true,
+      sarvamUsed,
       provider: "fallback_fuzzy",
       rawText: spokenText,
       matched,

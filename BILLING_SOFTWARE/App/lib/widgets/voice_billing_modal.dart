@@ -55,7 +55,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
 
   @override
   void dispose() {
-    _voiceService.stopListening();
+    _voiceService.stopRecording();
     _animController.dispose();
     _textCtrl.dispose();
     super.dispose();
@@ -69,9 +69,9 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
 
     final currentLocale = context.read<LocaleProvider>().locale;
 
-    await _voiceService.startListening(
+    await _voiceService.startRecording(
       languageCode: currentLocale,
-      onResult: (text) {
+      onLiveText: (text) {
         if (mounted) {
           setState(() {
             _textCtrl.text = text;
@@ -80,25 +80,52 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
       },
       onDone: () {
         if (mounted) {
-          setState(() {
-            _isListening = false;
-          });
-          if (_textCtrl.text.trim().isNotEmpty) {
-            _processAiOrder();
-          }
+          _stopVoiceAndProcess();
         }
       },
     );
   }
 
   void _stopVoiceAndProcess() async {
-    if (_isListening) {
-      await _voiceService.stopListening();
-      if (mounted) {
-        setState(() => _isListening = false);
-        if (_textCtrl.text.trim().isNotEmpty) {
-          _processAiOrder();
+    if (!_isListening && !_isProcessing) return;
+
+    final auth = context.read<AuthProvider>();
+    final currentLocale = context.read<LocaleProvider>().locale;
+
+    final audioBase64 = await _voiceService.stopRecording();
+
+    if (!mounted) return;
+
+    setState(() {
+      _isListening = false;
+      _isProcessing = true;
+      _errorMessage = null;
+    });
+
+    final liveText = _textCtrl.text.trim();
+
+    final result = await _voiceService.processVoiceOrder(
+      baseUrl: auth.baseUrl,
+      apiKey: auth.apiKey,
+      audioBase64: audioBase64,
+      text: liveText,
+      language: currentLocale,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isProcessing = false;
+        _result = result;
+        if (result.rawText.isNotEmpty && result.rawText != liveText) {
+          _textCtrl.text = result.rawText;
         }
+        if (!result.success) {
+          _errorMessage = result.errorMessage ?? 'Failed to process voice order';
+        }
+      });
+
+      if (result.success && result.matched.isNotEmpty) {
+        widget.onAddToCart(result.matched, result.unmatched);
       }
     }
   }
@@ -118,7 +145,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
     final auth = context.read<AuthProvider>();
     final currentLocale = context.read<LocaleProvider>().locale;
 
-    await _voiceService.stopListening();
+    final audioBase64 = await _voiceService.stopRecording();
 
     if (!mounted) return;
 
@@ -131,6 +158,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
     final result = await _voiceService.processVoiceOrder(
       baseUrl: auth.baseUrl,
       apiKey: auth.apiKey,
+      audioBase64: audioBase64,
       text: text,
       language: currentLocale,
     );
@@ -139,6 +167,9 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with SingleTicker
       setState(() {
         _isProcessing = false;
         _result = result;
+        if (result.rawText.isNotEmpty && result.rawText != text) {
+          _textCtrl.text = result.rawText;
+        }
         if (!result.success) {
           _errorMessage = result.errorMessage ?? 'Failed to process voice order';
         }
