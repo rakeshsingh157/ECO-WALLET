@@ -119,26 +119,41 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.borderSubtle),
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.forestMint.withValues(alpha: 0.15),
+                    AppColors.surface,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.forestMint.withValues(alpha: 0.25), width: 1.2),
               ),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
-                      color: AppColors.secondaryContainer,
-                      shape: BoxShape.circle,
+                      color: AppColors.forestMint,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.forestMint.withValues(alpha: 0.35),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    child: Icon(Icons.dns_rounded, color: AppColors.forestMint, size: 22),
+                    child: const Icon(Icons.dns_rounded, color: Colors.white, size: 24),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -147,12 +162,12 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
                       children: [
                         Text(
                           context.tr('backend_endpoint_host'),
-                          style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                          style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 3),
                         Text(
                           context.tr('backend_endpoint_desc'),
-                          style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
+                          style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -161,121 +176,204 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 18),
 
-            Text(
-              context.tr('quick_presets').toUpperCase(),
-              style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 10),
-
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => setState(() => _baseUrlCtrl.text = 'http://10.0.2.2:5001/api'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(color: AppColors.borderSubtle),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: Text(context.tr('android_emulator'), style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.forestMint)),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.borderSubtle, width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => setState(() => _baseUrlCtrl.text = 'http://localhost:5001/api'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(color: AppColors.borderSubtle),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: Text(context.tr('desktop_local'), style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.warmNavy)),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.warmNavy.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.speed_rounded, size: 15, color: AppColors.warmNavy),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        context.tr('quick_presets').toUpperCase(),
+                        style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2, color: AppColors.textSecondary),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(height: 12),
 
-            const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => setState(() => _baseUrlCtrl.text = 'http://10.0.2.2:5001/api'),
+                          icon: const Icon(Icons.phone_android_rounded, size: 16),
+                          label: Text(context.tr('android_emulator'), overflow: TextOverflow.ellipsis),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                            side: BorderSide(
+                              color: _baseUrlCtrl.text.contains('10.0.2.2') ? AppColors.forestMint : AppColors.borderSubtle,
+                              width: _baseUrlCtrl.text.contains('10.0.2.2') ? 1.8 : 1.0,
+                            ),
+                            backgroundColor: _baseUrlCtrl.text.contains('10.0.2.2') ? AppColors.forestMint.withValues(alpha: 0.12) : Colors.transparent,
+                            foregroundColor: _baseUrlCtrl.text.contains('10.0.2.2') ? AppColors.forestMint : AppColors.textPrimary,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            textStyle: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => setState(() => _baseUrlCtrl.text = 'http://localhost:5001/api'),
+                          icon: const Icon(Icons.laptop_rounded, size: 16),
+                          label: Text(context.tr('desktop_local'), overflow: TextOverflow.ellipsis),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                            side: BorderSide(
+                              color: _baseUrlCtrl.text.contains('localhost') ? AppColors.info : AppColors.borderSubtle,
+                              width: _baseUrlCtrl.text.contains('localhost') ? 1.8 : 1.0,
+                            ),
+                            backgroundColor: _baseUrlCtrl.text.contains('localhost') ? AppColors.info.withValues(alpha: 0.12) : Colors.transparent,
+                            foregroundColor: _baseUrlCtrl.text.contains('localhost') ? AppColors.info : AppColors.textPrimary,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            textStyle: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
 
-            TextFormField(
-              controller: _baseUrlCtrl,
-              style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-              decoration: InputDecoration(
-                labelText: context.tr('backend_api_base_url'),
-                hintText: 'http://10.0.2.2:5001/api',
-                prefixIcon: Icon(Icons.link_rounded, color: AppColors.forestMint),
-              ),
-            ),
+                  TextFormField(
+                    controller: _baseUrlCtrl,
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                    decoration: InputDecoration(
+                      labelText: context.tr('backend_api_base_url'),
+                      hintText: 'http://10.0.2.2:5001/api',
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.forestMint.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(Icons.link_rounded, color: AppColors.forestMint, size: 20),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
 
-            const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _apiKeyCtrl,
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                    decoration: InputDecoration(
+                      labelText: context.tr('eco_merchant_api_key'),
+                      hintText: 'key_mch_...',
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.terracotta.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(Icons.key_rounded, color: AppColors.terracotta, size: 20),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
 
-            TextFormField(
-              controller: _apiKeyCtrl,
-              style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-              decoration: InputDecoration(
-                labelText: context.tr('eco_merchant_api_key'),
-                hintText: 'key_mch_...',
-                prefixIcon: Icon(Icons.key_rounded, color: AppColors.terracotta),
-              ),
-            ),
+                  ElevatedButton.icon(
+                    onPressed: _isTesting ? null : _testConnection,
+                    icon: _isTesting
+                        ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.forestMint))
+                        : Icon(Icons.wifi_find_rounded, color: AppColors.forestMint, size: 18),
+                    label: Text(
+                      _isTesting ? context.tr('testing_connectivity') : context.tr('test_host_connectivity').toUpperCase(),
+                      style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, letterSpacing: 0.8),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 50),
+                      backgroundColor: AppColors.forestMint.withValues(alpha: 0.15),
+                      foregroundColor: AppColors.forestMint,
+                      elevation: 0,
+                      side: BorderSide(color: AppColors.forestMint.withValues(alpha: 0.4), width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
 
-            const SizedBox(height: 20),
-
-            OutlinedButton.icon(
-              onPressed: _isTesting ? null : _testConnection,
-              icon: _isTesting
-                  ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.forestMint))
-                  : Icon(Icons.wifi_find_rounded, color: AppColors.forestMint, size: 18),
-              label: Text(
-                _isTesting ? context.tr('testing_connectivity') : context.tr('test_host_connectivity').toUpperCase(),
-                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.forestMint),
-              ),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-                side: BorderSide(color: AppColors.forestMint),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-
-            if (_testResult != null) ...[
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: (_isSuccess ? AppColors.success : AppColors.error).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: _isSuccess ? AppColors.success : AppColors.error),
-                ),
-                child: Row(
-                  children: [
-                    Icon(_isSuccess ? Icons.check_circle_rounded : Icons.error_rounded, color: _isSuccess ? AppColors.success : AppColors.error, size: 22),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _testResult!,
-                        style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: _isSuccess ? AppColors.success : AppColors.error),
+                  if (_testResult != null) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: (_isSuccess ? AppColors.success : AppColors.error).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: _isSuccess ? AppColors.success : AppColors.error, width: 1.2),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(_isSuccess ? Icons.check_circle_rounded : Icons.error_rounded, color: _isSuccess ? AppColors.success : AppColors.error, size: 22),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _testResult!,
+                              style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: _isSuccess ? AppColors.success : AppColors.error),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
+                ],
               ),
-            ],
+            ),
 
             const SizedBox(height: 24),
 
-            SizedBox(
+            Container(
               width: double.infinity,
+              height: 54,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.terracotta.withValues(alpha: 0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
               child: ElevatedButton.icon(
                 onPressed: _saveConfig,
-                icon: const Icon(Icons.save_rounded, size: 18),
-                label: Text(context.tr('save_server_configuration').toUpperCase()),
+                icon: const Icon(Icons.save_rounded, size: 20),
+                label: Text(
+                  context.tr('save_server_configuration').toUpperCase(),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.1,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.terracotta,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
               ),
             ),

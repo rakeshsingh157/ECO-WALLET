@@ -203,84 +203,261 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.borderSubtle),
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.terracotta.withValues(alpha: 0.15),
+                    AppColors.surface,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.25), width: 1.2),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    context.tr('store_information'),
-                    style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: AppColors.terracotta,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.terracotta.withValues(alpha: 0.35),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 28),
                   ),
-                  const SizedBox(height: 14),
-
-                  TextFormField(
-                    controller: _shopNameCtrl,
-                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
-                    decoration: InputDecoration(
-                      labelText: '${context.tr('store_name')} *',
-                      prefixIcon: Icon(Icons.store_rounded, color: AppColors.terracotta),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          currentShop,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          _ownerNameCtrl.text.trim().isNotEmpty ? _ownerNameCtrl.text.trim() : 'Store Owner',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _ownerNameCtrl,
-                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-                    decoration: InputDecoration(
-                      labelText: '${context.tr('proprietor')} *',
-                      prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.forestMint.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.forestMint.withValues(alpha: 0.3)),
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _mobileCtrl,
-                    keyboardType: TextInputType.phone,
-                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-                    decoration: InputDecoration(
-                      labelText: context.tr('registered_mobile'),
-                      prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _gstinCtrl,
-                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
-                    decoration: InputDecoration(
-                      labelText: '${context.tr('gstin')} (${context.tr('optional')})',
-                      prefixIcon: Icon(Icons.badge_rounded, color: AppColors.forestMint),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _addressCtrl,
-                    maxLines: 2,
-                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-                    decoration: InputDecoration(
-                      labelText: context.tr('store_address_receipt'),
-                      prefixIcon: Icon(Icons.location_on_rounded, color: AppColors.textSecondary),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: AppColors.forestMint,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          'LIVE',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
+                            color: AppColors.forestMint,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 18),
 
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.info.withAlpha(90), width: 1.5),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.borderSubtle, width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.terracotta.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.info_outline_rounded, size: 15, color: AppColors.terracotta),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        context.tr('store_information').toUpperCase(),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _shopNameCtrl,
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                    decoration: InputDecoration(
+                      labelText: '${context.tr('store_name')} *',
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.terracotta.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(Icons.store_rounded, color: AppColors.terracotta, size: 20),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  TextFormField(
+                    controller: _ownerNameCtrl,
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                    decoration: InputDecoration(
+                      labelText: '${context.tr('proprietor')} *',
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.chaiGold.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(Icons.person_rounded, color: AppColors.chaiGold, size: 20),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  TextFormField(
+                    controller: _mobileCtrl,
+                    keyboardType: TextInputType.phone,
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                    decoration: InputDecoration(
+                      labelText: context.tr('registered_mobile'),
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.forestMint.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(Icons.phone_rounded, color: AppColors.forestMint, size: 20),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  TextFormField(
+                    controller: _gstinCtrl,
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                    decoration: InputDecoration(
+                      labelText: '${context.tr('gstin')} (${context.tr('optional')})',
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.warmNavy.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(Icons.badge_rounded, color: AppColors.warmNavy, size: 20),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  TextFormField(
+                    controller: _addressCtrl,
+                    maxLines: 2,
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w500),
+                    decoration: InputDecoration(
+                      labelText: context.tr('store_address_receipt'),
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.softIndigo.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(Icons.location_on_rounded, color: AppColors.softIndigo, size: 20),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.info.withValues(alpha: 0.35), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.info.withValues(alpha: 0.05),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -288,38 +465,65 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        context.tr('store_upi_qr_setup'),
-                        style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2, color: AppColors.info),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppColors.info.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(Icons.qr_code_rounded, size: 15, color: AppColors.info),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            context.tr('store_upi_qr_setup').toUpperCase(),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.2,
+                              color: AppColors.info,
+                            ),
+                          ),
+                        ],
                       ),
                       Row(
                         children: [
-                          OutlinedButton.icon(
+                          ElevatedButton.icon(
                             onPressed: _pickQrFromGallery,
-                            icon: const Icon(Icons.photo_library_rounded, size: 14),
+                            icon: const Icon(Icons.photo_library_rounded, size: 13),
                             label: Text(context.tr('gallery')),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: AppColors.info),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.info.withValues(alpha: 0.15),
+                              foregroundColor: AppColors.info,
+                              elevation: 0,
+                              side: BorderSide(color: AppColors.info.withValues(alpha: 0.4)),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               visualDensity: VisualDensity.compact,
+                              textStyle: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700),
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          OutlinedButton.icon(
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
                             onPressed: _scanStandeeQr,
-                            icon: const Icon(Icons.qr_code_scanner_rounded, size: 14),
+                            icon: const Icon(Icons.qr_code_scanner_rounded, size: 13),
                             label: Text(context.tr('scan')),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: AppColors.info),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.info,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               visualDensity: VisualDensity.compact,
+                              textStyle: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700),
                             ),
                           ),
                         ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   TextFormField(
                     controller: _upiIdCtrl,
@@ -327,99 +531,126 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                     decoration: InputDecoration(
                       labelText: '${context.tr('store_upi_id')} *',
                       hintText: 'e.g. yourname@okhdfcbank, 9876543210@paytm',
-                      prefixIcon: Icon(Icons.account_balance_rounded, color: AppColors.info),
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.info.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(Icons.account_balance_rounded, color: AppColors.info, size: 20),
+                        ),
+                      ),
                       helperText: context.tr('store_upi_sub'),
-                      helperStyle: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppColors.textMuted),
+                      helperStyle: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textMuted),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
 
                   if (previewUpiUri.isNotEmpty) ...[
                     Center(
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(14),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withAlpha(30),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                      child: Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: AppColors.canvas,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: AppColors.info.withValues(alpha: 0.25)),
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.12),
+                                    blurRadius: 14,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: QrImageView(
+                                data: previewUpiUri,
+                                version: QrVersions.auto,
+                                size: 170.0,
+                                backgroundColor: Colors.white,
+                                dataModuleStyle: const QrDataModuleStyle(
+                                  dataModuleShape: QrDataModuleShape.square,
+                                  color: Colors.black,
                                 ),
-                              ],
-                            ),
-                            child: QrImageView(
-                              data: previewUpiUri,
-                              version: QrVersions.auto,
-                              size: 160.0,
-                              backgroundColor: Colors.white,
-                              dataModuleStyle: const QrDataModuleStyle(
-                                dataModuleShape: QrDataModuleShape.square,
-                                color: Colors.black,
-                              ),
-                              eyeStyle: const QrEyeStyle(
-                                eyeShape: QrEyeShape.square,
-                                color: Colors.black,
+                                eyeStyle: const QrEyeStyle(
+                                  eyeShape: QrEyeShape.square,
+                                  color: Colors.black,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            currentShop,
-                            style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-                          ),
-                          Text(
-                            currentUpi,
-                            style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.info),
-                          ),
-                        ],
+                            const SizedBox(height: 12),
+                            Text(
+                              currentShop,
+                              style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                            ),
+                            const SizedBox(height: 2),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.info.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                currentUpi,
+                                style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.info),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ] else ...[
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryContainer.withAlpha(40),
-                        borderRadius: BorderRadius.circular(12),
+                        color: AppColors.primaryContainer.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: AppColors.borderSubtle),
                       ),
                       child: Column(
                         children: [
-                          Icon(Icons.qr_code_2_rounded, size: 40, color: AppColors.textMuted),
-                          const SizedBox(height: 8),
+                          Icon(Icons.qr_code_2_rounded, size: 44, color: AppColors.info),
+                          const SizedBox(height: 10),
                           Text(
                             context.tr('upload_qr_hint'),
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textSecondary),
+                            style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
                           Row(
                             children: [
                               Expanded(
                                 child: ElevatedButton.icon(
                                   onPressed: _pickQrFromGallery,
-                                  icon: const Icon(Icons.photo_library_rounded, size: 14),
+                                  icon: const Icon(Icons.photo_library_rounded, size: 15),
                                   label: Text(context.tr('pick_gallery'), overflow: TextOverflow.ellipsis),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.info,
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: OutlinedButton.icon(
                                   onPressed: _scanStandeeQr,
-                                  icon: const Icon(Icons.qr_code_scanner_rounded, size: 14),
+                                  icon: const Icon(Icons.qr_code_scanner_rounded, size: 15),
                                   label: Text(context.tr('scan_standee'), overflow: TextOverflow.ellipsis),
                                   style: OutlinedButton.styleFrom(
-                                    side: BorderSide(color: AppColors.info),
-                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+                                    side: BorderSide(color: AppColors.info, width: 1.5),
+                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                   ),
                                 ),
                               ),
@@ -435,32 +666,51 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
 
             const SizedBox(height: 24),
 
-            SizedBox(
+            Container(
               width: double.infinity,
+              height: 54,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.terracotta.withValues(alpha: 0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
               child: ElevatedButton(
                 onPressed: _isSaving ? null : _saveProfile,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.terracotta,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 child: _isSaving
                     ? const SizedBox(
-                        width: 20,
-                        height: 20,
+                        width: 22,
+                        height: 22,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                       )
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.save_rounded, size: 18),
-                          const SizedBox(width: 8),
-                          Text(context.tr('save_shop_profile_qr').toUpperCase()),
+                          const Icon(Icons.save_rounded, size: 20),
+                          const SizedBox(width: 10),
+                          Text(
+                            context.tr('save_shop_profile_qr').toUpperCase(),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.1,
+                            ),
+                          ),
                         ],
                       ),
               ),
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),

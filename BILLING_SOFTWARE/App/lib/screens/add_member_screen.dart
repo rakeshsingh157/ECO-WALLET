@@ -150,6 +150,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -159,32 +160,71 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
 
               TextField(
                 controller: nameCtrl,
                 enabled: !isSaving,
                 style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-                decoration: InputDecoration(labelText: 'Staff Name *', prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta)),
+                decoration: InputDecoration(
+                  labelText: 'Staff Name *',
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.terracotta.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Icons.person_rounded, color: AppColors.terracotta, size: 20),
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
+
               TextField(
                 controller: phoneCtrl,
                 enabled: !isSaving,
                 keyboardType: TextInputType.phone,
-                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-                decoration: InputDecoration(labelText: 'Mobile Number *', prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta)),
+                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                decoration: InputDecoration(
+                  labelText: 'Mobile Number *',
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.forestMint.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Icons.phone_rounded, color: AppColors.forestMint, size: 20),
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
+
               DropdownButtonFormField<String>(
                 initialValue: selectedRole,
-                decoration: InputDecoration(labelText: 'Role Permission', prefixIcon: Icon(Icons.badge_rounded, color: AppColors.warmNavy)),
+                decoration: InputDecoration(
+                  labelText: 'Role Permission',
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.warmNavy.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Icons.badge_rounded, color: AppColors.warmNavy, size: 20),
+                    ),
+                  ),
+                ),
                 items: ['Counter Cashier', 'Shop Manager', 'Inventory Helper']
-                    .map((r) => DropdownMenuItem(value: r, child: Text(r, style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary))))
+                    .map((r) => DropdownMenuItem(value: r, child: Text(r, style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600))))
                     .toList(),
                 onChanged: isSaving ? null : (v) => selectedRole = v!,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
+
               TextField(
                 controller: pinCtrl,
                 enabled: !isSaving,
@@ -195,13 +235,34 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                   labelText: '4-digit Staff Security PIN *',
                   counterText: '',
                   helperText: 'Cashier will use this PIN to log in on their mobile device',
-                  prefixIcon: Icon(Icons.lock_rounded, color: AppColors.chaiGold),
+                  helperStyle: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.chaiGold.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Icons.lock_rounded, color: AppColors.chaiGold, size: 20),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
 
-              SizedBox(
+              Container(
                 width: double.infinity,
+                height: 52,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.terracotta.withValues(alpha: 0.3),
+                      blurRadius: 14,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
                 child: ElevatedButton.icon(
                   onPressed: isSaving
                       ? null
@@ -252,20 +313,27 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                             }
                           } else {
                             setModalState(() => isSaving = false);
-                            if (ctx.mounted) {
-                              AppNotifier.error(ctx, 'Failed to add staff member', title: 'SERVER ERROR');
+                            if (mounted) {
+                              AppNotifier.error(context, 'Failed to save staff member', title: 'SAVE ERROR');
                             }
                           }
                         },
-                  icon: isSaving
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Icon(Icons.person_add_rounded, size: 18),
-                  label: Text(isSaving ? 'SAVING...' : 'SAVE STAFF MEMBER'),
+                  icon: isSaving ? const SizedBox.shrink() : const Icon(Icons.person_add_rounded, size: 18),
+                  label: isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : Text(
+                          'SAVE STAFF MEMBER',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: 1.1),
+                        ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.terracotta,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                 ),
               ),
@@ -304,28 +372,42 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
         color: AppColors.terracotta,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderSubtle),
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.terracotta.withValues(alpha: 0.15),
+                      AppColors.surface,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.25), width: 1.2),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      width: 44,
-                      height: 44,
+                      width: 48,
+                      height: 48,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryContainer,
-                        shape: BoxShape.circle,
+                        color: AppColors.terracotta,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.terracotta.withValues(alpha: 0.35),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      child: Center(
-                        child: Icon(Icons.admin_panel_settings_rounded, color: AppColors.terracotta, size: 22),
+                      child: const Center(
+                        child: Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 24),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -335,12 +417,12 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                         children: [
                           Text(
                             context.tr('multi_device_cashier_title'),
-                            style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                            style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 3),
                           Text(
                             context.tr('multi_device_cashier_sub'),
-                            style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
+                            style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
                           ),
                         ],
                       ),
@@ -349,22 +431,29 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    context.tr('store_staff_roster'),
-                    style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.textSecondary),
+                    context.tr('store_staff_roster').toUpperCase(),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2, color: AppColors.textSecondary),
                   ),
-                  Text(
-                    '${_members.length} ${context.tr('members_unit')}',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.terracotta.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${_members.length} ${context.tr('members_unit')}',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.terracotta),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
 
               if (_isLoading)
                 Center(child: Padding(padding: const EdgeInsets.all(32), child: CircularProgressIndicator(color: AppColors.terracotta)))
@@ -373,7 +462,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                   padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: AppColors.borderSubtle),
                   ),
                   child: Center(
@@ -409,20 +498,27 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.borderSubtle),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Row(
                         children: [
                           Container(
-                            width: 42,
-                            height: 42,
+                            width: 44,
+                            height: 44,
                             decoration: BoxDecoration(
-                              color: AppColors.primaryContainer,
-                              shape: BoxShape.circle,
+                              color: AppColors.terracotta.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                             child: Center(
                               child: Text(
                                 member.name.isNotEmpty ? member.name[0].toUpperCase() : 'M',
-                                style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.terracotta),
+                                style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.terracotta),
                               ),
                             ),
                           ),
@@ -431,9 +527,25 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(member.name, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                                const SizedBox(height: 2),
-                                Text('${context.trRole(member.role)} • ${member.phone}', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
+                                Text(member.name, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                                const SizedBox(height: 3),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.warmNavy.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        context.trRole(member.role),
+                                        style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.warmNavy),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(member.phone, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
+                                  ],
+                                ),
                               ],
                             ),
                           ),
