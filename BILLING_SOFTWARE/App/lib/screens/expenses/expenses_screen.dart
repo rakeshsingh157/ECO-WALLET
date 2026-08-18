@@ -86,7 +86,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    isEdit ? 'EDIT EXPENSE' : ctx.tr('add_expense').toUpperCase(),
+                    isEdit ? ctx.tr('edit_expense').toUpperCase() : ctx.tr('add_expense').toUpperCase(),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
@@ -129,7 +129,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   prefixIcon: Icon(Icons.category_rounded, color: AppColors.terracotta),
                 ),
                 items: categoryOptions
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c, style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary))))
+                    .map((c) => DropdownMenuItem(value: c, child: Text(ctx.trExpenseCategory(c), style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary))))
                     .toList(),
                 onChanged: (v) => setModalState(() => category = v!),
               ),
@@ -137,11 +137,21 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
               DropdownButtonFormField<String>(
                 initialValue: paymentMode,
                 decoration: InputDecoration(
-                  labelText: 'Paid Via',
+                  labelText: ctx.tr('paid_via'),
                   prefixIcon: Icon(Icons.payment_rounded, color: AppColors.forestMint),
                 ),
                 items: modeOptions
-                    .map((m) => DropdownMenuItem(value: m, child: Text(m, style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary))))
+                    .map((m) => DropdownMenuItem(
+                          value: m,
+                          child: Text(
+                            m == 'Cash'
+                                ? ctx.tr('cash')
+                                : (m == 'UPI'
+                                    ? ctx.tr('upi')
+                                    : (m == 'ECO Wallet' ? ctx.tr('eco_wallet') : ctx.tr('bank_transfer'))),
+                            style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                          ),
+                        ))
                     .toList(),
                 onChanged: (v) => setModalState(() => paymentMode = v!),
               ),
@@ -150,7 +160,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 controller: notesCtrl,
                 style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
                 decoration: InputDecoration(
-                  labelText: 'Notes (Optional)',
+                  labelText: '${ctx.tr('notes')} (${ctx.tr('optional')})',
                   hintText: 'Add description or remarks',
                   prefixIcon: Icon(Icons.notes_rounded, color: AppColors.textSecondary),
                 ),
@@ -220,7 +230,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text(isEdit ? 'UPDATE EXPENSE' : ctx.tr('save_expense')),
+                  child: Text(isEdit ? ctx.tr('update_expense').toUpperCase() : ctx.tr('save_expense').toUpperCase()),
                 ),
               ),
             ],

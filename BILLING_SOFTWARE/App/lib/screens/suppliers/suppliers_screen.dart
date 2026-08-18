@@ -68,7 +68,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  ctx.tr('add_supplier'),
+                  ctx.tr('add_supplier').toUpperCase(),
                   style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                 ),
                 IconButton(
@@ -130,7 +130,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: Text(ctx.tr('save_supplier')),
+                child: Text(ctx.tr('save_supplier').toUpperCase()),
               ),
             ),
           ],
@@ -199,7 +199,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                     ElevatedButton.icon(
                       onPressed: _showAddSupplierModal,
                       icon: const Icon(Icons.add_rounded, size: 16),
-                      label: Text(context.tr('suppliers')),
+                      label: Text(context.tr('add_supplier')),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.terracotta,
                         foregroundColor: Colors.white,
@@ -241,7 +241,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                   ? const Center(child: CircularProgressIndicator())
                   : suppliers.isEmpty
                       ? Center(
-                          child: Text('No suppliers found', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+                          child: Text(context.tr('no_suppliers_found'), style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
                         )
                       : ListView.separated(
                           physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
