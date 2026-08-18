@@ -74,22 +74,22 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Remove Staff Member',
+          ctx.tr('remove_staff_member'),
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.textPrimary),
         ),
         content: Text(
-          'Are you sure you want to remove ${member.name} (${member.phone}) from staff roster? They will no longer be able to log in.',
+          '${ctx.tr('confirm_remove_staff')} (${member.name})',
           style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+            child: Text(ctx.tr('cancel'), style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
-            child: const Text('REMOVE'),
+            child: Text(ctx.tr('remove').toUpperCase()),
           ),
         ],
       ),
@@ -146,7 +146,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'ADD STAFF MEMBER',
+                    ctx.tr('add_staff_member').toUpperCase(),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
@@ -167,7 +167,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                 enabled: !isSaving,
                 style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  labelText: 'Staff Name *',
+                  labelText: '${ctx.tr('staff_name')} *',
                   prefixIcon: Padding(
                     padding: const EdgeInsets.all(10),
                     child: Container(
@@ -188,7 +188,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                 keyboardType: TextInputType.phone,
                 style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  labelText: 'Mobile Number *',
+                  labelText: '${ctx.tr('mobile_number')} *',
                   prefixIcon: Padding(
                     padding: const EdgeInsets.all(10),
                     child: Container(
@@ -206,7 +206,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
               DropdownButtonFormField<String>(
                 initialValue: selectedRole,
                 decoration: InputDecoration(
-                  labelText: 'Role Permission',
+                  labelText: ctx.tr('role_permission'),
                   prefixIcon: Padding(
                     padding: const EdgeInsets.all(10),
                     child: Container(
@@ -219,7 +219,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                   ),
                 ),
                 items: ['Counter Cashier', 'Shop Manager', 'Inventory Helper']
-                    .map((r) => DropdownMenuItem(value: r, child: Text(r, style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600))))
+                    .map((r) => DropdownMenuItem(value: r, child: Text(ctx.trRole(r), style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600))))
                     .toList(),
                 onChanged: isSaving ? null : (v) => selectedRole = v!,
               ),
@@ -232,9 +232,9 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                 maxLength: 4,
                 style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                 decoration: InputDecoration(
-                  labelText: '4-digit Staff Security PIN *',
+                  labelText: '${ctx.tr('security_pin')} *',
                   counterText: '',
-                  helperText: 'Cashier will use this PIN to log in on their mobile device',
+                  helperText: ctx.tr('staff_pin_hint'),
                   helperStyle: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
                   prefixIcon: Padding(
                     padding: const EdgeInsets.all(10),
@@ -326,7 +326,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
                       : Text(
-                          'SAVE STAFF MEMBER',
+                          ctx.tr('save_staff_member').toUpperCase(),
                           style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: 1.1),
                         ),
                   style: ElevatedButton.styleFrom(
