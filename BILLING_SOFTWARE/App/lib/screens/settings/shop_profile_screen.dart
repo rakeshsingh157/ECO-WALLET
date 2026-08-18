@@ -392,7 +392,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                           Icon(Icons.qr_code_2_rounded, size: 40, color: AppColors.textMuted),
                           const SizedBox(height: 8),
                           Text(
-                            'Upload QR screenshot from Gallery, scan your physical standee, or type your UPI ID',
+                            context.tr('upload_qr_hint'),
                             textAlign: TextAlign.center,
                             style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textSecondary),
                           ),
@@ -403,7 +403,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                                 child: ElevatedButton.icon(
                                   onPressed: _pickQrFromGallery,
                                   icon: const Icon(Icons.photo_library_rounded, size: 14),
-                                  label: const Text('Pick Gallery', overflow: TextOverflow.ellipsis),
+                                  label: Text(context.tr('pick_gallery'), overflow: TextOverflow.ellipsis),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.info,
                                     foregroundColor: Colors.white,
@@ -416,7 +416,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                                 child: OutlinedButton.icon(
                                   onPressed: _scanStandeeQr,
                                   icon: const Icon(Icons.qr_code_scanner_rounded, size: 14),
-                                  label: const Text('Scan Standee', overflow: TextOverflow.ellipsis),
+                                  label: Text(context.tr('scan_standee'), overflow: TextOverflow.ellipsis),
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(color: AppColors.info),
                                     padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
@@ -451,12 +451,12 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                         height: 20,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                       )
-                    : const Row(
+                    : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.save_rounded, size: 18),
-                          SizedBox(width: 8),
-                          Text('SAVE STORE PROFILE & QR'),
+                          const Icon(Icons.save_rounded, size: 18),
+                          const SizedBox(width: 8),
+                          Text(context.tr('save_shop_profile_qr').toUpperCase()),
                         ],
                       ),
               ),
