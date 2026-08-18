@@ -93,7 +93,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Backend API URL updated successfully!'),
+          content: Text(context.tr('backend_url_updated_success')),
           backgroundColor: AppColors.success,
         ),
       );
@@ -179,7 +179,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
                       side: BorderSide(color: AppColors.borderSubtle),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: Text('Android Emulator', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.forestMint)),
+                    child: Text(context.tr('android_emulator'), style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.forestMint)),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -191,7 +191,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
                       side: BorderSide(color: AppColors.borderSubtle),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: Text('Desktop Local', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.warmNavy)),
+                    child: Text(context.tr('desktop_local'), style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.warmNavy)),
                   ),
                 ),
               ],
@@ -215,7 +215,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
               controller: _apiKeyCtrl,
               style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
               decoration: InputDecoration(
-                labelText: 'ECO Merchant API Key',
+                labelText: context.tr('eco_merchant_api_key'),
                 hintText: 'key_mch_...',
                 prefixIcon: Icon(Icons.key_rounded, color: AppColors.terracotta),
               ),
