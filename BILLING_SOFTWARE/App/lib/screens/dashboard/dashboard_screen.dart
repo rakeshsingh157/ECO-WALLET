@@ -7,6 +7,9 @@ import '../../providers/auth_provider.dart';
 import '../../providers/bill_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/customer_provider.dart';
+import '../../providers/expense_provider.dart';
+import '../../providers/supplier_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../models/bill.dart';
@@ -43,6 +46,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await Future.wait([
         context.read<ProductProvider>().fetchProducts(auth.baseUrl, auth.apiKey),
         context.read<BillProvider>().fetchBills(auth.apiService),
+        context.read<CustomerProvider>().fetchCustomers(auth.apiService),
+        context.read<ExpenseProvider>().fetchExpenses(auth.apiService),
+        context.read<SupplierProvider>().fetchSuppliers(auth.apiService),
+        context.read<NotificationProvider>().fetchNotifications(auth.apiService),
       ]);
     }
   }
