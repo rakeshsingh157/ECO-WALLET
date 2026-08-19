@@ -31,7 +31,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 800),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -43,7 +43,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     );
 
     _controller.forward();
-    _initAndLaunch();
+    _initAndLoadAllData();
   }
 
   @override
@@ -52,7 +52,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     super.dispose();
   }
 
-  Future<void> _initAndLaunch() async {
+  Future<void> _initAndLoadAllData() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final productProvider = Provider.of<ProductProvider>(context, listen: false);
     final billProvider = Provider.of<BillProvider>(context, listen: false);
@@ -63,23 +63,83 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     await auth.ensureInitialized();
 
-    final minSplashDuration = Future.delayed(const Duration(milliseconds: 1400));
-
-    if (auth.isConfigured && auth.baseUrl.isNotEmpty) {
-      unawaited(Future.wait([
-        productProvider.fetchProducts(auth.baseUrl, auth.apiKey),
-        billProvider.fetchBills(auth.apiService),
-        customerProvider.fetchCustomers(auth.apiService),
-        expenseProvider.fetchExpenses(auth.apiService),
-        supplierProvider.fetchSuppliers(auth.apiService),
-        notificationProvider.fetchNotifications(auth.apiService),
-      ]));
+    if (!auth.isConfigured || auth.baseUrl.isEmpty) {
+      await Future.delayed(const Duration(milliseconds: 1000));
+      if (mounted) _navigateToNext();
+      return;
     }
 
-    await minSplashDuration;
+    bool productsSynced = false;
+    bool billsSynced = false;
+    bool customersSynced = false;
+    bool expensesSynced = false;
+    bool suppliersSynced = false;
+    bool notificationsSynced = false;
 
-    if (mounted) {
-      _navigateToNext();
+    final startTime = DateTime.now();
+
+    while (mounted) {
+      final futures = <Future<void>>[];
+
+      if (!productsSynced) {
+        futures.add(() async {
+          final ok = await productProvider.fetchProducts(auth.baseUrl, auth.apiKey);
+          if (ok) productsSynced = true;
+        }());
+      }
+
+      if (!billsSynced) {
+        futures.add(() async {
+          final ok = await billProvider.fetchBills(auth.apiService);
+          if (ok) billsSynced = true;
+        }());
+      }
+
+      if (!customersSynced) {
+        futures.add(() async {
+          final ok = await customerProvider.fetchCustomers(auth.apiService);
+          if (ok) customersSynced = true;
+        }());
+      }
+
+      if (!expensesSynced) {
+        futures.add(() async {
+          final ok = await expenseProvider.fetchExpenses(auth.apiService);
+          if (ok) expensesSynced = true;
+        }());
+      }
+
+      if (!suppliersSynced) {
+        futures.add(() async {
+          final ok = await supplierProvider.fetchSuppliers(auth.apiService);
+          if (ok) suppliersSynced = true;
+        }());
+      }
+
+      if (!notificationsSynced) {
+        futures.add(() async {
+          final ok = await notificationProvider.fetchNotifications(auth.apiService);
+          if (ok) notificationsSynced = true;
+        }());
+      }
+
+      await Future.wait(futures);
+
+      if (productsSynced &&
+          billsSynced &&
+          customersSynced &&
+          expensesSynced &&
+          suppliersSynced &&
+          notificationsSynced) {
+        final elapsed = DateTime.now().difference(startTime).inMilliseconds;
+        if (elapsed < 900) {
+          await Future.delayed(Duration(milliseconds: 900 - elapsed));
+        }
+        if (mounted) _navigateToNext();
+        return;
+      }
+
+      await Future.delayed(const Duration(milliseconds: 800));
     }
   }
 
@@ -88,7 +148,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     final auth = Provider.of<AuthProvider>(context, listen: false);
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 450),
+        transitionDuration: const Duration(milliseconds: 400),
         pageBuilder: (_, __, ___) => auth.isConfigured ? const MainShell() : const OnboardingScreen(),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(opacity: animation, child: child);
