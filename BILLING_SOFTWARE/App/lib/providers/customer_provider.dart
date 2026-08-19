@@ -24,16 +24,21 @@ class CustomerProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchCustomers(ApiService apiService) async {
+  Future<bool> fetchCustomers(ApiService apiService) async {
     _isLoading = true;
     notifyListeners();
 
-    final remote = await apiService.getCustomers();
-    if (remote.isNotEmpty) {
+    try {
+      final remote = await apiService.getCustomers();
       _customers = remote;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (_) {
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
-    _isLoading = false;
-    notifyListeners();
   }
 
   Future<bool> addCustomer(ApiService apiService, Customer customer) async {

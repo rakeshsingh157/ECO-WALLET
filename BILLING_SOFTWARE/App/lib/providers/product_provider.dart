@@ -68,8 +68,8 @@ class ProductProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchProducts(String baseUrl, String apiKey) async {
-    if (baseUrl.isEmpty) return;
+  Future<bool> fetchProducts(String baseUrl, String apiKey) async {
+    if (baseUrl.isEmpty) return false;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -77,16 +77,17 @@ class ProductProvider extends ChangeNotifier {
     try {
       final apiService = ApiService(baseUrl: baseUrl, apiKey: apiKey);
       final remoteProducts = await apiService.getProducts();
-      if (remoteProducts.isNotEmpty) {
-        _products.clear();
-        _products.addAll(remoteProducts);
-      }
+      _products.clear();
+      _products.addAll(remoteProducts);
+      _isLoading = false;
+      notifyListeners();
+      return true;
     } catch (e) {
       _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
   Future<bool> createProduct(String baseUrl, String apiKey, Product product) async {

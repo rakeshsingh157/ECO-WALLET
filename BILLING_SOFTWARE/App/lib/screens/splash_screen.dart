@@ -35,22 +35,19 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   bool _suppliersSynced = false;
   bool _notificationsSynced = false;
 
-  bool _isSyncComplete = false;
-  Timer? _syncLoopTimer;
-
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 700),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeIn),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.88, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
 
@@ -58,7 +55,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _startPersistentDataSync();
   }
 
-  void _startPersistentDataSync() async {
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _startPersistentDataSync() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final productProvider = Provider.of<ProductProvider>(context, listen: false);
     final billProvider = Provider.of<BillProvider>(context, listen: false);
@@ -67,22 +70,22 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     final supplierProvider = Provider.of<SupplierProvider>(context, listen: false);
     final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
 
+    await auth.ensureInitialized();
+
     if (!auth.isConfigured || auth.baseUrl.isEmpty) {
-      await Future.delayed(const Duration(milliseconds: 1600));
+      await Future.delayed(const Duration(milliseconds: 1000));
       if (mounted) _navigateToNext();
       return;
     }
 
-    while (mounted && !_isSyncComplete) {
+    while (mounted) {
       _attemptCount++;
       if (mounted) {
         setState(() {
           if (_attemptCount == 1) {
             _statusMessage = 'Connecting to Dukaan Dost Cloud...';
-          } else if (_attemptCount <= 3) {
-            _statusMessage = 'Waking up cloud server (attempt $_attemptCount)...';
           } else {
-            _statusMessage = 'Receiving all store data (attempt $_attemptCount)...';
+            _statusMessage = 'Waking up cloud server and receiving store data (attempt $_attemptCount)...';
           }
         });
       }
@@ -91,55 +94,43 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
       if (!_productsSynced) {
         futures.add(() async {
-          try {
-            await productProvider.fetchProducts(auth.baseUrl, auth.apiKey);
-            if (mounted) setState(() => _productsSynced = true);
-          } catch (_) {}
+          final ok = await productProvider.fetchProducts(auth.baseUrl, auth.apiKey);
+          if (ok && mounted) setState(() => _productsSynced = true);
         }());
       }
 
       if (!_billsSynced) {
         futures.add(() async {
-          try {
-            await billProvider.fetchBills(auth.apiService);
-            if (mounted) setState(() => _billsSynced = true);
-          } catch (_) {}
+          final ok = await billProvider.fetchBills(auth.apiService);
+          if (ok && mounted) setState(() => _billsSynced = true);
         }());
       }
 
       if (!_customersSynced) {
         futures.add(() async {
-          try {
-            await customerProvider.fetchCustomers(auth.apiService);
-            if (mounted) setState(() => _customersSynced = true);
-          } catch (_) {}
+          final ok = await customerProvider.fetchCustomers(auth.apiService);
+          if (ok && mounted) setState(() => _customersSynced = true);
         }());
       }
 
       if (!_expensesSynced) {
         futures.add(() async {
-          try {
-            await expenseProvider.fetchExpenses(auth.apiService);
-            if (mounted) setState(() => _expensesSynced = true);
-          } catch (_) {}
+          final ok = await expenseProvider.fetchExpenses(auth.apiService);
+          if (ok && mounted) setState(() => _expensesSynced = true);
         }());
       }
 
       if (!_suppliersSynced) {
         futures.add(() async {
-          try {
-            await supplierProvider.fetchSuppliers(auth.apiService);
-            if (mounted) setState(() => _suppliersSynced = true);
-          } catch (_) {}
+          final ok = await supplierProvider.fetchSuppliers(auth.apiService);
+          if (ok && mounted) setState(() => _suppliersSynced = true);
         }());
       }
 
       if (!_notificationsSynced) {
         futures.add(() async {
-          try {
-            await notificationProvider.fetchNotifications(auth.apiService);
-            if (mounted) setState(() => _notificationsSynced = true);
-          } catch (_) {}
+          final ok = await notificationProvider.fetchNotifications(auth.apiService);
+          if (ok && mounted) setState(() => _notificationsSynced = true);
         }());
       }
 
@@ -151,25 +142,24 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           _expensesSynced &&
           _suppliersSynced &&
           _notificationsSynced) {
-        _isSyncComplete = true;
         if (mounted) {
-          setState(() => _statusMessage = 'All store records synchronized successfully!');
+          setState(() => _statusMessage = 'All store data received successfully!');
         }
-        await Future.delayed(const Duration(milliseconds: 600));
+        await Future.delayed(const Duration(milliseconds: 400));
         if (mounted) _navigateToNext();
-        break;
+        return;
       }
 
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(milliseconds: 1500));
     }
   }
 
   void _navigateToNext() {
-    _syncLoopTimer?.cancel();
+    if (!mounted) return;
     final auth = Provider.of<AuthProvider>(context, listen: false);
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 500),
+        transitionDuration: const Duration(milliseconds: 400),
         pageBuilder: (_, __, ___) => auth.isConfigured ? const MainShell() : const OnboardingScreen(),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(opacity: animation, child: child);
@@ -179,244 +169,113 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   @override
-  void dispose() {
-    _syncLoopTimer?.cancel();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  int get _syncedCount {
-    int count = 0;
-    if (_productsSynced) count++;
-    if (_billsSynced) count++;
-    if (_customersSynced) count++;
-    if (_expensesSynced) count++;
-    if (_suppliersSynced) count++;
-    if (_notificationsSynced) count++;
-    return count;
-  }
-
-  Widget _buildSyncItem(String title, bool isSynced) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3.5),
-      child: Row(
-        children: [
-          Container(
-            width: 18,
-            height: 18,
-            decoration: BoxDecoration(
-              color: isSynced ? AppColors.forestMint : AppColors.surface,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isSynced ? AppColors.forestMint : AppColors.borderSubtle,
-                width: 1.5,
-              ),
-            ),
-            child: isSynced
-                ? const Icon(Icons.check_rounded, color: Colors.white, size: 12)
-                : Center(
-                    child: SizedBox(
-                      width: 10,
-                      height: 10,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 1.5,
-                        color: AppColors.terracotta,
-                      ),
-                    ),
-                  ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              title,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12,
-                fontWeight: isSynced ? FontWeight.w700 : FontWeight.w500,
-                color: isSynced ? AppColors.textPrimary : AppColors.textSecondary,
-              ),
-            ),
-          ),
-          if (isSynced)
-            Text(
-              'READY',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 9,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.8,
-                color: AppColors.forestMint,
-              ),
-            )
-          else
-            Text(
-              'LOADING',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
-                color: AppColors.terracotta,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final syncedCount = (_productsSynced ? 1 : 0) +
+        (_billsSynced ? 1 : 0) +
+        (_customersSynced ? 1 : 0) +
+        (_expensesSynced ? 1 : 0) +
+        (_suppliersSynced ? 1 : 0) +
+        (_notificationsSynced ? 1 : 0);
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: ScaleTransition(
-                scale: _scaleAnimation,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset(
-                      MascotAssets.shopkeeper,
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.contain,
+                    const Spacer(flex: 2),
+
+                    Container(
+                      width: 110,
+                      height: 110,
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: AppColors.borderSubtle, width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.terracotta.withValues(alpha: 0.18),
+                            blurRadius: 36,
+                            offset: const Offset(0, 14),
+                          ),
+                        ],
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Image.asset(
+                        'assets/images/app_icon.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Center(
+                          child: Icon(Icons.storefront_rounded, size: 54, color: AppColors.terracotta),
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 18),
+
+                    const SizedBox(height: 24),
 
                     Text(
                       'DUKAAN DOST',
                       style: GoogleFonts.plusJakartaSans(
-                        fontSize: 24,
+                        fontSize: 26,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 2.2,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 4),
+
+                    const SizedBox(height: 6),
 
                     Text(
-                      'Smart Retail POS & Khata Terminal',
+                      'Smart Billing for Smart Shopkeepers',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: 24),
 
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.borderSubtle, width: 1.2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: _isSyncComplete ? AppColors.forestMint : AppColors.terracotta,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    'SYNCHRONIZING STORE DATA',
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 1.1,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: AppColors.terracotta.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  '$_syncedCount / 6',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.terracotta,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
+                    const Spacer(flex: 2),
 
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: LinearProgressIndicator(
-                              value: _syncedCount / 6.0,
-                              minHeight: 6,
-                              backgroundColor: AppColors.canvas,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                _isSyncComplete ? AppColors.forestMint : AppColors.terracotta,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          _buildSyncItem('Products & Catalog Inventory', _productsSynced),
-                          _buildSyncItem('Sales Records & Bill History', _billsSynced),
-                          _buildSyncItem('Customer Directory & Khata Ledger', _customersSynced),
-                          _buildSyncItem('Store Overhead & Expense Logs', _expensesSynced),
-                          _buildSyncItem('Suppliers & Purchase Accounts', _suppliersSynced),
-                          _buildSyncItem('Notifications & System Alerts', _notificationsSynced),
-                        ],
+                    SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.terracotta),
                       ),
                     ),
-                    const SizedBox(height: 18),
 
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      child: Text(
-                        _statusMessage,
-                        key: ValueKey<String>(_statusMessage),
+                    const SizedBox(height: 16),
+
+                    Text(
+                      _statusMessage,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textMuted,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    if (syncedCount > 0)
+                      Text(
+                        'Loaded $syncedCount / 6 store modules',
                         style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.forestMint,
                         ),
-                        textAlign: TextAlign.center,
                       ),
-                    ),
 
-                    if (_attemptCount > 4) ...[
-                      const SizedBox(height: 16),
-                      TextButton.icon(
-                        onPressed: _navigateToNext,
-                        icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-                        label: const Text('Continue to Dashboard (Background Sync)'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.terracotta,
-                          textStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 12),
-                        ),
-                      ),
-                    ],
+                    const SizedBox(height: 48),
                   ],
                 ),
               ),

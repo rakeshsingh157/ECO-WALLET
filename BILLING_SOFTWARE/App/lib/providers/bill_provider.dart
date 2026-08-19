@@ -128,7 +128,7 @@ class BillProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchBills(ApiService apiService) async {
+  Future<bool> fetchBills(ApiService apiService) async {
     _isLoadingBills = true;
     notifyListeners();
 
@@ -211,11 +211,15 @@ class BillProvider extends ChangeNotifier {
             ));
           }
         }
+        _isLoadingBills = false;
+        notifyListeners();
+        return true;
       }
     } catch (_) {}
 
     _isLoadingBills = false;
     notifyListeners();
+    return false;
   }
 
   Future<bool> initiateEcoPayment(
@@ -427,3 +431,5 @@ class BillProvider extends ChangeNotifier {
     super.dispose();
   }
 }
+
+

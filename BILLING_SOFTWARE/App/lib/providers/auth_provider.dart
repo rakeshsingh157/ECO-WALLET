@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants.dart';
@@ -20,6 +21,7 @@ class AuthProvider extends ChangeNotifier {
   String _staffName = '';
   String _staffRole = '';
   String? _authError;
+  final Completer<void> _initCompleter = Completer<void>();
 
   String get apiKey => _apiKey;
   String get webhookSecret => _webhookSecret;
@@ -39,6 +41,7 @@ class AuthProvider extends ChangeNotifier {
   String get staffName => _staffName;
   String get staffRole => _staffRole;
   String? get authError => _authError;
+  Future<void> ensureInitialized() => _initCompleter.future;
 
   ApiService get apiService => ApiService(baseUrl: _baseUrl, apiKey: _apiKey);
 
@@ -64,6 +67,7 @@ class AuthProvider extends ChangeNotifier {
     _staffRole = prefs.getString('staff_role') ?? '';
 
     _isConfigured = _apiKey.isNotEmpty && _mobileNumber.isNotEmpty;
+    if (!_initCompleter.isCompleted) _initCompleter.complete();
     notifyListeners();
 
     if (_baseUrl.isNotEmpty && _isConfigured) {

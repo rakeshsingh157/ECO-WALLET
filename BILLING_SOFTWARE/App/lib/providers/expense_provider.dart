@@ -18,14 +18,21 @@ class ExpenseProvider with ChangeNotifier {
     return _expenses.fold<double>(0.0, (sum, e) => sum + e.amount);
   }
 
-  Future<void> fetchExpenses(ApiService apiService, {String? period, String? category}) async {
+  Future<bool> fetchExpenses(ApiService apiService, {String? period, String? category}) async {
     _isLoading = true;
     notifyListeners();
 
-    final remote = await apiService.getExpenses(period: period, category: category);
-    _expenses = remote;
-    _isLoading = false;
-    notifyListeners();
+    try {
+      final remote = await apiService.getExpenses(period: period, category: category);
+      _expenses = remote;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (_) {
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
 
   Future<bool> addExpense(ApiService apiService, Expense expense) async {

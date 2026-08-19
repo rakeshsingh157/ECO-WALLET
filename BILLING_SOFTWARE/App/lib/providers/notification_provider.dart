@@ -11,16 +11,21 @@ class NotificationProvider with ChangeNotifier {
 
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
 
-  Future<void> fetchNotifications(ApiService apiService) async {
+  Future<bool> fetchNotifications(ApiService apiService) async {
     _isLoading = true;
     notifyListeners();
 
-    final remote = await apiService.getNotifications();
-    if (remote.isNotEmpty) {
+    try {
+      final remote = await apiService.getNotifications();
       _notifications = remote;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (_) {
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
-    _isLoading = false;
-    notifyListeners();
   }
 
   Future<void> markAsRead(ApiService apiService, String id) async {

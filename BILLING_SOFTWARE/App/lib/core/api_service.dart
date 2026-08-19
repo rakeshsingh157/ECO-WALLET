@@ -24,6 +24,20 @@ class ApiService {
         "X-API-Key": apiKey,
       };
 
+  Future<bool> checkHealth() async {
+    if (baseUrl.isEmpty) return false;
+    try {
+      final url = Uri.parse("$_cleanBase/health");
+      final response = await http.get(url).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) return true;
+      final rootUrl = Uri.parse(baseUrl);
+      final rootResponse = await http.get(rootUrl).timeout(const Duration(seconds: 5));
+      return rootResponse.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   // ==================== AUTHENTICATION ====================
 
   Future<Map<String, dynamic>> signupMerchant({

@@ -24,16 +24,21 @@ class SupplierProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchSuppliers(ApiService apiService) async {
+  Future<bool> fetchSuppliers(ApiService apiService) async {
     _isLoading = true;
     notifyListeners();
 
-    final remote = await apiService.getSuppliers();
-    if (remote.isNotEmpty) {
+    try {
+      final remote = await apiService.getSuppliers();
       _suppliers = remote;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (_) {
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
-    _isLoading = false;
-    notifyListeners();
   }
 
   Future<bool> addSupplier(ApiService apiService, Supplier supplier) async {
