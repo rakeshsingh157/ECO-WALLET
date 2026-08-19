@@ -7,7 +7,9 @@ const NUMBER_WORDS = {
   "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
   "ondru": 1, "irandu": 2, "moondru": 3, "naangu": 4, "ainthu": 5,
   "okati": 1, "rendu": 2, "moodu": 3, "naalugu": 4, "aidu": 5,
-  "ek1": 1, "don": 2, "tin": 3, "char1": 4, "paach": 5
+  "ek1": 1, "don": 2, "tin": 3, "char1": 4, "paach": 5,
+  "adha": 0.5, "aadha": 0.5, "half": 0.5, "pav": 0.25, "paav": 0.25, "pao": 0.25, "quarter": 0.25,
+  "dedh": 1.5, "derh": 1.5, "dhai": 2.5, "dhaye": 2.5, "sawa": 1.25, "paune": 0.75
 };
 
 const MULTI_LANG_SYNONYMS = {
@@ -23,6 +25,34 @@ const MULTI_LANG_SYNONYMS = {
   "biscuit": ["biscuit", "biscuits", "parle", "cookies", "બિસ્કિટ", "बिस्कीट", "बिस्कुट", "பிஸ்கட்", "బిస్కెట్"],
   "dal": ["dal", "daal", "paruppu", "pappu", "pulse", "lentils", "દાળ", "डाळ", "दाल", "பருப்பு", "పప్పు"]
 };
+
+function normalizeQuantityForProduct(requestedQty, requestedUnit, targetUnit) {
+  let qty = typeof requestedQty === "number" ? requestedQty : parseFloat(requestedQty);
+  if (isNaN(qty) || qty <= 0) qty = 1.0;
+
+  const reqU = (requestedUnit || "").toLowerCase().trim();
+  const tgtU = (targetUnit || "").toLowerCase().trim();
+
+  if (["kg", "kilo", "kilogram", "kgs"].includes(tgtU)) {
+    if (["g", "gm", "gram", "grams", "gms"].includes(reqU)) {
+      qty = qty / 1000.0;
+    }
+  } else if (["g", "gm", "gram", "grams", "gms"].includes(tgtU)) {
+    if (["kg", "kilo", "kilogram", "kgs"].includes(reqU)) {
+      qty = qty * 1000.0;
+    }
+  } else if (["l", "ltr", "liter", "litre", "liters", "litres"].includes(tgtU)) {
+    if (["ml", "milliliter", "millilitre", "mls"].includes(reqU)) {
+      qty = qty / 1000.0;
+    }
+  } else if (["ml", "milliliter", "millilitre", "mls"].includes(tgtU)) {
+    if (["l", "ltr", "liter", "litre", "liters", "litres"].includes(reqU)) {
+      qty = qty * 1000.0;
+    }
+  }
+
+  return Math.round(qty * 10000) / 10000;
+}
 
 function mapLanguageToSarvam(langCode) {
   switch ((langCode || "").toLowerCase().trim()) {
@@ -163,10 +193,20 @@ function fallbackFuzzyMatch(spokenText, products) {
     let unit = "pcs";
     let token = words[i];
 
-    if (/^\d+(\.\d+)?$/.test(token)) {
+    const compoundMatch = token.match(/^(\d+(?:\.\d+)?)(kg|g|gm|gram|grams|l|ltr|liter|litre|ml|packet|pkt|bottle|pc|pcs)$/i);
+    if (compoundMatch) {
+      qty = parseFloat(compoundMatch[1]);
+      unit = compoundMatch[2].toLowerCase();
+      processedIndices.add(i);
+      if (i + 1 < words.length) {
+        token = words[i + 1];
+        processedIndices.add(i + 1);
+        i++;
+      }
+    } else if (/^\d+(\.\d+)?$/.test(token)) {
       qty = parseFloat(token);
       processedIndices.add(i);
-      if (i + 1 < words.length && ["kg", "g", "gm", "gram", "grams", "kilo", "l", "ltr", "liter", "litre", "bottle", "bottles", "packet", "packets", "pkt", "pkts", "pc", "pcs", "piece", "pieces", "can", "cans"].includes(words[i + 1])) {
+      if (i + 1 < words.length && ["kg", "g", "gm", "gram", "grams", "kilo", "l", "ltr", "liter", "litre", "ml", "bottle", "bottles", "packet", "packets", "pkt", "pkts", "pc", "pcs", "piece", "pieces", "can", "cans"].includes(words[i + 1])) {
         unit = words[i + 1];
         processedIndices.add(i + 1);
         i++;
@@ -176,10 +216,10 @@ function fallbackFuzzyMatch(spokenText, products) {
         processedIndices.add(i + 1);
         i++;
       }
-    } else if (NUMBER_WORDS[token]) {
+    } else if (NUMBER_WORDS[token] !== undefined) {
       qty = NUMBER_WORDS[token];
       processedIndices.add(i);
-      if (i + 1 < words.length && ["kg", "g", "gm", "gram", "grams", "kilo", "l", "ltr", "liter", "litre", "bottle", "bottles", "packet", "packets", "pkt", "pkts", "pc", "pcs", "piece", "pieces"].includes(words[i + 1])) {
+      if (i + 1 < words.length && ["kg", "g", "gm", "gram", "grams", "kilo", "l", "ltr", "liter", "litre", "ml", "bottle", "bottles", "packet", "packets", "pkt", "pkts", "pc", "pcs", "piece", "pieces"].includes(words[i + 1])) {
         unit = words[i + 1];
         processedIndices.add(i + 1);
         i++;
@@ -191,7 +231,7 @@ function fallbackFuzzyMatch(spokenText, products) {
       }
     }
 
-    if (!token || ["kg", "gm", "bottle", "packet", "and", "aur", "aur1", "mathe", "evam", "to", "ke", "ka", "ki"].includes(token)) {
+    if (!token || ["kg", "gm", "g", "ml", "liter", "bottle", "packet", "and", "aur", "aur1", "mathe", "evam", "to", "ke", "ka", "ki"].includes(token)) {
       continue;
     }
 
@@ -199,9 +239,10 @@ function fallbackFuzzyMatch(spokenText, products) {
 
     if (foundProduct) {
       const pId = foundProduct.product_id || foundProduct._id.toString();
+      const normalizedQty = normalizeQuantityForProduct(qty, unit, foundProduct.unit || "pcs");
       const alreadyInMatched = matched.find(m => m.id === pId);
       if (alreadyInMatched) {
-        alreadyInMatched.quantity += qty;
+        alreadyInMatched.quantity = Math.round((alreadyInMatched.quantity + normalizedQty) * 10000) / 10000;
       } else {
         matched.push({
           id: pId,
@@ -211,7 +252,7 @@ function fallbackFuzzyMatch(spokenText, products) {
           unit: foundProduct.unit || unit,
           stock: foundProduct.stock,
           category: foundProduct.category,
-          quantity: qty
+          quantity: normalizedQty
         });
       }
     } else {
@@ -277,7 +318,6 @@ router.post("/voice-to-cart", async (req, res) => {
 
     const mistralApiKey = process.env.MISTRAL_API_KEY;
     let mistralRawOutput = "";
-    let mistralErrorMsg = null;
 
     if (mistralApiKey && mistralApiKey.trim().length > 5) {
       try {
@@ -291,8 +331,15 @@ router.post("/voice-to-cart", async (req, res) => {
         }));
 
         const systemPrompt = `You are an expert AI retail cashier assistant for Dukaan Dost billing software in India.
-The user speaks their order items in Indian languages (Hindi, Hinglish, Marathi, Tamil, Telugu, Gujarati, or English), for example: "1 kg chini 1 bottle pani" or "2 packet doodh 500g chai".
+The user speaks their order items in Indian languages (Hindi, Hinglish, Marathi, Tamil, Telugu, Gujarati, or English), for example: "250g chini 1 bottle pani" or "500g doodh adha kilo chawal".
 Your task is to parse all items, their requested quantities and units, and match them against the merchant's available inventory.
+
+CRITICAL UNIT CONVERSIONS:
+1. Always normalize quantities to the inventory item's unit.
+2. If an inventory product is sold in 'kg', and the customer requests '250g' / '250gm' / 'ek pav', set quantity to 0.25 and unit to 'kg'.
+3. If an inventory product is sold in 'kg', and customer requests '500g' / 'adha kilo' / 'half kg', set quantity to 0.5 and unit to 'kg'.
+4. If an inventory product is sold in 'l' or 'liter', and customer requests '250ml', set quantity to 0.25 and unit to 'l'.
+5. If customer requests 'dedh kilo', set quantity to 1.5. If 'dhai kilo', set quantity to 2.5.
 
 Available Merchant Inventory:
 ${JSON.stringify(inventorySummary)}
@@ -303,7 +350,7 @@ Strict Response Format (ONLY return valid JSON without commentary):
     {
       "id": "exact product id from inventory",
       "name": "exact product name from inventory",
-      "quantity": 1,
+      "quantity": 0.25,
       "unit": "kg"
     }
   ],
@@ -353,9 +400,10 @@ Strict Response Format (ONLY return valid JSON without commentary):
 
                 if (matchedProduct) {
                   const pId = matchedProduct.product_id || matchedProduct._id.toString();
+                  const finalQty = normalizeQuantityForProduct(safeQty, item.unit, matchedProduct.unit || "pcs");
                   const existing = matchedList.find(m => m.id === pId);
                   if (existing) {
-                    existing.quantity += safeQty;
+                    existing.quantity = Math.round((existing.quantity + finalQty) * 10000) / 10000;
                   } else {
                     matchedList.push({
                       id: pId,
@@ -365,7 +413,7 @@ Strict Response Format (ONLY return valid JSON without commentary):
                       unit: matchedProduct.unit || item.unit || "pcs",
                       stock: matchedProduct.stock,
                       category: matchedProduct.category,
-                      quantity: safeQty
+                      quantity: finalQty
                     });
                   }
                 } else {

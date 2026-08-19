@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../core/theme.dart';
-import '../core/localization.dart';
 import '../core/voice_ai_service.dart';
 import '../providers/auth_provider.dart';
 import '../providers/locale_provider.dart';
@@ -18,7 +17,10 @@ class VoiceBillingModal extends StatefulWidget {
     required this.onAddToCart,
   });
 
-  static Future<void> show(BuildContext context, {required Function(List<VoiceAiItem> matched, List<VoiceAiUnmatched> unmatched) onAddToCart}) {
+  static Future<void> show(
+    BuildContext context, {
+    required Function(List<VoiceAiItem> matched, List<VoiceAiUnmatched> unmatched) onAddToCart,
+  }) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -43,8 +45,20 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
   int _recordDuration = 0;
   bool _isListening = false;
   bool _isProcessing = false;
+  bool _isAddingToCart = false;
   VoiceAiResult? _result;
   String? _errorMessage;
+
+  List<VoiceAiItem> _editableMatched = [];
+
+  final List<String> _quickVoiceExamples = [
+    '250g chini',
+    '500g aata',
+    '1.5 kg chawal',
+    '500ml doodh',
+    '2 packet biscuit',
+    '1 kg dal',
+  ];
 
   @override
   void initState() {
@@ -110,7 +124,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
       setState(() {
         _isListening = false;
         _isProcessing = false;
-        _errorMessage = 'No voice detected. Please hold the button firmly while speaking.';
+        _errorMessage = 'No voice detected. Please hold or tap the mic and speak clearly.';
       });
       return;
     }
@@ -133,6 +147,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
       setState(() {
         _isProcessing = false;
         _result = result;
+        _editableMatched = List.from(result.matched);
         if (result.rawText.isNotEmpty && result.rawText != liveText) {
           _textCtrl.text = result.rawText;
         }
@@ -140,26 +155,21 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
           _errorMessage = result.errorMessage ?? 'Failed to process voice order';
         }
       });
-
-      if (result.success && result.matched.isNotEmpty) {
-        widget.onAddToCart(result.matched, result.unmatched);
-      }
     }
   }
 
-  void _processAiOrder() async {
-    final text = _textCtrl.text.trim();
+  void _processAiOrder([String? customText]) async {
+    final text = (customText ?? _textCtrl.text).trim();
     if (text.isEmpty) return;
+
+    if (customText != null) {
+      _textCtrl.text = customText;
+    }
 
     final auth = context.read<AuthProvider>();
     final currentLocale = context.read<LocaleProvider>().locale;
 
-    final audioBase64 = await _voiceService.stopRecording();
-
-    if (!mounted) return;
-
     setState(() {
-      _isListening = false;
       _isProcessing = true;
       _errorMessage = null;
     });
@@ -167,7 +177,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
     final result = await _voiceService.processVoiceOrder(
       baseUrl: auth.baseUrl,
       apiKey: auth.apiKey,
-      audioBase64: audioBase64,
+      audioBase64: null,
       text: text,
       language: currentLocale,
     );
@@ -176,22 +186,62 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
       setState(() {
         _isProcessing = false;
         _result = result;
-        if (result.rawText.isNotEmpty && result.rawText != text) {
-          _textCtrl.text = result.rawText;
-        }
+        _editableMatched = List.from(result.matched);
         if (!result.success) {
-          _errorMessage = result.errorMessage ?? 'Failed to process voice order';
+          _errorMessage = result.errorMessage ?? 'Failed to process order';
         }
       });
-
-      if (result.success && result.matched.isNotEmpty) {
-        widget.onAddToCart(result.matched, result.unmatched);
-      }
     }
+  }
+
+  void _confirmAndAddToCart() {
+    if (_isAddingToCart || _editableMatched.isEmpty) return;
+
+    setState(() => _isAddingToCart = true);
+
+    widget.onAddToCart(
+      _editableMatched,
+      _result?.unmatched ?? [],
+    );
+
+    Navigator.pop(context);
+  }
+
+  void _updateItemQuantity(int index, double delta) {
+    setState(() {
+      final current = _editableMatched[index];
+      final newQty = math.max(0.05, (current.quantity + delta));
+      final rounded = double.parse(newQty.toStringAsFixed(3));
+
+      _editableMatched[index] = VoiceAiItem(
+        id: current.id,
+        name: current.name,
+        price: current.price,
+        unit: current.unit,
+        stock: current.stock,
+        category: current.category,
+        quantity: rounded,
+      );
+    });
+  }
+
+  void _removeItem(int index) {
+    setState(() {
+      _editableMatched.removeAt(index);
+    });
+  }
+
+  double get _totalEstimatedAmount {
+    double total = 0.0;
+    for (final item in _editableMatched) {
+      total += item.price * item.quantity;
+    }
+    return total;
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark || AppColors.isDark;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
@@ -201,12 +251,12 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
         boxShadow: const [
           BoxShadow(
             color: Color(0x22000000),
-            blurRadius: 20,
-            offset: Offset(0, -4),
+            blurRadius: 24,
+            offset: Offset(0, -6),
           ),
         ],
       ),
-      padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + bottomInset),
+      padding: EdgeInsets.fromLTRB(20, 14, 20, 20 + bottomInset),
       child: SafeArea(
         top: false,
         child: SingleChildScrollView(
@@ -219,7 +269,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.borderStrong,
+                    color: isDark ? const Color(0xFF37475A) : const Color(0xFFD5CEBF),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -235,18 +285,32 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: AppColors.terracotta.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(Icons.mic_rounded, color: AppColors.terracotta, size: 20),
                       ),
                       const SizedBox(width: 10),
-                      Text(
-                        context.tr('voice_billing_title'),
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'AI VOICE CART',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.0,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            'Speak weights, units & items',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -255,7 +319,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
                       const LanguagePickerButton(),
                       const SizedBox(width: 4),
                       IconButton(
-                        icon: Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                        icon: Icon(Icons.close_rounded, color: AppColors.textSecondary, size: 20),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -265,18 +329,54 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
               const SizedBox(height: 16),
 
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.canvas,
-                  borderRadius: BorderRadius.circular(16),
+                  color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                  borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: _isListening ? AppColors.terracotta : AppColors.borderSubtle,
-                    width: _isListening ? 1.5 : 1,
+                    color: _isListening
+                        ? AppColors.terracotta
+                        : (isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8)),
+                    width: _isListening ? 1.5 : 1.2,
                   ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Spoken Order / Items Input',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          if (_textCtrl.text.isNotEmpty)
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _textCtrl.clear();
+                                  _result = null;
+                                  _editableMatched = [];
+                                });
+                              },
+                              child: Text(
+                                'Clear',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.terracotta,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                     TextField(
                       controller: _textCtrl,
                       maxLines: 2,
@@ -287,8 +387,8 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
                       ),
                       decoration: InputDecoration(
                         hintText: _isListening
-                            ? context.tr('listening_hint')
-                            : context.tr('speak_order_prompt'),
+                            ? 'Listening... e.g. "250g chini 1 bottle pani"'
+                            : 'Tap mic or type: e.g. 250g chini, 500ml doodh, 1.5kg chawal',
                         hintStyle: GoogleFonts.plusJakartaSans(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -300,144 +400,222 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
                       ),
                       onSubmitted: (_) => _processAiOrder(),
                     ),
-                    if (_textCtrl.text.isNotEmpty)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _textCtrl.clear();
-                              _result = null;
-                            });
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              context.tr('clear_voice_text'),
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.terracotta,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ),
+
               const SizedBox(height: 10),
 
-              Text(
-                context.tr('try_speaking_example'),
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: _quickVoiceExamples.map((example) {
+                  return ActionChip(
+                    label: Text(example),
+                    labelStyle: GoogleFonts.plusJakartaSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? const Color(0xFFD5CEBF) : const Color(0xFF4A443A),
+                    ),
+                    backgroundColor: isDark ? const Color(0xFF243042) : const Color(0xFFEBE6DC),
+                    side: BorderSide.none,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    onPressed: _isProcessing ? null : () => _processAiOrder(example),
+                  );
+                }).toList(),
               ),
+
               const SizedBox(height: 16),
 
               if (_isProcessing)
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 28),
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                      width: 1.2,
+                    ),
+                  ),
                   child: Column(
                     children: [
-                      CircularProgressIndicator(color: AppColors.terracotta, strokeWidth: 3),
+                      CircularProgressIndicator(color: AppColors.terracotta, strokeWidth: 2.8),
                       const SizedBox(height: 14),
                       Text(
-                        context.tr('processing_voice_ai'),
+                        'ANALYZING SPEECH & QUANTITIES...',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 13,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
                           color: AppColors.terracotta,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Converting decimal weights into cart units',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
                   ),
                 )
-              else if (_result != null) ...[
-                if (_result!.matched.isNotEmpty) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.forestMint.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.forestMint.withValues(alpha: 0.3)),
+              else if (_result != null && _editableMatched.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: AppColors.forestMint.withValues(alpha: 0.4),
+                      width: 1.2,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.check_circle_rounded, color: AppColors.forestMint, size: 16),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${_result!.matched.length} ${context.tr('items_added_to_cart')}',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.forestMint,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.check_circle_rounded, color: AppColors.forestMint, size: 18),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${_editableMatched.length} ITEMS IDENTIFIED',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.8,
+                                  color: AppColors.forestMint,
+                                ),
                               ),
+                            ],
+                          ),
+                          Text(
+                            'Est. ₹${_totalEstimatedAmount.toStringAsFixed(2)}',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.textPrimary,
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ..._result!.matched.map((item) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 2),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      '${item.name} (${item.quantity} ${item.unit})',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      ..._editableMatched.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final item = entry.value;
+                        final itemTotal = item.price * item.quantity;
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF243042) : Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.name,
                                       style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w800,
                                         color: AppColors.textPrimary,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '₹${item.price.toStringAsFixed(0)} / ${item.unit}  •  ₹${itemTotal.toStringAsFixed(2)}',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.remove_circle_outline_rounded, size: 20),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    color: AppColors.textSecondary,
+                                    onPressed: item.quantity <= 0.1
+                                        ? () => _removeItem(index)
+                                        : () => _updateItemQuantity(
+                                              index,
+                                              ['kg', 'l', 'ltr', 'liter'].contains(item.unit.toLowerCase()) ? -0.25 : -1.0,
+                                            ),
                                   ),
-                                  Text(
-                                    '₹${(item.price * item.quantity).toStringAsFixed(2)}',
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.textPrimary,
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    child: Text(
+                                      '${item.quantity} ${item.unit}',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w900,
+                                        color: AppColors.terracotta,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    color: AppColors.forestMint,
+                                    onPressed: () => _updateItemQuantity(
+                                      index,
+                                      ['kg', 'l', 'ltr', 'liter'].contains(item.unit.toLowerCase()) ? 0.25 : 1.0,
                                     ),
                                   ),
                                 ],
                               ),
-                            )),
-                      ],
-                    ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                ],
+                ),
+                const SizedBox(height: 12),
 
                 if (_result!.unmatched.isNotEmpty) ...[
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.terracotta.withValues(alpha: 0.08),
+                      color: AppColors.error.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.3)),
+                      border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.warning_amber_rounded, color: AppColors.terracotta, size: 16),
+                            Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 16),
                             const SizedBox(width: 6),
                             Text(
-                              context.tr('items_not_found_alert'),
+                              'Not In Inventory (${_result!.unmatched.length})',
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.terracotta,
+                                color: AppColors.error,
                               ),
                             ),
                           ],
@@ -445,51 +623,60 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
                         const SizedBox(height: 6),
                         ..._result!.unmatched.map((item) => Padding(
                               padding: const EdgeInsets.symmetric(vertical: 2),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.close_rounded, color: AppColors.error, size: 14),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${item.name} (${item.quantity} ${item.unit})',
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 12,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ],
+                              child: Text(
+                                '• ${item.name} (${item.quantity} ${item.unit})',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                             )),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                 ],
 
-                ElevatedButton.icon(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.shopping_cart_checkout_rounded, size: 18),
-                  label: Text(context.tr('checkout')),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.terracotta,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _isAddingToCart ? null : _confirmAndAddToCart,
+                    icon: _isAddingToCart
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                          )
+                        : const Icon(Icons.add_shopping_cart_rounded, size: 20),
+                    label: Text(
+                      _isAddingToCart
+                          ? 'ADDING TO CART...'
+                          : 'ADD ${_editableMatched.length} ITEMS TO BILL (₹${_totalEstimatedAmount.toStringAsFixed(0)})',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.forestMint,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
                   ),
                 ),
               ] else ...[
                 Center(
                   child: GestureDetector(
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            context.tr('tap_and_hold_to_speak'),
-                            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
-                          ),
-                          duration: const Duration(seconds: 2),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
+                      if (_isListening) {
+                        _stopVoiceAndProcess();
+                      } else {
+                        _startVoiceListening();
+                      }
                     },
                     onLongPressStart: (_) => _startVoiceListening(),
                     onLongPressEnd: (_) => _stopVoiceAndProcess(),
@@ -519,8 +706,8 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
                               return Transform.scale(
                                 scale: _isListening ? _coreScaleAnimation.value : 1.0,
                                 child: Container(
-                                  width: 82,
-                                  height: 82,
+                                  width: 84,
+                                  height: 84,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     gradient: LinearGradient(
@@ -532,15 +719,15 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
                                               const Color(0xFFD34724),
                                             ]
                                           : [
-                                              AppColors.canvas,
-                                              AppColors.surface,
+                                              isDark ? const Color(0xFF243042) : const Color(0xFFFFFFFF),
+                                              isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
                                             ],
                                     ),
                                     border: Border.all(
                                       color: _isListening
-                                          ? Colors.white.withValues(alpha: 0.35)
-                                          : AppColors.terracotta.withValues(alpha: 0.4),
-                                      width: _isListening ? 2 : 1.5,
+                                          ? Colors.white.withValues(alpha: 0.4)
+                                          : AppColors.terracotta.withValues(alpha: 0.5),
+                                      width: _isListening ? 2.5 : 1.8,
                                     ),
                                     boxShadow: _isListening
                                         ? [
@@ -563,7 +750,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
                                     child: Icon(
                                       _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
                                       color: _isListening ? Colors.white : AppColors.terracotta,
-                                      size: 34,
+                                      size: 36,
                                     ),
                                   ),
                                 ),
@@ -582,7 +769,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: AppColors.canvas,
+                        color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.3)),
                       ),
@@ -615,7 +802,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
                 else
                   Center(
                     child: Text(
-                      context.tr('tap_and_hold_to_speak'),
+                      'Hold or Tap Mic to Speak Order',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -625,35 +812,46 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
                     ),
                   ),
 
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
                 if (_textCtrl.text.trim().isNotEmpty)
-                  ElevatedButton.icon(
-                    onPressed: _processAiOrder,
-                    icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                    label: Text(context.tr('process_order_ai_btn')),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.terracotta,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _processAiOrder(),
+                      icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                      label: Text(
+                        'PROCESS ORDER VIA AI',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.terracotta,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
                     ),
                   ),
               ],
 
               if (_errorMessage != null) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: AppColors.error.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     _errorMessage!,
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.error,
                     ),
                     textAlign: TextAlign.center,
