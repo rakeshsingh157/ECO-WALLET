@@ -13,6 +13,7 @@ import 'shop_profile_screen.dart';
 import 'language_selection_screen.dart';
 import 'backup_restore_screen.dart';
 import 'help_support_screen.dart';
+import '../../core/update_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -238,6 +239,15 @@ class SettingsScreen extends StatelessWidget {
                     subtitle: context.tr('help_support_sub'),
                     color: AppColors.warmNavy,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpSupportScreen())),
+                  ),
+                  Divider(color: AppColors.borderSubtle, height: 20),
+                  _buildNavRow(
+                    context,
+                    icon: Icons.system_update_rounded,
+                    title: context.tr('check_updates'),
+                    subtitle: context.tr('check_updates_sub'),
+                    color: AppColors.terracotta,
+                    onTap: () => UpdateService.checkForUpdates(context, isManual: true),
                   ),
                 ],
               ),

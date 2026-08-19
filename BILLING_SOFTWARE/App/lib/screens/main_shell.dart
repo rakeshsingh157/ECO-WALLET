@@ -11,6 +11,7 @@ import '../providers/expense_provider.dart';
 import '../providers/supplier_provider.dart';
 import '../providers/notification_provider.dart';
 import '../providers/locale_provider.dart';
+import '../core/update_service.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'inventory/products_screen.dart';
 import 'pos/pos_screen.dart';
@@ -32,6 +33,7 @@ class _MainShellState extends State<MainShell> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _syncAllStoreData();
+      UpdateService.checkForUpdates(context);
     });
   }
 
