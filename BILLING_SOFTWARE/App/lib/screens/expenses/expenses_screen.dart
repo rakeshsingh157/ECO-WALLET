@@ -70,182 +70,404 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
       isScrollControlled: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-            left: 20,
-            right: 20,
-            top: 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        builder: (ctx, setModalState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark || AppColors.isDark;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              left: 20,
+              right: 20,
+              top: 14,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    isEdit ? ctx.tr('edit_expense').toUpperCase() : ctx.tr('add_expense').toUpperCase(),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                      color: AppColors.textPrimary,
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF37475A) : const Color(0xFFD5CEBF),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
-                    onPressed: isSaving ? null : () => Navigator.pop(ctx),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              isEdit ? Icons.edit_note_rounded : Icons.receipt_long_rounded,
+                              size: 20,
+                              color: AppColors.error,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            (isEdit ? ctx.tr('edit_expense') : ctx.tr('add_expense')).toUpperCase(),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.0,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
+                        onPressed: isSaving ? null : () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Expense Title / Description *',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: titleCtrl,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'e.g. Electricity Bill, Shop Rent, Tea & Snacks',
+                            prefixIcon: Icon(Icons.description_outlined, color: AppColors.terracotta, size: 20),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Amount (₹) *',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: amountCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.error,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: '0.00',
+                            prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.error, size: 20),
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        Wrap(
+                          spacing: 8,
+                          children: [50, 100, 200, 500, 1000].map((preset) {
+                            return ActionChip(
+                              label: Text('+₹$preset'),
+                              labelStyle: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: isDark ? const Color(0xFFD5CEBF) : const Color(0xFF4A443A),
+                              ),
+                              backgroundColor: isDark ? const Color(0xFF243042) : const Color(0xFFEBE6DC),
+                              side: BorderSide.none,
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              onPressed: () {
+                                final cur = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                                final next = cur + preset;
+                                amountCtrl.text = next.truncateToDouble() == next ? next.toInt().toString() : next.toString();
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            'Category',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: categoryOptions.map((c) {
+                            final isSel = category == c;
+                            return ChoiceChip(
+                              label: Text(ctx.trExpenseCategory(c)),
+                              selected: isSel,
+                              labelStyle: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
+                                color: isSel ? Colors.white : AppColors.textPrimary,
+                              ),
+                              selectedColor: AppColors.terracotta,
+                              backgroundColor: isDark ? const Color(0xFF243042) : const Color(0xFFEBE6DC),
+                              showCheckmark: false,
+                              side: BorderSide.none,
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              onSelected: (sel) {
+                                if (sel) setModalState(() => category = c);
+                              },
+                            );
+                          }).toList(),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            'Payment Mode',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: modeOptions.map((m) {
+                            final isSel = paymentMode == m;
+                            return ChoiceChip(
+                              label: Text(
+                                m == 'Cash'
+                                    ? ctx.tr('cash')
+                                    : (m == 'UPI'
+                                        ? ctx.tr('upi')
+                                        : (m == 'ECO Wallet' ? ctx.tr('eco_wallet') : ctx.tr('bank_transfer'))),
+                              ),
+                              selected: isSel,
+                              labelStyle: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
+                                color: isSel ? Colors.white : AppColors.textPrimary,
+                              ),
+                              selectedColor: AppColors.forestMint,
+                              backgroundColor: isDark ? const Color(0xFF243042) : const Color(0xFFEBE6DC),
+                              showCheckmark: false,
+                              side: BorderSide.none,
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              onSelected: (sel) {
+                                if (sel) setModalState(() => paymentMode = m);
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Notes / Remarks (Optional)',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: notesCtrl,
+                          style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                          decoration: InputDecoration(
+                            hintText: 'Any extra details or memo',
+                            prefixIcon: Icon(Icons.notes_rounded, color: AppColors.textSecondary, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                              final title = titleCtrl.text.trim();
+                              if (title.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Please enter an expense title'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+                              if (amt <= 0) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Please enter a valid expense amount'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              setModalState(() => isSaving = true);
+                              final auth = context.read<AuthProvider>();
+                              final expenseProvider = context.read<ExpenseProvider>();
+
+                              if (isEdit) {
+                                final updated = Expense(
+                                  id: expense.id,
+                                  title: title,
+                                  amount: amt,
+                                  category: category,
+                                  paymentMode: paymentMode,
+                                  notes: notesCtrl.text.trim(),
+                                  date: expense.date,
+                                );
+                                final success = await expenseProvider.updateExpense(auth.apiService, updated);
+                                if (ctx.mounted) Navigator.pop(ctx);
+                                if (mounted) {
+                                  if (success) {
+                                    AppNotifier.success(context, 'Expense updated successfully', title: 'EXPENSE UPDATED');
+                                  } else {
+                                    AppNotifier.error(context, 'Failed to update expense', title: 'UPDATE ERROR');
+                                  }
+                                }
+                              } else {
+                                final newExp = Expense(
+                                  id: 'exp_${DateTime.now().millisecondsSinceEpoch}',
+                                  title: title,
+                                  amount: amt,
+                                  category: category,
+                                  paymentMode: paymentMode,
+                                  notes: notesCtrl.text.trim(),
+                                  date: DateTime.now(),
+                                );
+                                final success = await expenseProvider.addExpense(auth.apiService, newExp);
+                                if (ctx.mounted) Navigator.pop(ctx);
+                                if (mounted) {
+                                  if (success) {
+                                    AppNotifier.success(context, 'Expense added successfully', title: 'EXPENSE SAVED');
+                                  } else {
+                                    AppNotifier.error(context, 'Failed to add expense', title: 'EXPENSE ERROR');
+                                  }
+                                }
+                              }
+                            },
+                      icon: isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                            )
+                          : const Icon(Icons.check_circle_rounded, size: 20),
+                      label: Text(
+                        isSaving
+                            ? 'SAVING EXPENSE...'
+                            : (isEdit ? 'UPDATE EXPENSE' : 'SAVE EXPENSE RECORD'),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.terracotta,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: titleCtrl,
-                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-                decoration: InputDecoration(
-                  labelText: ctx.tr('expense_title'),
-                  hintText: 'e.g. Electricity Bill, Shop Rent',
-                  prefixIcon: Icon(Icons.receipt_long_rounded, color: AppColors.terracotta),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: amountCtrl,
-                keyboardType: TextInputType.number,
-                style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                decoration: InputDecoration(
-                  labelText: ctx.tr('expense_amount'),
-                  hintText: '0.00',
-                  prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.error),
-                ),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: category,
-                decoration: InputDecoration(
-                  labelText: ctx.tr('expense_category'),
-                  prefixIcon: Icon(Icons.category_rounded, color: AppColors.terracotta),
-                ),
-                items: categoryOptions
-                    .map((c) => DropdownMenuItem(value: c, child: Text(ctx.trExpenseCategory(c), style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary))))
-                    .toList(),
-                onChanged: (v) => setModalState(() => category = v!),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: paymentMode,
-                decoration: InputDecoration(
-                  labelText: ctx.tr('paid_via'),
-                  prefixIcon: Icon(Icons.payment_rounded, color: AppColors.forestMint),
-                ),
-                items: modeOptions
-                    .map((m) => DropdownMenuItem(
-                          value: m,
-                          child: Text(
-                            m == 'Cash'
-                                ? ctx.tr('cash')
-                                : (m == 'UPI'
-                                    ? ctx.tr('upi')
-                                    : (m == 'ECO Wallet' ? ctx.tr('eco_wallet') : ctx.tr('bank_transfer'))),
-                            style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-                          ),
-                        ))
-                    .toList(),
-                onChanged: (v) => setModalState(() => paymentMode = v!),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: notesCtrl,
-                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-                decoration: InputDecoration(
-                  labelText: '${ctx.tr('notes')} (${ctx.tr('optional')})',
-                  hintText: 'Add description or remarks',
-                  prefixIcon: Icon(Icons.notes_rounded, color: AppColors.textSecondary),
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: isSaving ? null : () async {
-                    if (isSaving) return;
-                    final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
-                    final title = titleCtrl.text.trim();
-                    if (title.isEmpty) {
-                      AppNotifier.warning(ctx, 'Please enter an expense title', title: 'REQUIRED FIELD');
-                      return;
-                    }
-                    if (amt <= 0) {
-                      AppNotifier.warning(ctx, 'Please enter a valid expense amount', title: 'INVALID AMOUNT');
-                      return;
-                    }
-
-                    setModalState(() => isSaving = true);
-                    final auth = context.read<AuthProvider>();
-                    final expenseProvider = context.read<ExpenseProvider>();
-
-                    if (isEdit) {
-                      final updated = Expense(
-                        id: expense.id,
-                        title: title,
-                        amount: amt,
-                        category: category,
-                        paymentMode: paymentMode,
-                        notes: notesCtrl.text.trim(),
-                        date: expense.date,
-                      );
-                      final success = await expenseProvider.updateExpense(auth.apiService, updated);
-                      if (ctx.mounted) Navigator.pop(ctx);
-                      if (mounted) {
-                        if (success) {
-                          AppNotifier.success(context, 'Expense updated successfully', title: 'EXPENSE UPDATED');
-                        } else {
-                          AppNotifier.error(context, 'Failed to update expense', title: 'UPDATE ERROR');
-                        }
-                      }
-                    } else {
-                      final newExp = Expense(
-                        id: 'exp_${DateTime.now().millisecondsSinceEpoch}',
-                        title: title,
-                        amount: amt,
-                        category: category,
-                        paymentMode: paymentMode,
-                        notes: notesCtrl.text.trim(),
-                        date: DateTime.now(),
-                      );
-                      final success = await expenseProvider.addExpense(auth.apiService, newExp);
-                      if (ctx.mounted) Navigator.pop(ctx);
-                      if (mounted) {
-                        if (success) {
-                          AppNotifier.success(context, 'Expense recorded successfully', title: 'EXPENSE SAVED');
-                        } else {
-                          AppNotifier.error(context, 'Failed to record expense', title: 'SAVE ERROR');
-                        }
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.terracotta,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: isSaving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : Text(isEdit ? ctx.tr('update_expense').toUpperCase() : ctx.tr('save_expense').toUpperCase()),
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

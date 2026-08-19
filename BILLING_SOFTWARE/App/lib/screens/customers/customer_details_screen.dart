@@ -59,98 +59,277 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     final noteCtrl = TextEditingController(text: 'Store goods on credit');
     bool isSaving = false;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(
-            context.tr('add_credit_entry'),
-            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('${context.tr('giving_credit_to')} ${liveCustomer.name}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
-              const SizedBox(height: 8),
-              Text(
-                '${context.tr('current_balance')}: ₹${liveCustomer.dueAmount.toStringAsFixed(0)}',
-                style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.chaiGold),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: amountCtrl,
-                enabled: !isSaving,
-                keyboardType: TextInputType.number,
-                autofocus: true,
-                style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                decoration: InputDecoration(labelText: context.tr('credit_amount'), prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.terracotta)),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: noteCtrl,
-                enabled: !isSaving,
-                style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textPrimary),
-                decoration: InputDecoration(labelText: context.tr('note_details'), prefixIcon: const Icon(Icons.note_alt_outlined)),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: isSaving ? null : () => Navigator.pop(ctx),
-              child: Text(context.tr('cancel'), style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
-            ),
-            ElevatedButton(
-              onPressed: isSaving
-                  ? null
-                  : () async {
-                      final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
-                      if (amt <= 0) {
-                        AppNotifier.warning(ctx, 'Please enter a valid credit amount', title: 'INVALID AMOUNT');
-                        return;
-                      }
+        builder: (ctx, setModalState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark || AppColors.isDark;
 
-                      setDialogState(() => isSaving = true);
-                      try {
-                        final auth = context.read<AuthProvider>();
-                        final note = noteCtrl.text.trim().isNotEmpty ? noteCtrl.text.trim() : 'Store goods credit';
-                        await context.read<CustomerProvider>().addCredit(
-                          auth.apiService,
-                          liveCustomer.id,
-                          amt,
-                          note: note,
-                        );
-                        _loadTransactions();
-                        if (ctx.mounted) {
-                          Navigator.pop(ctx);
-                        }
-                        if (mounted) {
-                          AppNotifier.success(
-                            context,
-                            'Added ₹${amt.toStringAsFixed(0)} credit for ${liveCustomer.name}',
-                            title: 'KHATA UPDATED',
-                          );
-                        }
-                      } catch (_) {
-                        if (ctx.mounted) {
-                          setDialogState(() => isSaving = false);
-                          AppNotifier.error(
-                            ctx,
-                            'Failed to record Khata credit. Please check connection.',
-                            title: 'SYNC ERROR',
-                          );
-                        }
-                      }
-                    },
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.terracotta, foregroundColor: Colors.white),
-              child: isSaving
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : Text(context.tr('save').toUpperCase()),
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              left: 20,
+              right: 20,
+              top: 14,
             ),
-          ],
-        ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF37475A) : const Color(0xFFD5CEBF),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.terracotta.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(Icons.add_card_rounded, size: 20, color: AppColors.terracotta),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            context.tr('add_credit_entry').toUpperCase(),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.0,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
+                        onPressed: isSaving ? null : () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Current Khata Due',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            Text(
+                              '₹${liveCustomer.dueAmount.toStringAsFixed(0)}',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.chaiGold,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Credit Amount (₹) *',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: amountCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.terracotta,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: '0.00',
+                            prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.terracotta, size: 20),
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        Wrap(
+                          spacing: 8,
+                          children: [100, 200, 500, 1000].map((preset) {
+                            return ActionChip(
+                              label: Text('+₹$preset'),
+                              labelStyle: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: isDark ? const Color(0xFFD5CEBF) : const Color(0xFF4A443A),
+                              ),
+                              backgroundColor: isDark ? const Color(0xFF243042) : const Color(0xFFEBE6DC),
+                              side: BorderSide.none,
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              onPressed: () {
+                                final cur = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                                final next = cur + preset;
+                                amountCtrl.text = next.truncateToDouble() == next ? next.toInt().toString() : next.toString();
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Reason / Particulars (Optional)',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: noteCtrl,
+                          style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                          decoration: InputDecoration(
+                            hintText: 'Store goods, groceries, etc.',
+                            prefixIcon: Icon(Icons.notes_rounded, color: AppColors.textSecondary, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                              if (amt <= 0) {
+                                AppNotifier.warning(ctx, 'Please enter a valid credit amount', title: 'INVALID AMOUNT');
+                                return;
+                              }
+
+                              setModalState(() => isSaving = true);
+                              try {
+                                final auth = context.read<AuthProvider>();
+                                final note = noteCtrl.text.trim().isNotEmpty ? noteCtrl.text.trim() : 'Store goods credit';
+                                await context.read<CustomerProvider>().addCredit(
+                                  auth.apiService,
+                                  liveCustomer.id,
+                                  amt,
+                                  note: note,
+                                );
+                                _loadTransactions();
+                                if (ctx.mounted) {
+                                  Navigator.pop(ctx);
+                                }
+                                if (mounted) {
+                                  AppNotifier.success(
+                                    context,
+                                    'Added ₹${amt.toStringAsFixed(0)} credit for ${liveCustomer.name}',
+                                    title: 'KHATA UPDATED',
+                                  );
+                                }
+                              } catch (_) {
+                                if (ctx.mounted) {
+                                  setModalState(() => isSaving = false);
+                                  AppNotifier.error(
+                                    ctx,
+                                    'Failed to record Khata credit. Please check connection.',
+                                    title: 'SYNC ERROR',
+                                  );
+                                }
+                              }
+                            },
+                      icon: isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                            )
+                          : const Icon(Icons.check_circle_rounded, size: 20),
+                      label: Text(
+                        isSaving ? 'SAVING CREDIT...' : 'RECORD KHATA CREDIT',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.terracotta,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -176,164 +355,346 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     String selectedMode = 'cash';
     bool isRecording = false;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(
-            context.tr('collect_due'),
-            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('${context.tr('receiving_payment_from')} ${liveCustomer.name}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.chaiGold.withAlpha(20),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.chaiGold.withAlpha(80)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      context.tr('max_payable_due'),
-                      style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-                    ),
-                    Text(
-                      '₹${liveCustomer.dueAmount.toStringAsFixed(0)}',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.chaiGold),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: amountCtrl,
-                enabled: !isRecording,
-                keyboardType: TextInputType.number,
-                autofocus: true,
-                style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                decoration: InputDecoration(
-                  labelText: context.tr('amount_received'),
-                  helperText: '${context.tr('must_not_exceed')} ₹${liveCustomer.dueAmount.toStringAsFixed(0)}',
-                  prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.forestMint),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(context.tr('payment_mode').toUpperCase(), style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.textSecondary)),
-              const SizedBox(height: 6),
-              Row(
+        builder: (ctx, setModalState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark || AppColors.isDark;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              left: 20,
+              right: 20,
+              top: 14,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ChoiceChip(
-                    label: Text(context.tr('cash')),
-                    selected: selectedMode == 'cash',
-                    selectedColor: AppColors.forestMint,
-                    labelStyle: TextStyle(color: selectedMode == 'cash' ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.w700),
-                    onSelected: isRecording ? null : (_) => setDialogState(() => selectedMode = 'cash'),
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF37475A) : const Color(0xFFD5CEBF),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  ChoiceChip(
-                    label: Text(context.tr('upi')),
-                    selected: selectedMode == 'upi',
-                    selectedColor: AppColors.forestMint,
-                    labelStyle: TextStyle(color: selectedMode == 'upi' ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.w700),
-                    onSelected: isRecording ? null : (_) => setDialogState(() => selectedMode = 'upi'),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.forestMint.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(Icons.payments_rounded, size: 20, color: AppColors.forestMint),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            context.tr('collect_due').toUpperCase(),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.0,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
+                        onPressed: isRecording ? null : () => Navigator.pop(ctx),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  ChoiceChip(
-                    label: Text(context.tr('bank')),
-                    selected: selectedMode == 'bank',
-                    selectedColor: AppColors.forestMint,
-                    labelStyle: TextStyle(color: selectedMode == 'bank' ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.w700),
-                    onSelected: isRecording ? null : (_) => setDialogState(() => selectedMode = 'bank'),
+
+                  const SizedBox(height: 18),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              context.tr('max_payable_due'),
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            Text(
+                              '₹${liveCustomer.dueAmount.toStringAsFixed(0)}',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.chaiGold,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Amount Received (₹) *',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: amountCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.forestMint,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: '0.00',
+                            prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.forestMint, size: 20),
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            ActionChip(
+                              label: const Text('Full Due'),
+                              labelStyle: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.chaiGold,
+                              ),
+                              backgroundColor: AppColors.chaiGold.withValues(alpha: 0.15),
+                              side: BorderSide.none,
+                              onPressed: () {
+                                amountCtrl.text = liveCustomer.dueAmount.toStringAsFixed(0);
+                              },
+                            ),
+                            ...[100, 200, 500, 1000].map((preset) {
+                              return ActionChip(
+                                label: Text('+₹$preset'),
+                                labelStyle: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark ? const Color(0xFFD5CEBF) : const Color(0xFF4A443A),
+                                ),
+                                backgroundColor: isDark ? const Color(0xFF243042) : const Color(0xFFEBE6DC),
+                                side: BorderSide.none,
+                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                onPressed: () {
+                                  final cur = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                                  final next = cur + preset;
+                                  amountCtrl.text = next.truncateToDouble() == next ? next.toInt().toString() : next.toString();
+                                },
+                              );
+                            }),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            'Payment Mode',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        Wrap(
+                          spacing: 8,
+                          children: ['cash', 'upi', 'bank'].map((mode) {
+                            final isSel = selectedMode == mode;
+                            return ChoiceChip(
+                              label: Text(
+                                mode == 'cash'
+                                    ? context.tr('cash')
+                                    : (mode == 'upi' ? context.tr('upi') : context.tr('bank')),
+                              ),
+                              selected: isSel,
+                              selectedColor: AppColors.forestMint,
+                              labelStyle: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
+                                color: isSel ? Colors.white : AppColors.textPrimary,
+                              ),
+                              backgroundColor: isDark ? const Color(0xFF243042) : const Color(0xFFEBE6DC),
+                              showCheckmark: false,
+                              side: BorderSide.none,
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              onSelected: isRecording ? null : (_) => setModalState(() => selectedMode = mode),
+                            );
+                          }).toList(),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Note / Memo (Optional)',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: noteCtrl,
+                          style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                          decoration: InputDecoration(
+                            hintText: 'e.g. Khata settlement',
+                            prefixIcon: Icon(Icons.notes_rounded, color: AppColors.textSecondary, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: isRecording
+                          ? null
+                          : () async {
+                              final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                              if (amt <= 0) {
+                                AppNotifier.warning(ctx, 'Please enter a valid payment amount', title: 'INVALID AMOUNT');
+                                return;
+                              }
+
+                              if (amt > _customer.dueAmount) {
+                                AppNotifier.warning(
+                                  ctx,
+                                  'Payment amount (₹${amt.toStringAsFixed(0)}) cannot exceed pending due of ₹${_customer.dueAmount.toStringAsFixed(0)}',
+                                  title: 'EXCEEDS DUE AMOUNT',
+                                );
+                                return;
+                              }
+
+                              setModalState(() => isRecording = true);
+                              final auth = context.read<AuthProvider>();
+                              final custProvider = context.read<CustomerProvider>();
+                              final billProvider = context.read<BillProvider>();
+                              final note = noteCtrl.text.trim().isNotEmpty ? noteCtrl.text.trim() : 'Khata settlement';
+
+                              final success = await custProvider.recordPayment(
+                                auth.apiService,
+                                _customer.id,
+                                amt,
+                                note: note,
+                                paymentMode: selectedMode,
+                              );
+
+                              if (success) {
+                                setState(() {
+                                  _customer.dueAmount = (_customer.dueAmount - amt) < 0 ? 0 : _customer.dueAmount - amt;
+                                });
+                                _loadTransactions();
+                                billProvider.fetchBills(auth.apiService);
+                                custProvider.fetchCustomers(auth.apiService);
+                                if (ctx.mounted) {
+                                  Navigator.pop(ctx);
+                                }
+                                if (mounted) {
+                                  AppNotifier.success(
+                                    context,
+                                    'Received ₹${amt.toStringAsFixed(0)} from ${_customer.name} via ${selectedMode.toUpperCase()}',
+                                    title: 'PAYMENT RECORDED',
+                                  );
+                                }
+                              } else {
+                                setModalState(() => isRecording = false);
+                                if (ctx.mounted) {
+                                  AppNotifier.error(ctx, 'Failed to record payment. Please try again.', title: 'PAYMENT ERROR');
+                                }
+                              }
+                            },
+                      icon: isRecording
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                            )
+                          : const Icon(Icons.check_circle_rounded, size: 20),
+                      label: Text(
+                        isRecording ? 'SAVING PAYMENT...' : 'CONFIRM & SAVE PAYMENT',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.forestMint,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: noteCtrl,
-                enabled: !isRecording,
-                style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textPrimary),
-                decoration: InputDecoration(labelText: context.tr('note_details'), prefixIcon: const Icon(Icons.note_alt_outlined)),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: isRecording ? null : () => Navigator.pop(ctx),
-              child: Text(context.tr('cancel'), style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
             ),
-            ElevatedButton(
-              onPressed: isRecording
-                  ? null
-                  : () async {
-                      final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
-                      if (amt <= 0) {
-                        AppNotifier.warning(ctx, 'Please enter a valid payment amount', title: 'INVALID AMOUNT');
-                        return;
-                      }
-
-                      if (amt > _customer.dueAmount) {
-                        AppNotifier.warning(
-                          ctx,
-                          'Payment amount (₹${amt.toStringAsFixed(0)}) cannot exceed pending due of ₹${_customer.dueAmount.toStringAsFixed(0)}',
-                          title: 'EXCEEDS DUE AMOUNT',
-                        );
-                        return;
-                      }
-
-                      setDialogState(() => isRecording = true);
-                      final auth = context.read<AuthProvider>();
-                      final custProvider = context.read<CustomerProvider>();
-                      final billProvider = context.read<BillProvider>();
-                      final note = noteCtrl.text.trim().isNotEmpty ? noteCtrl.text.trim() : 'Khata settlement';
-
-                      final success = await custProvider.recordPayment(
-                        auth.apiService,
-                        _customer.id,
-                        amt,
-                        note: note,
-                        paymentMode: selectedMode,
-                      );
-
-                      if (success) {
-                        setState(() {
-                          _customer.dueAmount = (_customer.dueAmount - amt) < 0 ? 0 : _customer.dueAmount - amt;
-                        });
-                        _loadTransactions();
-                        billProvider.fetchBills(auth.apiService);
-                        custProvider.fetchCustomers(auth.apiService);
-                        if (ctx.mounted) {
-                          Navigator.pop(ctx);
-                        }
-                        if (mounted) {
-                          AppNotifier.success(
-                            context,
-                            'Received ₹${amt.toStringAsFixed(0)} from ${_customer.name} via ${selectedMode.toUpperCase()}',
-                            title: 'PAYMENT RECORDED',
-                          );
-                        }
-                      } else {
-                        setDialogState(() => isRecording = false);
-                        if (ctx.mounted) {
-                          AppNotifier.error(ctx, 'Failed to record payment. Please try again.', title: 'PAYMENT ERROR');
-                        }
-                      }
-                    },
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.forestMint, foregroundColor: Colors.white),
-              child: isRecording
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : Text(context.tr('save_payment').toUpperCase()),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

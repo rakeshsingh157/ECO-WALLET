@@ -61,210 +61,353 @@ class _KhataScreenState extends State<KhataScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-            left: 20,
-            right: 20,
-            top: 20,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      ctx.tr('add_credit_entry'),
-                      style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
-                      onPressed: isSaving ? null : () => Navigator.pop(ctx),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
+        builder: (ctx, setModalState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark || AppColors.isDark;
 
-                if (customerProvider.customers.isNotEmpty)
-                  Row(
-                    children: [
-                      ChoiceChip(
-                        label: Text(ctx.tr('existing_customer'), style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
-                        selected: !isNewCustomer,
-                        selectedColor: AppColors.terracotta,
-                        labelStyle: TextStyle(color: !isNewCustomer ? Colors.white : AppColors.textPrimary),
-                        onSelected: isSaving ? null : (val) => setModalState(() => isNewCustomer = false),
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              left: 20,
+              right: 20,
+              top: 20,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF37475A) : const Color(0xFFD5CEBF),
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                      const SizedBox(width: 8),
-                      ChoiceChip(
-                        label: Text('+ ${ctx.tr('new_customer')}', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
-                        selected: isNewCustomer,
-                        selectedColor: AppColors.terracotta,
-                        labelStyle: TextStyle(color: isNewCustomer ? Colors.white : AppColors.textPrimary),
-                        onSelected: isSaving ? null : (val) => setModalState(() => isNewCustomer = true),
+                    ),
+                  ),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.terracotta.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(Icons.add_card_rounded, size: 20, color: AppColors.terracotta),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            ctx.tr('add_credit_entry').toUpperCase(),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.0,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
+                        onPressed: isSaving ? null : () => Navigator.pop(ctx),
                       ),
                     ],
                   ),
-                const SizedBox(height: 12),
 
-                if (!isNewCustomer && customerProvider.customers.isNotEmpty) ...[
-                  DropdownButtonFormField<Customer>(
-                    initialValue: selectedCustomer,
-                    decoration: InputDecoration(
-                      labelText: ctx.tr('select_customer'),
-                      prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta),
+                  const SizedBox(height: 18),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                        width: 1.2,
+                      ),
                     ),
-                    items: customerProvider.customers
-                        .map((c) => DropdownMenuItem(
-                              value: c,
-                              child: Text('${c.name} (${c.phone})', style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary)),
-                            ))
-                        .toList(),
-                    onChanged: isSaving ? null : (v) => setModalState(() => selectedCustomer = v),
-                  ),
-                ] else ...[
-                  TextField(
-                    controller: nameCtrl,
-                    enabled: !isSaving,
-                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-                    decoration: InputDecoration(
-                      labelText: ctx.tr('customer_name'),
-                      prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (customerProvider.customers.isNotEmpty) ...[
+                          Row(
+                            children: [
+                              ChoiceChip(
+                                label: Text(ctx.tr('existing_customer')),
+                                selected: !isNewCustomer,
+                                selectedColor: AppColors.terracotta,
+                                labelStyle: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  fontWeight: !isNewCustomer ? FontWeight.w800 : FontWeight.w600,
+                                  color: !isNewCustomer ? Colors.white : AppColors.textPrimary,
+                                ),
+                                backgroundColor: isDark ? const Color(0xFF243042) : const Color(0xFFEBE6DC),
+                                showCheckmark: false,
+                                side: BorderSide.none,
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                onSelected: isSaving ? null : (_) => setModalState(() => isNewCustomer = false),
+                              ),
+                              const SizedBox(width: 8),
+                              ChoiceChip(
+                                label: Text('+ ${ctx.tr('new_customer')}'),
+                                selected: isNewCustomer,
+                                selectedColor: AppColors.terracotta,
+                                labelStyle: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  fontWeight: isNewCustomer ? FontWeight.w800 : FontWeight.w600,
+                                  color: isNewCustomer ? Colors.white : AppColors.textPrimary,
+                                ),
+                                backgroundColor: isDark ? const Color(0xFF243042) : const Color(0xFFEBE6DC),
+                                showCheckmark: false,
+                                side: BorderSide.none,
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                onSelected: isSaving ? null : (_) => setModalState(() => isNewCustomer = true),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                        ],
+
+                        if (!isNewCustomer && customerProvider.customers.isNotEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Text(
+                              'Select Customer *',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                          DropdownButtonFormField<Customer>(
+                            initialValue: selectedCustomer,
+                            decoration: InputDecoration(
+                              prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.terracotta, size: 20),
+                            ),
+                            items: customerProvider.customers
+                                .map((c) => DropdownMenuItem(
+                                      value: c,
+                                      child: Text(
+                                        '${c.name} (${c.phone})',
+                                        style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                                      ),
+                                    ))
+                                .toList(),
+                            onChanged: isSaving ? null : (v) => setModalState(() => selectedCustomer = v),
+                          ),
+                        ] else ...[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Text(
+                              'Customer Name *',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                          TextField(
+                            controller: nameCtrl,
+                            enabled: !isSaving,
+                            style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                            decoration: InputDecoration(
+                              hintText: 'e.g. Ramesh Kumar',
+                              prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.terracotta, size: 20),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Text(
+                              'Mobile Number *',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                          TextField(
+                            controller: phoneCtrl,
+                            enabled: !isSaving,
+                            keyboardType: TextInputType.phone,
+                            style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                            decoration: InputDecoration(
+                              hintText: '10-digit mobile number',
+                              prefixIcon: Icon(Icons.phone_outlined, color: AppColors.forestMint, size: 20),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: phoneCtrl,
-                    enabled: !isSaving,
-                    keyboardType: TextInputType.phone,
-                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-                    decoration: InputDecoration(
-                      labelText: ctx.tr('customer_phone'),
-                      prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta),
+
+                  const SizedBox(height: 14),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Khata Credit Amount (₹) *',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: amountCtrl,
+                          enabled: !isSaving,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.terracotta,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: '0.00',
+                            prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.chaiGold, size: 20),
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        Wrap(
+                          spacing: 8,
+                          children: [100, 200, 500, 1000].map((preset) {
+                            return ActionChip(
+                              label: Text('+₹$preset'),
+                              labelStyle: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: isDark ? const Color(0xFFD5CEBF) : const Color(0xFF4A443A),
+                              ),
+                              backgroundColor: isDark ? const Color(0xFF243042) : const Color(0xFFEBE6DC),
+                              side: BorderSide.none,
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              onPressed: () {
+                                final cur = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                                final next = cur + preset;
+                                amountCtrl.text = next.truncateToDouble() == next ? next.toInt().toString() : next.toString();
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: addressCtrl,
-                    enabled: !isSaving,
-                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-                    decoration: InputDecoration(
-                      labelText: ctx.tr('customer_address_optional'),
-                      prefixIcon: Icon(Icons.location_on_rounded, color: AppColors.textSecondary),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: aadhaarCtrl,
-                    enabled: !isSaving,
-                    keyboardType: TextInputType.number,
-                    maxLength: 12,
-                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-                    decoration: InputDecoration(
-                      labelText: ctx.tr('customer_aadhaar_optional'),
-                      counterText: '',
-                      prefixIcon: Icon(Icons.badge_rounded, color: AppColors.forestMint),
+
+                  const SizedBox(height: 20),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                              if (amt <= 0) {
+                                AppNotifier.warning(ctx, 'Please enter a valid credit amount', title: 'INVALID AMOUNT');
+                                return;
+                              }
+
+                              final auth = context.read<AuthProvider>();
+                              final billProvider = context.read<BillProvider>();
+                              setModalState(() => isSaving = true);
+
+                              try {
+                                if (isNewCustomer) {
+                                  final n = nameCtrl.text.trim();
+                                  final p = phoneCtrl.text.trim();
+                                  if (n.isEmpty || p.isEmpty) {
+                                    setModalState(() => isSaving = false);
+                                    AppNotifier.warning(ctx, 'Customer name and phone are required', title: 'REQUIRED FIELDS');
+                                    return;
+                                  }
+                                  final newCust = Customer(
+                                    id: 'cust_${DateTime.now().millisecondsSinceEpoch}',
+                                    name: n,
+                                    phone: p,
+                                    address: addressCtrl.text.trim(),
+                                    aadhaarNumber: aadhaarCtrl.text.trim(),
+                                    dueAmount: amt,
+                                  );
+                                  await customerProvider.addCustomer(auth.apiService, newCust);
+                                } else if (selectedCustomer != null) {
+                                  await customerProvider.addCredit(auth.apiService, selectedCustomer!.id, amt);
+                                }
+
+                                billProvider.fetchBills(auth.apiService);
+
+                                if (ctx.mounted) {
+                                  Navigator.pop(ctx);
+                                }
+                                if (mounted) {
+                                  AppNotifier.success(
+                                    context,
+                                    'Recorded ₹${amt.toStringAsFixed(0)} Khata credit successfully',
+                                    title: 'KHATA RECORDED',
+                                  );
+                                }
+                              } catch (_) {
+                                if (ctx.mounted) {
+                                  setModalState(() => isSaving = false);
+                                  AppNotifier.error(
+                                    ctx,
+                                    'Failed to record Khata credit. Please check connection.',
+                                    title: 'SYNC ERROR',
+                                  );
+                                }
+                              }
+                            },
+                      icon: isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                            )
+                          : const Icon(Icons.check_circle_rounded, size: 20),
+                      label: Text(
+                        isSaving ? 'SAVING CREDIT...' : 'CONFIRM KHATA CREDIT',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.terracotta,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
                     ),
                   ),
                 ],
-                const SizedBox(height: 12),
-
-                TextField(
-                  controller: amountCtrl,
-                  enabled: !isSaving,
-                  keyboardType: TextInputType.number,
-                  style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                  decoration: InputDecoration(labelText: '${ctx.tr('khata_credit')} (₹) *', prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.chaiGold)),
-                ),
-
-                const SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: isSaving
-                        ? null
-                        : () async {
-                            final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
-                            if (amt <= 0) {
-                              AppNotifier.warning(ctx, 'Please enter a valid credit amount', title: 'INVALID AMOUNT');
-                              return;
-                            }
-
-                            final auth = context.read<AuthProvider>();
-                            final billProvider = context.read<BillProvider>();
-                            setModalState(() => isSaving = true);
-
-                            try {
-                              if (isNewCustomer) {
-                                final n = nameCtrl.text.trim();
-                                final p = phoneCtrl.text.trim();
-                                if (n.isEmpty || p.isEmpty) {
-                                  setModalState(() => isSaving = false);
-                                  AppNotifier.warning(ctx, 'Customer name and phone are required', title: 'REQUIRED FIELDS');
-                                  return;
-                                }
-                                final newCust = Customer(
-                                  id: 'cust_${DateTime.now().millisecondsSinceEpoch}',
-                                  name: n,
-                                  phone: p,
-                                  address: addressCtrl.text.trim(),
-                                  aadhaarNumber: aadhaarCtrl.text.trim(),
-                                  dueAmount: amt,
-                                );
-                                await customerProvider.addCustomer(auth.apiService, newCust);
-                              } else if (selectedCustomer != null) {
-                                await customerProvider.addCredit(auth.apiService, selectedCustomer!.id, amt);
-                              }
-
-                              billProvider.fetchBills(auth.apiService);
-
-                              if (ctx.mounted) {
-                                Navigator.pop(ctx);
-                              }
-                              if (mounted) {
-                                AppNotifier.success(
-                                  context,
-                                  'Recorded ₹${amt.toStringAsFixed(0)} Khata credit successfully',
-                                  title: 'KHATA RECORDED',
-                                );
-                              }
-                            } catch (_) {
-                              if (ctx.mounted) {
-                                setModalState(() => isSaving = false);
-                                AppNotifier.error(
-                                  ctx,
-                                  'Failed to record Khata credit. Please check connection.',
-                                  title: 'SYNC ERROR',
-                                );
-                              }
-                            }
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.terracotta,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: isSaving
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)),
-                              const SizedBox(width: 12),
-                              Text(ctx.tr('saving_khata_entry'), style: const TextStyle(fontWeight: FontWeight.w700)),
-                            ],
-                          )
-                        : Text(ctx.tr('record_khata_credit').toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

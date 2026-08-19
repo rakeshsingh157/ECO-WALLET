@@ -1,14 +1,15 @@
 {
-  "version": "1.0.6",
-  "versionCode": 7,
+  "version": "1.0.7",
+  "versionCode": 8,
   "isRequired": false,
   "downloadUrl": "https://github.com/rakeshsingh157/BILLING-version/raw/main/app-release.apk",
   "features": [
     "Dukaan Dost - Smart Retail POS & Khata Terminal",
-    "Precise decimal stock deduction for KG, Liter, Gram and ML units",
-    "Real-time fractional inventory synchronization on bill completion",
-    "Professional modern Add and Edit Product forms with stock stepper",
-    "Multi-tap debounce and duplicate product creation prevention",
-    "Adaptive dual-mode Light and Dark visual aesthetics"
+    "Ultra-professional form designs across all Add and Edit screens",
+    "Top-aligned field labels preventing any text clipping or cut-offs",
+    "Structured section cards for customers, suppliers, expenses, staff, and settings",
+    "Interactive quick amount increment chips and category selectors",
+    "Multi-tap debounce protection preventing duplicate record creation",
+    "Decimal stock calculation for KG and Liter units"
   ]
 }

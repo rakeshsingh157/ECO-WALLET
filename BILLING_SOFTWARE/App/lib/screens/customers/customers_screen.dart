@@ -45,104 +45,272 @@ class _CustomersScreenState extends State<CustomersScreen> {
     final phoneCtrl = TextEditingController();
     final addressCtrl = TextEditingController();
     final aadhaarCtrl = TextEditingController();
+    bool isSaving = false;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          left: 20,
-          right: 20,
-          top: 20,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark || AppColors.isDark;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              left: 20,
+              right: 20,
+              top: 14,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    ctx.tr('add_customer'),
-                    style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF37475A) : const Color(0xFFD5CEBF),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
-                    onPressed: () => Navigator.pop(ctx),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.terracotta.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(Icons.person_add_rounded, size: 20, color: AppColors.terracotta),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            ctx.tr('add_customer').toUpperCase(),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.0,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
+                        onPressed: isSaving ? null : () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Customer Name *',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: nameCtrl,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'e.g. Ramesh Kumar',
+                            prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.terracotta, size: 20),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Mobile Phone Number *',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: phoneCtrl,
+                          keyboardType: TextInputType.phone,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: '10-digit mobile number',
+                            prefixIcon: Icon(Icons.phone_outlined, color: AppColors.forestMint, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Address / Village (Optional)',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: addressCtrl,
+                          style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                          decoration: InputDecoration(
+                            hintText: 'Street, locality, landmarks',
+                            prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.textSecondary, size: 20),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Aadhaar Number (Optional)',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: aadhaarCtrl,
+                          keyboardType: TextInputType.number,
+                          maxLength: 12,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.0,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: '12-digit UIDAI number',
+                            counterText: '',
+                            prefixIcon: Icon(Icons.badge_outlined, color: AppColors.chaiGold, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              final name = nameCtrl.text.trim();
+                              final phone = phoneCtrl.text.trim();
+                              if (name.isEmpty || phone.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Customer name and phone number are required'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              setModalState(() => isSaving = true);
+                              final auth = context.read<AuthProvider>();
+                              final newCustomer = Customer(
+                                id: 'cust_${DateTime.now().millisecondsSinceEpoch}',
+                                name: name,
+                                phone: phone,
+                                address: addressCtrl.text.trim(),
+                                aadhaarNumber: aadhaarCtrl.text.trim(),
+                              );
+                              await context.read<CustomerProvider>().addCustomer(auth.apiService, newCustomer);
+                              if (ctx.mounted) {
+                                Navigator.pop(ctx);
+                              }
+                            },
+                      icon: isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                            )
+                          : const Icon(Icons.check_circle_rounded, size: 20),
+                      label: Text(
+                        isSaving ? 'SAVING CUSTOMER...' : 'SAVE CUSTOMER PROFILE',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.terracotta,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-
-              TextField(
-                controller: nameCtrl,
-                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-                decoration: InputDecoration(labelText: ctx.tr('customer_name'), prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta)),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: phoneCtrl,
-                keyboardType: TextInputType.phone,
-                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-                decoration: InputDecoration(labelText: ctx.tr('customer_phone'), prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta)),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: addressCtrl,
-                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-                decoration: InputDecoration(labelText: ctx.tr('customer_address_optional'), prefixIcon: Icon(Icons.location_on_rounded, color: AppColors.textSecondary)),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: aadhaarCtrl,
-                keyboardType: TextInputType.number,
-                maxLength: 12,
-                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-                decoration: InputDecoration(
-                  labelText: ctx.tr('customer_aadhaar_optional'),
-                  counterText: '',
-                  prefixIcon: Icon(Icons.badge_rounded, color: AppColors.forestMint),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    if (nameCtrl.text.trim().isNotEmpty && phoneCtrl.text.trim().isNotEmpty) {
-                      final auth = context.read<AuthProvider>();
-                      final newCustomer = Customer(
-                        id: 'cust_${DateTime.now().millisecondsSinceEpoch}',
-                        name: nameCtrl.text.trim(),
-                        phone: phoneCtrl.text.trim(),
-                        address: addressCtrl.text.trim(),
-                        aadhaarNumber: aadhaarCtrl.text.trim(),
-                      );
-                      await context.read<CustomerProvider>().addCustomer(auth.apiService, newCustomer);
-                      if (ctx.mounted) {
-                        Navigator.pop(ctx);
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.terracotta,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text(ctx.tr('save_customer')),
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

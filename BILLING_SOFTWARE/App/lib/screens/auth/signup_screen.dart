@@ -138,41 +138,72 @@ class _SignupScreenState extends State<SignupScreen> {
                     ],
                   ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(
+                          '${context.tr('shop_business_name')} *',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
                       TextFormField(
                         controller: _shopNameCtrl,
-                        style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                        style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                         decoration: InputDecoration(
-                          labelText: context.tr('shop_business_name'),
                           hintText: context.tr('shop_name_hint'),
-                          prefixIcon: Icon(Icons.store_rounded, color: AppColors.terracotta),
+                          prefixIcon: Icon(Icons.storefront_rounded, color: AppColors.terracotta, size: 20),
                         ),
                         validator: (v) => v == null || v.trim().isEmpty ? 'Enter shop name' : null,
                       ),
 
                       const SizedBox(height: 14),
 
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(
+                          '${context.tr('proprietor')} *',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
                       TextFormField(
                         controller: _ownerNameCtrl,
-                        style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                        style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                         decoration: InputDecoration(
-                          labelText: context.tr('proprietor'),
                           hintText: context.tr('owner_name_hint'),
-                          prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta),
+                          prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.terracotta, size: 20),
                         ),
                         validator: (v) => v == null || v.trim().isEmpty ? 'Enter owner name' : null,
                       ),
 
                       const SizedBox(height: 14),
 
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(
+                          '${context.tr('mobile_number_label')} *',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
                       TextFormField(
                         controller: _mobileCtrl,
                         keyboardType: TextInputType.phone,
-                        style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                        style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                         decoration: InputDecoration(
-                          labelText: context.tr('mobile_number_label'),
-                          hintText: '9876543210',
-                          prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta),
+                          hintText: '10-digit mobile number',
+                          prefixIcon: Icon(Icons.phone_outlined, color: AppColors.terracotta, size: 20),
                         ),
                         validator: (v) => v == null || v.trim().length < 10 ? 'Enter valid mobile number' : null,
                       ),
@@ -182,37 +213,78 @@ class _SignupScreenState extends State<SignupScreen> {
                       Row(
                         children: [
                           Expanded(
-                            child: TextFormField(
-                              controller: _pinCtrl,
-                              obscureText: _obscurePin,
-                              keyboardType: TextInputType.number,
-                              style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
-                              decoration: InputDecoration(
-                                labelText: context.tr('pin_label'),
-                                prefixIcon: Icon(Icons.lock_rounded, color: AppColors.terracotta),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePin ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                    color: AppColors.textSecondary,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 6),
+                                  child: Text(
+                                    '${context.tr('pin_label')} *',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
-                                  onPressed: () => setState(() => _obscurePin = !_obscurePin),
                                 ),
-                              ),
-                              validator: (v) => v == null || v.trim().length < 4 ? 'Min 4 digits' : null,
+                                TextFormField(
+                                  controller: _pinCtrl,
+                                  obscureText: _obscurePin,
+                                  keyboardType: TextInputType.number,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 2.0,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: '••••',
+                                    prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.terracotta, size: 20),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscurePin ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                        color: AppColors.textSecondary,
+                                        size: 20,
+                                      ),
+                                      onPressed: () => setState(() => _obscurePin = !_obscurePin),
+                                    ),
+                                  ),
+                                  validator: (v) => v == null || v.trim().length < 4 ? 'Min 4 digits' : null,
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: TextFormField(
-                              controller: _confirmPinCtrl,
-                              obscureText: _obscurePin,
-                              keyboardType: TextInputType.number,
-                              style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
-                              decoration: InputDecoration(
-                                labelText: context.tr('confirm_pin_label'),
-                                prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.terracotta),
-                              ),
-                              validator: (v) => v == null || v.trim().isEmpty ? 'Confirm PIN' : null,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 6),
+                                  child: Text(
+                                    '${context.tr('confirm_pin_label')} *',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ),
+                                TextFormField(
+                                  controller: _confirmPinCtrl,
+                                  obscureText: _obscurePin,
+                                  keyboardType: TextInputType.number,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 2.0,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: '••••',
+                                    prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.terracotta, size: 20),
+                                  ),
+                                  validator: (v) => v == null || v.trim().isEmpty ? 'Confirm PIN' : null,
+                                ),
+                              ],
                             ),
                           ),
                         ],

@@ -344,99 +344,114 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                   ),
                   const SizedBox(height: 16),
 
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      'Store / Business Name *',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
                   TextFormField(
                     controller: _shopNameCtrl,
                     style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                     decoration: InputDecoration(
-                      labelText: '${context.tr('store_name')} *',
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.terracotta.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(Icons.store_rounded, color: AppColors.terracotta, size: 20),
-                        ),
+                      hintText: 'e.g. Agarwal Supermarket',
+                      prefixIcon: Icon(Icons.storefront_rounded, color: AppColors.terracotta, size: 20),
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      'Proprietor / Owner Name *',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 14),
-
                   TextFormField(
                     controller: _ownerNameCtrl,
-                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                     decoration: InputDecoration(
-                      labelText: '${context.tr('proprietor')} *',
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.chaiGold.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(Icons.person_rounded, color: AppColors.chaiGold, size: 20),
-                        ),
+                      hintText: 'e.g. Ramesh Kumar',
+                      prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.chaiGold, size: 20),
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      'Registered Mobile Number *',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 14),
-
                   TextFormField(
                     controller: _mobileCtrl,
                     keyboardType: TextInputType.phone,
-                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-                    decoration: InputDecoration(
-                      labelText: context.tr('registered_mobile'),
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.forestMint.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(Icons.phone_rounded, color: AppColors.forestMint, size: 20),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  TextFormField(
-                    controller: _gstinCtrl,
                     style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                     decoration: InputDecoration(
-                      labelText: '${context.tr('gstin')} (${context.tr('optional')})',
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.warmNavy.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(Icons.badge_rounded, color: AppColors.warmNavy, size: 20),
-                        ),
+                      hintText: '10-digit mobile number',
+                      prefixIcon: Icon(Icons.phone_outlined, color: AppColors.forestMint, size: 20),
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      'GSTIN (Optional)',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ),
+                  TextFormField(
+                    controller: _gstinCtrl,
+                    textCapitalization: TextCapitalization.characters,
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                    decoration: InputDecoration(
+                      hintText: '29AAAAA0000A1Z5',
+                      prefixIcon: Icon(Icons.badge_outlined, color: AppColors.warmNavy, size: 20),
+                    ),
+                  ),
+
                   const SizedBox(height: 14),
 
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      'Store Address (Printed on Invoices)',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
                   TextFormField(
                     controller: _addressCtrl,
                     maxLines: 2,
-                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w500),
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
                     decoration: InputDecoration(
-                      labelText: context.tr('store_address_receipt'),
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.softIndigo.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(Icons.location_on_rounded, color: AppColors.softIndigo, size: 20),
-                        ),
-                      ),
+                      hintText: 'Shop No., Market, City, Pincode',
+                      prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.softIndigo, size: 20),
                     ),
                   ),
                 ],

@@ -128,218 +128,303 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
       isScrollControlled: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-            left: 20,
-            right: 20,
-            top: 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        builder: (ctx, setModalState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark || AppColors.isDark;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              left: 20,
+              right: 20,
+              top: 14,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    ctx.tr('add_staff_member').toUpperCase(),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                      color: AppColors.textPrimary,
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF37475A) : const Color(0xFFD5CEBF),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
-                    onPressed: isSaving ? null : () => Navigator.pop(ctx),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.warmNavy.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(Icons.badge_rounded, size: 20, color: AppColors.warmNavy),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            ctx.tr('add_staff_member').toUpperCase(),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.0,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
+                        onPressed: isSaving ? null : () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Staff Full Name *',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: nameCtrl,
+                          enabled: !isSaving,
+                          style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                          decoration: InputDecoration(
+                            hintText: 'e.g. Vikas Gupta',
+                            prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.terracotta, size: 20),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Mobile Number *',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: phoneCtrl,
+                          enabled: !isSaving,
+                          keyboardType: TextInputType.phone,
+                          style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                          decoration: InputDecoration(
+                            hintText: '10-digit mobile number',
+                            prefixIcon: Icon(Icons.phone_outlined, color: AppColors.forestMint, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            'Role & Access Level',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: ['Counter Cashier', 'Shop Manager', 'Inventory Helper'].map((r) {
+                            final isSel = selectedRole == r;
+                            return ChoiceChip(
+                              label: Text(ctx.trRole(r)),
+                              selected: isSel,
+                              labelStyle: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
+                                color: isSel ? Colors.white : AppColors.textPrimary,
+                              ),
+                              selectedColor: AppColors.warmNavy,
+                              backgroundColor: isDark ? const Color(0xFF243042) : const Color(0xFFEBE6DC),
+                              showCheckmark: false,
+                              side: BorderSide.none,
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              onSelected: isSaving ? null : (_) => setModalState(() => selectedRole = r),
+                            );
+                          }).toList(),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            '4-Digit Security PIN *',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: pinCtrl,
+                          enabled: !isSaving,
+                          keyboardType: TextInputType.number,
+                          maxLength: 4,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 2.0,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: '1234',
+                            counterText: '',
+                            helperText: ctx.tr('staff_pin_hint'),
+                            helperStyle: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
+                            prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.chaiGold, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              final name = nameCtrl.text.trim();
+                              final phone = phoneCtrl.text.trim();
+                              final pin = pinCtrl.text.trim();
+
+                              if (name.isEmpty) {
+                                AppNotifier.warning(ctx, 'Staff name is required', title: 'FIELD REQUIRED');
+                                return;
+                              }
+                              if (phone.length < 10) {
+                                AppNotifier.warning(ctx, 'Enter valid 10-digit mobile number', title: 'INVALID NUMBER');
+                                return;
+                              }
+                              if (pin.length != 4) {
+                                AppNotifier.warning(ctx, 'Enter a 4-digit security PIN', title: 'INVALID PIN');
+                                return;
+                              }
+
+                              setModalState(() => isSaving = true);
+
+                              final auth = context.read<AuthProvider>();
+                              final targetBase = auth.baseUrl.isNotEmpty ? auth.baseUrl : AppConstants.defaultEcoWalletBaseUrl;
+                              final apiService = ApiService(baseUrl: targetBase, apiKey: auth.apiKey);
+                              final memberId = 'm_${DateTime.now().millisecondsSinceEpoch}';
+
+                              final added = await apiService.addStaffMember(
+                                memberId: memberId,
+                                name: name,
+                                phone: phone,
+                                role: selectedRole,
+                                pin: pin,
+                              );
+
+                              if (added) {
+                                _loadMembers();
+                                if (ctx.mounted) {
+                                  Navigator.pop(ctx);
+                                }
+                                if (mounted) {
+                                  AppNotifier.success(
+                                    context,
+                                    '$name added to store staff. They can now log in using PIN $pin.',
+                                    title: 'STAFF ADDED',
+                                  );
+                                }
+                              } else {
+                                setModalState(() => isSaving = false);
+                                if (mounted) {
+                                  AppNotifier.error(context, 'Failed to save staff member', title: 'SAVE ERROR');
+                                }
+                              }
+                            },
+                      icon: isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                            )
+                          : const Icon(Icons.check_circle_rounded, size: 20),
+                      label: Text(
+                        isSaving ? 'SAVING STAFF MEMBER...' : 'SAVE STAFF MEMBER',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.warmNavy,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-
-              TextField(
-                controller: nameCtrl,
-                enabled: !isSaving,
-                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-                decoration: InputDecoration(
-                  labelText: '${ctx.tr('staff_name')} *',
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.terracotta.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(Icons.person_rounded, color: AppColors.terracotta, size: 20),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              TextField(
-                controller: phoneCtrl,
-                enabled: !isSaving,
-                keyboardType: TextInputType.phone,
-                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-                decoration: InputDecoration(
-                  labelText: '${ctx.tr('mobile_number')} *',
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.forestMint.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(Icons.phone_rounded, color: AppColors.forestMint, size: 20),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              DropdownButtonFormField<String>(
-                initialValue: selectedRole,
-                decoration: InputDecoration(
-                  labelText: ctx.tr('role_permission'),
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.warmNavy.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(Icons.badge_rounded, color: AppColors.warmNavy, size: 20),
-                    ),
-                  ),
-                ),
-                items: ['Counter Cashier', 'Shop Manager', 'Inventory Helper']
-                    .map((r) => DropdownMenuItem(value: r, child: Text(ctx.trRole(r), style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600))))
-                    .toList(),
-                onChanged: isSaving ? null : (v) => selectedRole = v!,
-              ),
-              const SizedBox(height: 14),
-
-              TextField(
-                controller: pinCtrl,
-                enabled: !isSaving,
-                keyboardType: TextInputType.number,
-                maxLength: 4,
-                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
-                decoration: InputDecoration(
-                  labelText: '${ctx.tr('security_pin')} *',
-                  counterText: '',
-                  helperText: ctx.tr('staff_pin_hint'),
-                  helperStyle: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted),
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.chaiGold.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(Icons.lock_rounded, color: AppColors.chaiGold, size: 20),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              Container(
-                width: double.infinity,
-                height: 52,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.terracotta.withValues(alpha: 0.3),
-                      blurRadius: 14,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton.icon(
-                  onPressed: isSaving
-                      ? null
-                      : () async {
-                          final name = nameCtrl.text.trim();
-                          final phone = phoneCtrl.text.trim();
-                          final pin = pinCtrl.text.trim();
-
-                          if (name.isEmpty) {
-                            AppNotifier.warning(ctx, 'Staff name is required', title: 'FIELD REQUIRED');
-                            return;
-                          }
-                          if (phone.length < 10) {
-                            AppNotifier.warning(ctx, 'Enter valid 10-digit mobile number', title: 'INVALID NUMBER');
-                            return;
-                          }
-                          if (pin.length != 4) {
-                            AppNotifier.warning(ctx, 'Enter a 4-digit security PIN', title: 'INVALID PIN');
-                            return;
-                          }
-
-                          setModalState(() => isSaving = true);
-
-                          final auth = context.read<AuthProvider>();
-                          final targetBase = auth.baseUrl.isNotEmpty ? auth.baseUrl : AppConstants.defaultEcoWalletBaseUrl;
-                          final apiService = ApiService(baseUrl: targetBase, apiKey: auth.apiKey);
-                          final memberId = 'm_${DateTime.now().millisecondsSinceEpoch}';
-
-                          final added = await apiService.addStaffMember(
-                            memberId: memberId,
-                            name: name,
-                            phone: phone,
-                            role: selectedRole,
-                            pin: pin,
-                          );
-
-                          if (added) {
-                            _loadMembers();
-                            if (ctx.mounted) {
-                              Navigator.pop(ctx);
-                            }
-                            if (mounted) {
-                              AppNotifier.success(
-                                context,
-                                '$name added to store staff. They can now log in using PIN $pin.',
-                                title: 'STAFF ADDED',
-                              );
-                            }
-                          } else {
-                            setModalState(() => isSaving = false);
-                            if (mounted) {
-                              AppNotifier.error(context, 'Failed to save staff member', title: 'SAVE ERROR');
-                            }
-                          }
-                        },
-                  icon: isSaving ? const SizedBox.shrink() : const Icon(Icons.person_add_rounded, size: 18),
-                  label: isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                        )
-                      : Text(
-                          ctx.tr('save_staff_member').toUpperCase(),
-                          style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: 1.1),
-                        ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.terracotta,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

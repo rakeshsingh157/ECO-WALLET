@@ -53,100 +53,267 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
       isScrollControlled: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-            left: 20,
-            right: 20,
-            top: 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        builder: (ctx, setModalState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark || AppColors.isDark;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              left: 20,
+              right: 20,
+              top: 14,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    ctx.tr('add_supplier').toUpperCase(),
-                    style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF37475A) : const Color(0xFFD5CEBF),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
-                    onPressed: isSaving ? null : () => Navigator.pop(ctx),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.warmNavy.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(Icons.domain_add_rounded, size: 20, color: AppColors.warmNavy),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            ctx.tr('add_supplier').toUpperCase(),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.0,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
+                        onPressed: isSaving ? null : () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Contact Person Name *',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: nameCtrl,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'e.g. Rajesh Sharma',
+                            prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.terracotta, size: 20),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Business / Company Name *',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: companyCtrl,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'e.g. Apex Traders Ltd.',
+                            prefixIcon: Icon(Icons.business_outlined, color: AppColors.warmNavy, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Phone Number *',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: phoneCtrl,
+                          keyboardType: TextInputType.phone,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: '10-digit mobile number',
+                            prefixIcon: Icon(Icons.phone_outlined, color: AppColors.forestMint, size: 20),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'GSTIN (Optional)',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: gstinCtrl,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.8,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'e.g. 27AAAAA0000A1Z5',
+                            prefixIcon: Icon(Icons.badge_outlined, color: AppColors.chaiGold, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              final name = nameCtrl.text.trim();
+                              final company = companyCtrl.text.trim();
+                              final phone = phoneCtrl.text.trim();
+
+                              if (name.isEmpty || company.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Contact name and company name are required'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              setModalState(() => isSaving = true);
+                              final auth = context.read<AuthProvider>();
+                              final newSupplier = Supplier(
+                                id: 'sup_${DateTime.now().millisecondsSinceEpoch}',
+                                name: name,
+                                companyName: company,
+                                phone: phone,
+                                gstin: gstinCtrl.text.trim(),
+                              );
+                              await context.read<SupplierProvider>().addSupplier(auth.apiService, newSupplier);
+                              if (ctx.mounted) {
+                                Navigator.pop(ctx);
+                              }
+                            },
+                      icon: isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                            )
+                          : const Icon(Icons.check_circle_rounded, size: 20),
+                      label: Text(
+                        isSaving ? 'SAVING SUPPLIER...' : 'SAVE SUPPLIER PROFILE',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.terracotta,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-
-              TextField(
-                controller: nameCtrl,
-                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-                decoration: InputDecoration(labelText: ctx.tr('contact_name'), prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta)),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: companyCtrl,
-                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-                decoration: InputDecoration(labelText: ctx.tr('company_name'), prefixIcon: Icon(Icons.business_rounded, color: AppColors.warmNavy)),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: phoneCtrl,
-                keyboardType: TextInputType.phone,
-                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-                decoration: InputDecoration(labelText: ctx.tr('supplier_phone'), prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta)),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: gstinCtrl,
-                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-                decoration: InputDecoration(labelText: ctx.tr('gstin'), prefixIcon: Icon(Icons.badge_rounded, color: AppColors.forestMint)),
-              ),
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: isSaving ? null : () async {
-                    if (isSaving) return;
-                    if (nameCtrl.text.trim().isNotEmpty && companyCtrl.text.trim().isNotEmpty) {
-                      setModalState(() => isSaving = true);
-                      final auth = context.read<AuthProvider>();
-                      final newSupplier = Supplier(
-                        id: 'sup_${DateTime.now().millisecondsSinceEpoch}',
-                        name: nameCtrl.text.trim(),
-                        companyName: companyCtrl.text.trim(),
-                        phone: phoneCtrl.text.trim(),
-                        gstin: gstinCtrl.text.trim(),
-                      );
-                      await context.read<SupplierProvider>().addSupplier(auth.apiService, newSupplier);
-                      if (ctx.mounted) {
-                        Navigator.pop(ctx);
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.terracotta,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: isSaving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : Text(ctx.tr('save_supplier').toUpperCase()),
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

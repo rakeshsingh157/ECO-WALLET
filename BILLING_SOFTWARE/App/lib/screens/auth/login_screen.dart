@@ -236,17 +236,29 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(
+                          _selectedLoginType == 0 ? '${context.tr('owner_mobile_label')} *' : '${context.tr('staff_mobile_label')} *',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
                       TextFormField(
                         controller: _mobileCtrl,
                         keyboardType: TextInputType.phone,
-                        style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                         decoration: InputDecoration(
-                          labelText: _selectedLoginType == 0 ? context.tr('owner_mobile_label') : context.tr('staff_mobile_label'),
-                          hintText: '9876543210',
+                          hintText: '10-digit mobile number',
                           prefixIcon: Icon(
-                            Icons.phone_rounded,
+                            Icons.phone_outlined,
                             color: _selectedLoginType == 0 ? AppColors.terracotta : AppColors.forestMint,
+                            size: 20,
                           ),
                         ),
                         validator: (v) => v == null || v.trim().length < 10 ? 'Enter valid 10-digit mobile number' : null,
@@ -254,22 +266,38 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       const SizedBox(height: 14),
 
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(
+                          _selectedLoginType == 0 ? '${context.tr('security_pin_label')} *' : '${context.tr('staff_pin_label')} *',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
                       TextFormField(
                         controller: _pinCtrl,
                         obscureText: _obscurePin,
                         keyboardType: TextInputType.number,
-                        style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                        style: GoogleFonts.plusJakartaSans(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 2.0,
+                        ),
                         decoration: InputDecoration(
-                          labelText: _selectedLoginType == 0 ? context.tr('security_pin_label') : context.tr('staff_pin_label'),
                           hintText: '••••',
                           prefixIcon: Icon(
-                            Icons.lock_rounded,
+                            Icons.lock_outline_rounded,
                             color: _selectedLoginType == 0 ? AppColors.terracotta : AppColors.forestMint,
+                            size: 20,
                           ),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePin ? Icons.visibility_off_rounded : Icons.visibility_rounded,
                               color: AppColors.textSecondary,
+                              size: 20,
                             ),
                             onPressed: () => setState(() => _obscurePin = !_obscurePin),
                           ),

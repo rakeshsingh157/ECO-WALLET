@@ -257,42 +257,45 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
                   ),
                   const SizedBox(height: 18),
 
-                  TextFormField(
-                    controller: _baseUrlCtrl,
-                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-                    decoration: InputDecoration(
-                      labelText: context.tr('backend_api_base_url'),
-                      hintText: 'http://10.0.2.2:5001/api',
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.forestMint.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(Icons.link_rounded, color: AppColors.forestMint, size: 20),
-                        ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      '${context.tr('backend_api_base_url')} *',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ),
+                  TextFormField(
+                    controller: _baseUrlCtrl,
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                    decoration: InputDecoration(
+                      hintText: 'http://10.0.2.2:5001/api',
+                      prefixIcon: Icon(Icons.link_rounded, color: AppColors.forestMint, size: 20),
+                    ),
+                  ),
+
                   const SizedBox(height: 14),
 
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      context.tr('eco_merchant_api_key'),
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
                   TextFormField(
                     controller: _apiKeyCtrl,
-                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
                     decoration: InputDecoration(
-                      labelText: context.tr('eco_merchant_api_key'),
                       hintText: 'key_mch_...',
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.terracotta.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(Icons.key_rounded, color: AppColors.terracotta, size: 20),
-                        ),
-                      ),
+                      prefixIcon: Icon(Icons.key_rounded, color: AppColors.terracotta, size: 20),
                     ),
                   ),
                   const SizedBox(height: 18),

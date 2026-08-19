@@ -46,65 +46,235 @@ class _SupplierDetailsScreenState extends State<SupplierDetailsScreen> {
   }
 
   void _recordPaymentToSupplier() {
-    final amountCtrl = TextEditingController();
+    final amountCtrl = TextEditingController(
+      text: _supplier.pendingPayment > 0 ? _supplier.pendingPayment.toStringAsFixed(0) : '',
+    );
+    bool isRecording = false;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Pay Supplier',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Paying pending balance to ${_supplier.companyName}', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
-            const SizedBox(height: 8),
-            Text(
-              'Pending Due: ₹${_supplier.pendingPayment.toStringAsFixed(0)}',
-              style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.error),
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark || AppColors.isDark;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              left: 20,
+              right: 20,
+              top: 14,
             ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: amountCtrl,
-              keyboardType: TextInputType.number,
-              autofocus: true,
-              style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-              decoration: InputDecoration(labelText: 'Amount Paid (₹)', prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.terracotta)),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF37475A) : const Color(0xFFD5CEBF),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.forestMint.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(Icons.payment_rounded, size: 20, color: AppColors.forestMint),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'PAY SUPPLIER / VENDOR',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.0,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
+                        onPressed: isRecording ? null : () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1B2432) : const Color(0xFFF9F7F4),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2B3A4F) : const Color(0xFFE8E2D8),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Outstanding Due Balance',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            Text(
+                              '₹${_supplier.pendingPayment.toStringAsFixed(0)}',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.error,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            'Amount to Pay (₹) *',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: amountCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.forestMint,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: '0.00',
+                            prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.forestMint, size: 20),
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        Wrap(
+                          spacing: 8,
+                          children: [500, 1000, 2000, 5000].map((preset) {
+                            return ActionChip(
+                              label: Text('+₹$preset'),
+                              labelStyle: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: isDark ? const Color(0xFFD5CEBF) : const Color(0xFF4A443A),
+                              ),
+                              backgroundColor: isDark ? const Color(0xFF243042) : const Color(0xFFEBE6DC),
+                              side: BorderSide.none,
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              onPressed: () {
+                                final cur = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                                final next = cur + preset;
+                                amountCtrl.text = next.truncateToDouble() == next ? next.toInt().toString() : next.toString();
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: isRecording
+                          ? null
+                          : () async {
+                              final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                              if (amt <= 0) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Please enter a valid payment amount'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              setModalState(() => isRecording = true);
+                              final auth = context.read<AuthProvider>();
+                              await context.read<SupplierProvider>().recordPaymentToSupplier(auth.apiService, _supplier.id, amt);
+                              setState(() {
+                                _supplier.pendingPayment = (_supplier.pendingPayment - amt) < 0 ? 0 : _supplier.pendingPayment - amt;
+                              });
+                              if (ctx.mounted) {
+                                Navigator.pop(ctx);
+                              }
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Paid ₹${amt.toStringAsFixed(0)} to ${_supplier.companyName}'),
+                                    backgroundColor: AppColors.success,
+                                  ),
+                                );
+                              }
+                            },
+                      icon: isRecording
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                            )
+                          : const Icon(Icons.check_circle_rounded, size: 20),
+                      label: Text(
+                        isRecording ? 'PROCESSING PAYMENT...' : 'RECORD PAYMENT TO VENDOR',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.forestMint,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
-              if (amt > 0) {
-                final auth = context.read<AuthProvider>();
-                await context.read<SupplierProvider>().recordPaymentToSupplier(auth.apiService, _supplier.id, amt);
-                setState(() {
-                  _supplier.pendingPayment = (_supplier.pendingPayment - amt) < 0 ? 0 : _supplier.pendingPayment - amt;
-                });
-                if (ctx.mounted) {
-                  Navigator.pop(ctx);
-                }
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Paid ₹${amt.toStringAsFixed(0)} to ${_supplier.companyName}'), backgroundColor: AppColors.success),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.terracotta, foregroundColor: Colors.white),
-            child: const Text('RECORD PAYMENT'),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
