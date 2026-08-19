@@ -17,7 +17,7 @@
     <uses-feature android:name="android.hardware.microphone" android:required="false"/>
 
     <application
-        android:label="dukaan_dost"
+        android:label="Dukaan Dost"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
