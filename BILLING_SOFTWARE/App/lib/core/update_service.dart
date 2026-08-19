@@ -86,7 +86,7 @@ class UpdateService {
         if (isManual && context.mounted) {
           AppNotifier.success(
             context,
-            'Dukaan Dost is already running the latest version (v$currentVersionStr).',
+            'Dukaan Dost is running the latest version (v$currentVersionStr).',
             title: 'LATEST VERSION',
           );
         }
@@ -218,7 +218,7 @@ class _UpdateSheetWidgetState extends State<_UpdateSheetWidget> {
 
     setState(() {
       _isDownloading = true;
-      _statusMessage = 'Requesting storage permissions...';
+      _statusMessage = 'Requesting installation permissions...';
       _progress = 0;
     });
 
@@ -292,6 +292,21 @@ class _UpdateSheetWidgetState extends State<_UpdateSheetWidget> {
     }
   }
 
+  IconData _getFeatureIcon(int index) {
+    switch (index % 5) {
+      case 0:
+        return Icons.rocket_launch_rounded;
+      case 1:
+        return Icons.bolt_rounded;
+      case 2:
+        return Icons.shield_rounded;
+      case 3:
+        return Icons.palette_rounded;
+      default:
+        return Icons.language_rounded;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark || AppColors.isDark;
@@ -299,283 +314,381 @@ class _UpdateSheetWidgetState extends State<_UpdateSheetWidget> {
     return PopScope(
       canPop: !widget.isRequired && !_isDownloading,
       child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
+        ),
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          color: isDark ? const Color(0xFF131A26) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(36)),
           border: Border(
-            top: BorderSide(color: AppColors.borderSubtle, width: 1.5),
+            top: BorderSide(
+              color: isDark ? const Color(0xFF293649) : const Color(0xFFE8E4DC),
+              width: 1.5,
+            ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.6 : 0.15),
-              blurRadius: 36,
-              offset: const Offset(0, -10),
+              color: Colors.black.withValues(alpha: isDark ? 0.75 : 0.18),
+              blurRadius: 40,
+              offset: const Offset(0, -12),
             ),
           ],
         ),
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
         child: SafeArea(
           top: false,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const SizedBox(height: 12),
+
               Center(
                 child: Container(
-                  width: 44,
-                  height: 4,
+                  width: 46,
+                  height: 5,
                   decoration: BoxDecoration(
-                    color: AppColors.borderStrong,
-                    borderRadius: BorderRadius.circular(2),
+                    color: isDark ? const Color(0xFF3B4D66) : const Color(0xFFD8D2C4),
+                    borderRadius: BorderRadius.circular(3),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 20),
-
-              Row(
-                children: [
-                  Container(
-                    width: 54,
-                    height: 54,
-                    decoration: BoxDecoration(
-                      color: AppColors.terracotta.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.3)),
-                    ),
-                    child: Center(
-                      child: Icon(Icons.rocket_launch_rounded, color: AppColors.terracotta, size: 28),
-                    ),
-                  ),
-
-                  const SizedBox(width: 16),
-
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Stack(
+                          alignment: Alignment.center,
                           children: [
-                            Text(
-                              'UPDATE AVAILABLE',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 1.2,
-                                color: AppColors.textPrimary,
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.terracotta.withValues(alpha: isDark ? 0.18 : 0.12),
                               ),
                             ),
-                            const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              width: 64,
+                              height: 64,
                               decoration: BoxDecoration(
-                                color: AppColors.forestMint.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: AppColors.forestMint.withValues(alpha: 0.4)),
+                                color: AppColors.surface,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.terracotta.withValues(alpha: 0.4),
+                                  width: 2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.terracotta.withValues(alpha: 0.3),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
                               ),
-                              child: Text(
-                                'v${widget.newVersion}',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.forestMint,
+                              child: Center(
+                                child: Icon(
+                                  Icons.rocket_launch_rounded,
+                                  color: AppColors.terracotta,
+                                  size: 30,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Current version: v${widget.currentVersion}',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      Text(
+                        'NEW VERSION AVAILABLE',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.5,
+                          color: isDark ? Colors.white : const Color(0xFF1F2421),
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                      ),
 
-              const SizedBox(height: 20),
+                      const SizedBox(height: 6),
 
-              if (widget.features.isNotEmpty) ...[
-                Text(
-                  "WHAT'S NEW IN THIS VERSION",
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.canvas,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.borderSubtle),
-                  ),
-                  child: Column(
-                    children: widget.features.map((feature) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              margin: const EdgeInsets.only(top: 2),
-                              padding: const EdgeInsets.all(3),
-                              decoration: BoxDecoration(
-                                color: AppColors.forestMint.withValues(alpha: 0.15),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(Icons.check_rounded, size: 12, color: AppColors.forestMint),
+                      Text(
+                        'A brand new update of Dukaan Dost is ready to install',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? const Color(0xFF9EAAB7) : const Color(0xFF5A645A),
+                        ),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E2838) : const Color(0xFFF3EFEA),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF2E3D52) : const Color(0xFFE0DACF),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                feature,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'v${widget.currentVersion}',
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                  height: 1.35,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark ? const Color(0xFF7E8D9E) : const Color(0xFF7C877C),
                                 ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.arrow_forward_rounded,
+                                size: 14,
+                                color: isDark ? const Color(0xFF7E8D9E) : const Color(0xFF7C877C),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.forestMint.withValues(alpha: 0.18),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: AppColors.forestMint.withValues(alpha: 0.4),
+                                  ),
+                                ),
+                                child: Text(
+                                  'v${widget.newVersion} • LATEST',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.forestMint,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 22),
+
+                      if (widget.features.isNotEmpty) ...[
+                        Row(
+                          children: [
+                            Icon(Icons.stars_rounded, size: 16, color: AppColors.chaiGold),
+                            const SizedBox(width: 6),
+                            Text(
+                              "WHAT'S NEW IN THIS UPDATE",
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.2,
+                                color: isDark ? const Color(0xFF8E9EAF) : const Color(0xFF6E786E),
                               ),
                             ),
                           ],
                         ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
+                        const SizedBox(height: 10),
 
-              if (_isDownloading || _progress > 0) ...[
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.canvas,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.3)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            _statusMessage,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF192230) : const Color(0xFFFAF8F5),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF2A374A) : const Color(0xFFE8E4DC),
                             ),
                           ),
-                          if (_mbProgress.isNotEmpty)
-                            Text(
-                              _mbProgress,
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.terracotta,
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: _progress > 0 ? _progress : null,
-                          minHeight: 10,
-                          backgroundColor: isDark ? const Color(0xFF242E3D) : const Color(0xFFE8E4DC),
-                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.terracotta),
+                          child: Column(
+                            children: widget.features.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final feature = entry.value;
+                              final icon = _getFeatureIcon(index);
+
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: index == widget.features.length - 1 ? 0 : 12,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.terracotta.withValues(alpha: 0.14),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(icon, size: 14, color: AppColors.terracotta),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        feature,
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark ? const Color(0xFFF0F4F8) : const Color(0xFF1F2421),
+                                          height: 1.35,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
+                        const SizedBox(height: 20),
+                      ],
 
-              if (_isDownloading)
-                OutlinedButton.icon(
-                  onPressed: _cancelDownload,
-                  icon: Icon(Icons.close_rounded, size: 18, color: AppColors.error),
-                  label: Text(
-                    'CANCEL DOWNLOAD',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.0,
-                      color: AppColors.error,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: BorderSide(color: AppColors.error.withValues(alpha: 0.6), width: 1.5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                )
-              else
-                Row(
-                  children: [
-                    if (!widget.isRequired) ...[
-                      Expanded(
-                        flex: 1,
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            side: BorderSide(color: AppColors.borderStrong),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      if (_isDownloading || _progress > 0) ...[
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF192230) : const Color(0xFFFAF8F5),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppColors.terracotta.withValues(alpha: 0.4),
+                              width: 1.5,
+                            ),
                           ),
-                          child: Text(
-                            'LATER',
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    _statusMessage,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      color: isDark ? Colors.white : const Color(0xFF1F2421),
+                                    ),
+                                  ),
+                                  if (_mbProgress.isNotEmpty)
+                                    Text(
+                                      _mbProgress,
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.terracotta,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: LinearProgressIndicator(
+                                  value: _progress > 0 ? _progress : null,
+                                  minHeight: 12,
+                                  backgroundColor: isDark ? const Color(0xFF293649) : const Color(0xFFE2DDD5),
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.terracotta),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+
+                      if (_isDownloading)
+                        OutlinedButton.icon(
+                          onPressed: _cancelDownload,
+                          icon: Icon(Icons.close_rounded, size: 18, color: AppColors.error),
+                          label: Text(
+                            'CANCEL DOWNLOAD',
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 1.0,
-                              color: AppColors.textSecondary,
+                              color: AppColors.error,
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
-
-                    Expanded(
-                      flex: 2,
-                      child: ElevatedButton.icon(
-                        onPressed: _startDownload,
-                        icon: const Icon(Icons.download_for_offline_rounded, size: 20),
-                        label: Text(
-                          _progress == 1.0 ? 'INSTALL UPDATE' : 'UPDATE NOW',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.0,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            side: BorderSide(
+                              color: AppColors.error.withValues(alpha: 0.6),
+                              width: 1.5,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
                           ),
+                        )
+                      else
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(18),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.terracotta.withValues(alpha: 0.35),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
+                              ),
+                              child: ElevatedButton.icon(
+                                onPressed: _startDownload,
+                                icon: const Icon(Icons.download_rounded, size: 20),
+                                label: Text(
+                                  _progress == 1.0
+                                      ? 'INSTALL UPDATE NOW'
+                                      : 'DOWNLOAD & UPDATE TO V${widget.newVersion}',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.terracotta,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 18),
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            if (!widget.isRequired) ...[
+                              const SizedBox(height: 10),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                child: Text(
+                                  'Remind Me Later',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark ? const Color(0xFF7E8D9E) : const Color(0xFF7C877C),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.terracotta,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          shadowColor: AppColors.terracotta.withValues(alpha: 0.4),
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+              ),
             ],
           ),
         ),
