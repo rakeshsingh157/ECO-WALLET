@@ -10,6 +10,7 @@ import '../providers/customer_provider.dart';
 import '../providers/expense_provider.dart';
 import '../providers/supplier_provider.dart';
 import '../providers/notification_provider.dart';
+import '../providers/theme_provider.dart';
 import 'main_shell.dart';
 import 'onboarding/onboarding_screen.dart';
 
@@ -25,34 +26,24 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
-  String _statusMessage = 'Connecting to Dukaan Dost Cloud...';
-  int _attemptCount = 0;
-
-  bool _productsSynced = false;
-  bool _billsSynced = false;
-  bool _customersSynced = false;
-  bool _expensesSynced = false;
-  bool _suppliersSynced = false;
-  bool _notificationsSynced = false;
-
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 900),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeIn),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0.88, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
 
     _controller.forward();
-    _startPersistentDataSync();
+    _initAndLaunch();
   }
 
   @override
@@ -61,7 +52,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     super.dispose();
   }
 
-  Future<void> _startPersistentDataSync() async {
+  Future<void> _initAndLaunch() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final productProvider = Provider.of<ProductProvider>(context, listen: false);
     final billProvider = Provider.of<BillProvider>(context, listen: false);
@@ -72,85 +63,23 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     await auth.ensureInitialized();
 
-    if (!auth.isConfigured || auth.baseUrl.isEmpty) {
-      await Future.delayed(const Duration(milliseconds: 1000));
-      if (mounted) _navigateToNext();
-      return;
+    final minSplashDuration = Future.delayed(const Duration(milliseconds: 1400));
+
+    if (auth.isConfigured && auth.baseUrl.isNotEmpty) {
+      unawaited(Future.wait([
+        productProvider.fetchProducts(auth.baseUrl, auth.apiKey),
+        billProvider.fetchBills(auth.apiService),
+        customerProvider.fetchCustomers(auth.apiService),
+        expenseProvider.fetchExpenses(auth.apiService),
+        supplierProvider.fetchSuppliers(auth.apiService),
+        notificationProvider.fetchNotifications(auth.apiService),
+      ]));
     }
 
-    while (mounted) {
-      _attemptCount++;
-      if (mounted) {
-        setState(() {
-          if (_attemptCount == 1) {
-            _statusMessage = 'Connecting to Dukaan Dost Cloud...';
-          } else {
-            _statusMessage = 'Waking up cloud server and receiving store data (attempt $_attemptCount)...';
-          }
-        });
-      }
+    await minSplashDuration;
 
-      final futures = <Future<void>>[];
-
-      if (!_productsSynced) {
-        futures.add(() async {
-          final ok = await productProvider.fetchProducts(auth.baseUrl, auth.apiKey);
-          if (ok && mounted) setState(() => _productsSynced = true);
-        }());
-      }
-
-      if (!_billsSynced) {
-        futures.add(() async {
-          final ok = await billProvider.fetchBills(auth.apiService);
-          if (ok && mounted) setState(() => _billsSynced = true);
-        }());
-      }
-
-      if (!_customersSynced) {
-        futures.add(() async {
-          final ok = await customerProvider.fetchCustomers(auth.apiService);
-          if (ok && mounted) setState(() => _customersSynced = true);
-        }());
-      }
-
-      if (!_expensesSynced) {
-        futures.add(() async {
-          final ok = await expenseProvider.fetchExpenses(auth.apiService);
-          if (ok && mounted) setState(() => _expensesSynced = true);
-        }());
-      }
-
-      if (!_suppliersSynced) {
-        futures.add(() async {
-          final ok = await supplierProvider.fetchSuppliers(auth.apiService);
-          if (ok && mounted) setState(() => _suppliersSynced = true);
-        }());
-      }
-
-      if (!_notificationsSynced) {
-        futures.add(() async {
-          final ok = await notificationProvider.fetchNotifications(auth.apiService);
-          if (ok && mounted) setState(() => _notificationsSynced = true);
-        }());
-      }
-
-      await Future.wait(futures);
-
-      if (_productsSynced &&
-          _billsSynced &&
-          _customersSynced &&
-          _expensesSynced &&
-          _suppliersSynced &&
-          _notificationsSynced) {
-        if (mounted) {
-          setState(() => _statusMessage = 'All store data received successfully!');
-        }
-        await Future.delayed(const Duration(milliseconds: 400));
-        if (mounted) _navigateToNext();
-        return;
-      }
-
-      await Future.delayed(const Duration(milliseconds: 1500));
+    if (mounted) {
+      _navigateToNext();
     }
   }
 
@@ -159,7 +88,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     final auth = Provider.of<AuthProvider>(context, listen: false);
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 400),
+        transitionDuration: const Duration(milliseconds: 450),
         pageBuilder: (_, __, ___) => auth.isConfigured ? const MainShell() : const OnboardingScreen(),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(opacity: animation, child: child);
@@ -170,12 +99,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final syncedCount = (_productsSynced ? 1 : 0) +
-        (_billsSynced ? 1 : 0) +
-        (_customersSynced ? 1 : 0) +
-        (_expensesSynced ? 1 : 0) +
-        (_suppliersSynced ? 1 : 0) +
-        (_notificationsSynced ? 1 : 0);
+    context.watch<ThemeProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark || AppColors.isDark;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -186,24 +111,32 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             scale: _scaleAnimation,
             child: Center(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 28),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Spacer(flex: 2),
+                    const Spacer(flex: 3),
 
                     Container(
-                      width: 110,
-                      height: 110,
+                      width: 116,
+                      height: 116,
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: AppColors.borderSubtle, width: 1.5),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF293649) : const Color(0xFFE8E4DC),
+                          width: 1.5,
+                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.terracotta.withValues(alpha: 0.18),
+                            color: AppColors.terracotta.withValues(alpha: isDark ? 0.22 : 0.14),
                             blurRadius: 36,
                             offset: const Offset(0, 14),
+                          ),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.04),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
                           ),
                         ],
                       ),
@@ -212,70 +145,47 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         'assets/images/app_icon.png',
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Center(
-                          child: Icon(Icons.storefront_rounded, size: 54, color: AppColors.terracotta),
+                          child: Icon(Icons.storefront_rounded, size: 56, color: AppColors.terracotta),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 28),
 
                     Text(
                       'DUKAAN DOST',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 26,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 2.2,
+                        letterSpacing: 2.5,
                         color: AppColors.textPrimary,
                       ),
                     ),
 
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
 
                     Text(
-                      'Smart Billing for Smart Shopkeepers',
+                      'Smart Retail POS & Khata Terminal',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary,
+                        letterSpacing: 0.2,
                       ),
                     ),
 
-                    const Spacer(flex: 2),
+                    const Spacer(flex: 3),
 
                     SizedBox(
-                      width: 28,
-                      height: 28,
+                      width: 24,
+                      height: 24,
                       child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
+                        strokeWidth: 2.4,
                         valueColor: AlwaysStoppedAnimation<Color>(AppColors.terracotta),
                       ),
                     ),
 
-                    const SizedBox(height: 16),
-
-                    Text(
-                      _statusMessage,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textMuted,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    if (syncedCount > 0)
-                      Text(
-                        'Loaded $syncedCount / 6 store modules',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.forestMint,
-                        ),
-                      ),
-
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 44),
                   ],
                 ),
               ),
