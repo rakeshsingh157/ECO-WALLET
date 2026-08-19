@@ -1,13 +1,13 @@
 {
-  "version": "1.0.1",
-  "versionCode": 2,
+  "version": "1.0.2",
+  "versionCode": 3,
   "isRequired": false,
   "downloadUrl": "https://github.com/rakeshsingh157/BILLING-version/raw/main/app-release.apk",
   "features": [
-    "Brand new Dukaan Dost premium app icon and identity",
-    "Automatic Store Data Synchronization on startup",
-    "In-app seamless Auto-Update & manual check",
-    "Enhanced Staff Management & PIN Access Security",
-    "Full Multilingual support across 6 Indian languages"
+    "Dukaan Dost - Smart Retail POS & Khata Terminal",
+    "Fast parallel store data preloader on startup",
+    "In-app seamless Auto-Updater & version check",
+    "Clean adaptive Light & Dark mode experience",
+    "Multi-language support across 6 Indian languages"
   ]
 }
