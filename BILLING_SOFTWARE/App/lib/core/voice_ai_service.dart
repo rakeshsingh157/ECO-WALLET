@@ -9,7 +9,7 @@ class VoiceAiItem {
   final String name;
   final double price;
   final String unit;
-  final int stock;
+  final double stock;
   final String category;
   final double quantity;
 
@@ -29,7 +29,7 @@ class VoiceAiItem {
       name: json['name']?.toString() ?? 'Product',
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       unit: json['unit']?.toString() ?? 'pcs',
-      stock: (json['stock'] as num?)?.toInt() ?? 0,
+      stock: (json['stock'] as num?)?.toDouble() ?? 0.0,
       category: json['category']?.toString() ?? 'General',
       quantity: (json['quantity'] as num?)?.toDouble() ?? 1.0,
     );

@@ -52,11 +52,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
     });
   }
 
-  void _adjustStock(int delta) {
-    final current = int.tryParse(_stockCtrl.text.trim()) ?? 0;
-    final next = (current + delta).clamp(0, 99999);
+  void _adjustStock(double delta) {
+    final current = double.tryParse(_stockCtrl.text.trim()) ?? 0.0;
+    final next = (current + delta).clamp(0.0, 99999.0);
+    final isWhole = next.truncateToDouble() == next;
     setState(() {
-      _stockCtrl.text = next.toString();
+      _stockCtrl.text = isWhole ? next.toInt().toString() : next.toStringAsFixed(2);
     });
   }
 
@@ -89,8 +90,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     final auth = context.read<AuthProvider>();
     final productProvider = context.read<ProductProvider>();
 
-    final parsedStock = int.tryParse(_stockCtrl.text.trim()) ?? 0;
-    final parsedAlert = int.tryParse(_lowStockCtrl.text.trim()) ?? 5;
+    final parsedStock = double.tryParse(_stockCtrl.text.trim()) ?? 0.0;
+    final parsedAlert = double.tryParse(_lowStockCtrl.text.trim()) ?? 5.0;
 
     final newProduct = Product(
       id: 'prod_${DateTime.now().millisecondsSinceEpoch}',
@@ -98,8 +99,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
       price: double.tryParse(_priceCtrl.text.trim()) ?? 0.0,
       category: _selectedCategory,
       unit: _selectedUnit,
-      stock: parsedStock < 0 ? 0 : parsedStock,
-      lowStockAlert: parsedAlert < 0 ? 0 : parsedAlert,
+      stock: parsedStock < 0.0 ? 0.0 : parsedStock,
+      lowStockAlert: parsedAlert < 0.0 ? 0.0 : parsedAlert,
       barcode: _barcodeCtrl.text.trim().isNotEmpty ? _barcodeCtrl.text.trim() : null,
     );
 
@@ -415,7 +416,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                         child: TextFormField(
                                           controller: _stockCtrl,
                                           textAlign: TextAlign.center,
-                                          keyboardType: TextInputType.number,
+                                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                           style: GoogleFonts.plusJakartaSans(
                                             color: AppColors.textPrimary,
                                             fontWeight: FontWeight.w800,
@@ -426,7 +427,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                           ),
                                           validator: (v) {
                                             if (v == null || v.trim().isEmpty) return 'Enter stock';
-                                            final s = int.tryParse(v.trim());
+                                            final s = double.tryParse(v.trim());
                                             if (s == null || s < 0) return 'Invalid';
                                             return null;
                                           },
@@ -454,7 +455,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                   TextFormField(
                                     controller: _lowStockCtrl,
                                     textAlign: TextAlign.center,
-                                    keyboardType: TextInputType.number,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                     style: GoogleFonts.plusJakartaSans(
                                       color: AppColors.textPrimary,
                                       fontWeight: FontWeight.w800,
@@ -466,7 +467,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                     ),
                                     validator: (v) {
                                       if (v == null || v.trim().isEmpty) return 'Required';
-                                      final alert = int.tryParse(v.trim());
+                                      final alert = double.tryParse(v.trim());
                                       if (alert == null || alert < 0) return 'Invalid';
                                       return null;
                                     },

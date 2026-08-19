@@ -147,4 +147,27 @@ class ProductProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  void deductStock(List<dynamic> items) {
+    for (final item in items) {
+      final pid = item.product.id;
+      final qty = (item.quantity as num).toDouble();
+      final idx = _products.indexWhere((p) => p.id == pid);
+      if (idx != -1) {
+        final currentStock = _products[idx].stock;
+        final newStock = currentStock - qty;
+        _products[idx] = _products[idx].copyWith(stock: newStock < 0.0 ? 0.0 : newStock);
+      }
+    }
+    notifyListeners();
+  }
+
+  void restoreStock(String productId, double quantity) {
+    final idx = _products.indexWhere((p) => p.id == productId);
+    if (idx != -1) {
+      final currentStock = _products[idx].stock;
+      _products[idx] = _products[idx].copyWith(stock: currentStock + quantity);
+      notifyListeners();
+    }
+  }
 }

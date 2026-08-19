@@ -129,7 +129,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           Text(context.tr('current_stock'), style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted)),
                           const SizedBox(height: 2),
                           Text(
-                            '${_product.stock} ${_product.unit}',
+                            _product.formattedStock,
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 20,
                               fontWeight: FontWeight.w800,
@@ -148,7 +148,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '${context.tr('low_stock_threshold_label')}: <= ${_product.lowStockAlert} ${_product.unit}',
+                      '${context.tr('low_stock_threshold_label')}: <= ${_product.lowStockAlert.truncateToDouble() == _product.lowStockAlert ? _product.lowStockAlert.toInt().toString() : _product.lowStockAlert.toString()} ${_product.unit}',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,

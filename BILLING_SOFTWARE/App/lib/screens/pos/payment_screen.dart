@@ -9,6 +9,7 @@ import '../../core/api_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/bill_provider.dart';
 import '../../providers/customer_provider.dart';
+import '../../providers/product_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../models/bill.dart';
 import '../../models/customer.dart';
@@ -130,6 +131,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         merchantId: auth.merchantId,
         onSuccess: (completedBill) {
           if (mounted) {
+            context.read<ProductProvider>().deductStock(completedBill.items);
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (_) => BillSuccessScreen(bill: completedBill)),
@@ -142,6 +144,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   void _processPayment() {
     final billProvider = context.read<BillProvider>();
+    final productProvider = context.read<ProductProvider>();
     final auth = context.read<AuthProvider>();
     final apiService = ApiService(baseUrl: auth.baseUrl, apiKey: auth.apiKey);
 
@@ -180,6 +183,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         gstin: auth.gstin,
         merchantId: auth.merchantId,
       );
+      productProvider.deductStock(bill.items);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => BillSuccessScreen(bill: bill)),
@@ -198,6 +202,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         gstin: auth.gstin,
         merchantId: auth.merchantId,
       );
+      productProvider.deductStock(bill.items);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => BillSuccessScreen(bill: bill)),
@@ -216,6 +221,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         gstin: auth.gstin,
         merchantId: auth.merchantId,
       );
+      productProvider.deductStock(bill.items);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => BillSuccessScreen(bill: bill)),

@@ -101,8 +101,8 @@ class ApiService {
             price: (p["price"] as num?)?.toDouble() ?? 0.0,
             category: p["category"] ?? "General",
             unit: p["unit"] ?? "pcs",
-            stock: (p["stock"] as num?)?.toInt() ?? 10,
-            lowStockAlert: (p["min_stock_alert"] as num?)?.toInt() ?? 5,
+            stock: (p["stock"] as num?)?.toDouble() ?? 10.0,
+            lowStockAlert: (p["min_stock_alert"] as num?)?.toDouble() ?? 5.0,
             icon: p["icon"] ?? "box",
             barcode: p["barcode"],
           )).toList();

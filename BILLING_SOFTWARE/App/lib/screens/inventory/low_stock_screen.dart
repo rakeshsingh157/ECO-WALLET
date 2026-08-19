@@ -37,13 +37,13 @@ class _LowStockScreenState extends State<LowStockScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Current stock: ${product.stock} ${product.unit} (Alert threshold: ${product.lowStockAlert})',
+              'Current stock: ${product.formattedStock} (Alert threshold: ${product.lowStockAlert.truncateToDouble() == product.lowStockAlert ? product.lowStockAlert.toInt() : product.lowStockAlert})',
               style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 14),
             TextFormField(
               controller: qtyCtrl,
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.textPrimary),
               decoration: InputDecoration(
                 labelText: 'Quantity to Add (${product.unit})',
@@ -53,7 +53,7 @@ class _LowStockScreenState extends State<LowStockScreen> {
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
-              children: [5, 10, 25, 50, 100].map((preset) {
+              children: [1, 5, 10, 25, 50].map((preset) {
                 return ActionChip(
                   label: Text('+$preset'),
                   onPressed: () {
@@ -71,7 +71,7 @@ class _LowStockScreenState extends State<LowStockScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              final toAdd = int.tryParse(qtyCtrl.text.trim()) ?? 0;
+              final toAdd = double.tryParse(qtyCtrl.text.trim()) ?? 0.0;
               if (toAdd <= 0) return;
               final messenger = ScaffoldMessenger.of(context);
               final nav = Navigator.of(ctx);
@@ -81,7 +81,7 @@ class _LowStockScreenState extends State<LowStockScreen> {
               nav.pop();
               messenger.showSnackBar(
                 SnackBar(
-                  content: Text('${product.name} restocked! New stock: $newStock ${product.unit}'),
+                  content: Text('${product.name} restocked! New stock: ${updated.formattedStock}'),
                   backgroundColor: AppColors.success,
                 ),
               );
@@ -272,10 +272,10 @@ class _LowStockScreenState extends State<LowStockScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 2),
-                                  Text(
-                                    isOut
-                                        ? 'Out of stock (Alert at <= ${product.lowStockAlert})'
-                                        : 'Only ${product.stock} ${product.unit} left (Alert at <= ${product.lowStockAlert})',
+                                    Text(
+                                      isOut
+                                          ? 'Out of stock (Alert at <= ${product.lowStockAlert.truncateToDouble() == product.lowStockAlert ? product.lowStockAlert.toInt() : product.lowStockAlert})'
+                                          : 'Only ${product.formattedStock} left (Alert at <= ${product.lowStockAlert.truncateToDouble() == product.lowStockAlert ? product.lowStockAlert.toInt() : product.lowStockAlert})',
                                     style: GoogleFonts.plusJakartaSans(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,

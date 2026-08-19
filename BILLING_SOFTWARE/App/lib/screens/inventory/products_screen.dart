@@ -284,7 +284,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      '${product.category} • ${product.stock} ${product.unit}',
+                                      '${product.category} • ${product.formattedStock}',
                                       style: GoogleFonts.plusJakartaSans(
                                         fontSize: 12,
                                         color: isOut ? AppColors.error : (isLow ? AppColors.warning : AppColors.textSecondary),

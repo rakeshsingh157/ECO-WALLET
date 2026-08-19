@@ -37,8 +37,9 @@ class _EditProductScreenState extends State<EditProductScreen> {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.product.name);
     _priceCtrl = TextEditingController(text: widget.product.price.toStringAsFixed(0));
-    _stockCtrl = TextEditingController(text: widget.product.stock.toString());
-    _lowStockCtrl = TextEditingController(text: widget.product.lowStockAlert.toString());
+    _stockCtrl = TextEditingController(text: widget.product.formattedStockQtyOnly);
+    final alertIsWhole = widget.product.lowStockAlert.truncateToDouble() == widget.product.lowStockAlert;
+    _lowStockCtrl = TextEditingController(text: alertIsWhole ? widget.product.lowStockAlert.toInt().toString() : widget.product.lowStockAlert.toString());
     _barcodeCtrl = TextEditingController(text: widget.product.barcode ?? '');
     _selectedCategory = widget.product.category;
     _selectedUnit = widget.product.unit;
@@ -54,11 +55,12 @@ class _EditProductScreenState extends State<EditProductScreen> {
     super.dispose();
   }
 
-  void _adjustStock(int delta) {
-    final current = int.tryParse(_stockCtrl.text.trim()) ?? 0;
-    final next = (current + delta).clamp(0, 99999);
+  void _adjustStock(double delta) {
+    final current = double.tryParse(_stockCtrl.text.trim()) ?? 0.0;
+    final next = (current + delta).clamp(0.0, 99999.0);
+    final isWhole = next.truncateToDouble() == next;
     setState(() {
-      _stockCtrl.text = next.toString();
+      _stockCtrl.text = isWhole ? next.toInt().toString() : next.toStringAsFixed(2);
     });
   }
 
@@ -91,15 +93,15 @@ class _EditProductScreenState extends State<EditProductScreen> {
     final auth = context.read<AuthProvider>();
     final productProvider = context.read<ProductProvider>();
 
-    final parsedStock = int.tryParse(_stockCtrl.text.trim()) ?? widget.product.stock;
-    final parsedAlert = int.tryParse(_lowStockCtrl.text.trim()) ?? widget.product.lowStockAlert;
+    final parsedStock = double.tryParse(_stockCtrl.text.trim()) ?? widget.product.stock;
+    final parsedAlert = double.tryParse(_lowStockCtrl.text.trim()) ?? widget.product.lowStockAlert;
 
     final updatedProduct = widget.product.copyWith(
       name: _nameCtrl.text.trim(),
       price: double.tryParse(_priceCtrl.text.trim()) ?? widget.product.price,
       category: _selectedCategory,
-      stock: parsedStock < 0 ? 0 : parsedStock,
-      lowStockAlert: parsedAlert < 0 ? 0 : parsedAlert,
+      stock: parsedStock < 0.0 ? 0.0 : parsedStock,
+      lowStockAlert: parsedAlert < 0.0 ? 0.0 : parsedAlert,
       unit: _selectedUnit,
       barcode: _barcodeCtrl.text.trim().isNotEmpty ? _barcodeCtrl.text.trim() : null,
     );
@@ -495,7 +497,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                                         child: TextFormField(
                                           controller: _stockCtrl,
                                           textAlign: TextAlign.center,
-                                          keyboardType: TextInputType.number,
+                                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                           style: GoogleFonts.plusJakartaSans(
                                             color: AppColors.textPrimary,
                                             fontWeight: FontWeight.w800,
@@ -506,7 +508,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                                           ),
                                           validator: (v) {
                                             if (v == null || v.trim().isEmpty) return 'Enter stock';
-                                            final s = int.tryParse(v.trim());
+                                            final s = double.tryParse(v.trim());
                                             if (s == null || s < 0) return 'Invalid';
                                             return null;
                                           },
@@ -534,7 +536,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                                   TextFormField(
                                     controller: _lowStockCtrl,
                                     textAlign: TextAlign.center,
-                                    keyboardType: TextInputType.number,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                     style: GoogleFonts.plusJakartaSans(
                                       color: AppColors.textPrimary,
                                       fontWeight: FontWeight.w800,
@@ -546,7 +548,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                                     ),
                                     validator: (v) {
                                       if (v == null || v.trim().isEmpty) return 'Required';
-                                      final alert = int.tryParse(v.trim());
+                                      final alert = double.tryParse(v.trim());
                                       if (alert == null || alert < 0) return 'Invalid';
                                       return null;
                                     },

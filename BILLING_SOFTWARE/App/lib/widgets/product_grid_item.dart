@@ -41,8 +41,8 @@ class ProductGridItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isOutOfStock = product.stock <= 0;
-    final isLowStock = product.stock > 0 && product.stock <= 5;
+    final isOutOfStock = product.isOutOfStock;
+    final isLowStock = product.isLowStock;
 
     return InkWell(
       onTap: isOutOfStock ? null : onAdd,
@@ -59,8 +59,8 @@ class ProductGridItem extends StatelessWidget {
           ),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x06000000),
-              blurRadius: 8,
+              color: Color(0x0A000000),
+              blurRadius: 10,
               offset: Offset(0, 2),
             ),
           ],
@@ -80,29 +80,30 @@ class ProductGridItem extends StatelessWidget {
                   ),
                   child: Icon(
                     _getCategoryIcon(product.category),
+                    size: 20,
                     color: AppColors.terracotta,
-                    size: 18,
                   ),
                 ),
-                if (isInCart && cartQuantityLabel != null)
+                if (isInCart)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: AppColors.terracotta,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      cartQuantityLabel!,
+                      context.tr('in_cart'),
                       style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
                         color: Colors.white,
                       ),
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 6),
+
+            const SizedBox(height: 10),
 
             Text(
               product.name,
@@ -115,7 +116,8 @@ class ProductGridItem extends StatelessWidget {
                 height: 1.2,
               ),
             ),
-            const SizedBox(height: 2),
+
+            const SizedBox(height: 4),
 
             if (isOutOfStock)
               Text(
@@ -128,7 +130,7 @@ class ProductGridItem extends StatelessWidget {
               )
             else if (isLowStock)
               Text(
-                '${context.tr('low_stock')} (${product.stock})',
+                '${context.tr('low_stock')} (${product.formattedStockQtyOnly})',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
