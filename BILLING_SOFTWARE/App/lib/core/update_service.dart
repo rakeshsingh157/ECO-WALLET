@@ -55,16 +55,25 @@ class UpdateService {
       }
 
       final latestVersionStr = (data['version'] ?? '1.0.0').toString().trim();
+      final latestCode = (data['versionCode'] as num?)?.toInt() ?? 0;
       final isRequired = data['isRequired'] == true || data['required'] == true;
       final downloadUrl = (data['downloadUrl'] ?? data['apkUrl'] ?? data['url'] ?? '').toString().trim();
       final features = (data['features'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
 
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersionStr = packageInfo.version;
+      final currentCode = int.tryParse(packageInfo.buildNumber) ?? 0;
 
-      if (_isNewerVersion(currentVersionStr, latestVersionStr)) {
+      final bool hasUpdate = _isNewerVersion(
+        currentVersion: currentVersionStr,
+        currentCode: currentCode,
+        latestVersion: latestVersionStr,
+        latestCode: latestCode,
+      );
+
+      if (hasUpdate) {
         if (context.mounted) {
-          _showUpdateDialog(
+          _showUpdateModal(
             context,
             currentVersion: currentVersionStr,
             newVersion: latestVersionStr,
@@ -77,7 +86,7 @@ class UpdateService {
         if (isManual && context.mounted) {
           AppNotifier.success(
             context,
-            'Dukaan Dost is already up to date (v$currentVersionStr).',
+            'Dukaan Dost is already running the latest version (v$currentVersionStr).',
             title: 'LATEST VERSION',
           );
         }
@@ -86,17 +95,22 @@ class UpdateService {
       if (isManual && context.mounted) {
         AppNotifier.info(
           context,
-          'Unable to reach update server. Please check your network connection.',
+          'Unable to reach update server. Please check your internet connection.',
           title: 'UPDATE CHECK',
         );
       }
     }
   }
 
-  static bool _isNewerVersion(String current, String latest) {
+  static bool _isNewerVersion({
+    required String currentVersion,
+    required int currentCode,
+    required String latestVersion,
+    required int latestCode,
+  }) {
     try {
-      final cParts = current.split('.').map((s) => int.tryParse(s.replaceAll(RegExp(r'\D'), '')) ?? 0).toList();
-      final lParts = latest.split('.').map((s) => int.tryParse(s.replaceAll(RegExp(r'\D'), '')) ?? 0).toList();
+      final cParts = currentVersion.split('.').map((s) => int.tryParse(s.replaceAll(RegExp(r'\D'), '')) ?? 0).toList();
+      final lParts = latestVersion.split('.').map((s) => int.tryParse(s.replaceAll(RegExp(r'\D'), '')) ?? 0).toList();
 
       for (int i = 0; i < 3; i++) {
         final c = i < cParts.length ? cParts[i] : 0;
@@ -104,13 +118,18 @@ class UpdateService {
         if (l > c) return true;
         if (l < c) return false;
       }
+
+      if (latestCode > 0 && currentCode > 0) {
+        return latestCode > currentCode;
+      }
+
       return false;
     } catch (_) {
       return false;
     }
   }
 
-  static void _showUpdateDialog(
+  static void _showUpdateModal(
     BuildContext context, {
     required String currentVersion,
     required String newVersion,
@@ -118,12 +137,15 @@ class UpdateService {
     required bool isRequired,
     required String downloadUrl,
   }) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: !isRequired,
+      isDismissible: !isRequired,
+      enableDrag: !isRequired,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) => PopScope(
         canPop: !isRequired,
-        child: _UpdateDialogWidget(
+        child: _UpdateSheetWidget(
           currentVersion: currentVersion,
           newVersion: newVersion,
           features: features,
@@ -135,14 +157,14 @@ class UpdateService {
   }
 }
 
-class _UpdateDialogWidget extends StatefulWidget {
+class _UpdateSheetWidget extends StatefulWidget {
   final String currentVersion;
   final String newVersion;
   final List<String> features;
   final bool isRequired;
   final String downloadUrl;
 
-  const _UpdateDialogWidget({
+  const _UpdateSheetWidget({
     required this.currentVersion,
     required this.newVersion,
     required this.features,
@@ -151,13 +173,14 @@ class _UpdateDialogWidget extends StatefulWidget {
   });
 
   @override
-  State<_UpdateDialogWidget> createState() => _UpdateDialogWidgetState();
+  State<_UpdateSheetWidget> createState() => _UpdateSheetWidgetState();
 }
 
-class _UpdateDialogWidgetState extends State<_UpdateDialogWidget> {
+class _UpdateSheetWidgetState extends State<_UpdateSheetWidget> {
   bool _isDownloading = false;
   double _progress = 0.0;
   String _statusMessage = '';
+  String _mbProgress = '';
 
   Future<void> _startDownload() async {
     if (widget.downloadUrl.isEmpty || !widget.downloadUrl.startsWith('http')) {
@@ -167,7 +190,7 @@ class _UpdateDialogWidgetState extends State<_UpdateDialogWidget> {
 
     setState(() {
       _isDownloading = true;
-      _statusMessage = 'Requesting installation permissions...';
+      _statusMessage = 'Requesting storage permission...';
       _progress = 0;
     });
 
@@ -176,7 +199,7 @@ class _UpdateDialogWidgetState extends State<_UpdateDialogWidget> {
       if (status.isDenied) {
         setState(() {
           _isDownloading = false;
-          _statusMessage = 'Installation permission denied. Cannot proceed with update.';
+          _statusMessage = 'Please enable install permissions from Settings to update.';
         });
         return;
       }
@@ -203,7 +226,8 @@ class _UpdateDialogWidgetState extends State<_UpdateDialogWidget> {
               _progress = rcv / total;
               final downloadedMb = (rcv / (1024 * 1024)).toStringAsFixed(1);
               final totalMb = (total / (1024 * 1024)).toStringAsFixed(1);
-              _statusMessage = 'Downloading: $downloadedMb MB / $totalMb MB (${(_progress * 100).toStringAsFixed(0)}%)';
+              _mbProgress = '$downloadedMb MB / $totalMb MB';
+              _statusMessage = 'Downloading update (${(_progress * 100).toStringAsFixed(0)}%)';
             });
           }
         },
@@ -214,7 +238,7 @@ class _UpdateDialogWidgetState extends State<_UpdateDialogWidget> {
       final result = await OpenFilex.open(savePath);
       if (result.type != ResultType.done) {
         setState(() {
-          _statusMessage = 'Failed to launch installer: ${result.message}';
+          _statusMessage = 'Tap Install Now to complete package installation.';
           _isDownloading = false;
         });
       } else {
@@ -225,143 +249,282 @@ class _UpdateDialogWidgetState extends State<_UpdateDialogWidget> {
     } catch (e) {
       setState(() {
         _isDownloading = false;
-        _statusMessage = 'Download failed: ${e.toString()}';
+        _statusMessage = 'Download failed. Please check connection and retry.';
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: AppColors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: AppColors.borderSubtle, width: 1.2)),
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppColors.terracotta.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(Icons.system_update_rounded, color: AppColors.terracotta, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'UPDATE AVAILABLE',
-                  style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 1.1, color: AppColors.textPrimary),
-                ),
-                Text(
-                  'v${widget.currentVersion} -> v${widget.newVersion}',
-                  style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.terracotta),
-                ),
-              ],
-            ),
+    final isDark = Theme.of(context).brightness == Brightness.dark || AppColors.isDark;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        border: Border(
+          top: BorderSide(color: AppColors.borderSubtle, width: 1.5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.6 : 0.15),
+            blurRadius: 36,
+            offset: const Offset(0, -10),
           ),
         ],
       ),
-      content: SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+      child: SafeArea(
+        top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'A new version of Dukaan Dost (v${widget.newVersion}) is ready to install.',
-              style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+            Center(
+              child: Container(
+                width: 44,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borderStrong,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
             ),
-            const SizedBox(height: 14),
+
+            const SizedBox(height: 20),
+
+            Row(
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: AppColors.terracotta.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.3)),
+                  ),
+                  child: Center(
+                    child: Icon(Icons.rocket_launch_rounded, color: AppColors.terracotta, size: 28),
+                  ),
+                ),
+
+                const SizedBox(width: 16),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'NEW UPDATE AVAILABLE',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.2,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.forestMint.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: AppColors.forestMint.withValues(alpha: 0.4)),
+                            ),
+                            child: Text(
+                              'v${widget.newVersion}',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.forestMint,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Current version: v${widget.currentVersion}',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
 
             if (widget.features.isNotEmpty) ...[
               Text(
-                "What's New in this update:",
-                style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.warmNavy),
+                "WHAT'S NEW IN THIS VERSION",
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                  color: AppColors.textMuted,
+                ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: AppColors.canvas,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.borderSubtle),
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: widget.features.map((f) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 3),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.check_circle_rounded, size: 14, color: AppColors.forestMint),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            f,
-                            style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
+                  children: widget.features.map((feature) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.only(top: 2),
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              color: AppColors.forestMint.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.check_rounded, size: 12, color: AppColors.forestMint),
                           ),
-                        ),
-                      ],
-                    ),
-                  )).toList(),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              feature,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                                height: 1.35,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 20),
             ],
 
             if (_isDownloading || _progress > 0) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: _progress > 0 ? _progress : null,
-                  backgroundColor: AppColors.canvas,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.terracotta),
-                  minHeight: 8,
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.canvas,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _statusMessage,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        if (_mbProgress.isNotEmpty)
+                          Text(
+                            _mbProgress,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.terracotta,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LinearProgressIndicator(
+                        value: _progress > 0 ? _progress : null,
+                        minHeight: 10,
+                        backgroundColor: isDark ? const Color(0xFF242E3D) : const Color(0xFFE8E4DC),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.terracotta),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                _statusMessage,
-                style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted),
-                textAlign: TextAlign.center,
-              ),
-            ] else if (_statusMessage.isNotEmpty) ...[
-              Text(
-                _statusMessage,
-                style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.error),
-                textAlign: TextAlign.center,
-              ),
+              const SizedBox(height: 20),
             ],
+
+            Row(
+              children: [
+                if (!widget.isRequired && !_isDownloading) ...[
+                  Expanded(
+                    flex: 1,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: BorderSide(color: AppColors.borderStrong),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: Text(
+                        'LATER',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: _isDownloading ? null : _startDownload,
+                    icon: _isDownloading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                          )
+                        : const Icon(Icons.download_for_offline_rounded, size: 20),
+                    label: Text(
+                      _progress == 1.0 ? 'INSTALL UPDATE' : 'UPDATE NOW',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.terracotta,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shadowColor: AppColors.terracotta.withValues(alpha: 0.4),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
-      actions: [
-        if (!widget.isRequired && !_isDownloading)
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'LATER',
-              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 12, color: AppColors.textSecondary),
-            ),
-          ),
-        ElevatedButton.icon(
-          onPressed: _isDownloading ? null : _startDownload,
-          icon: _isDownloading
-              ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : const Icon(Icons.download_rounded, size: 16),
-          label: Text(
-            _progress == 1.0 ? 'INSTALL NOW' : 'DOWNLOAD & UPDATE',
-            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 12, letterSpacing: 0.8),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.terracotta,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          ),
-        ),
-      ],
     );
   }
 }
