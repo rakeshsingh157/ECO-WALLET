@@ -42,7 +42,12 @@ class CustomerProvider with ChangeNotifier {
   }
 
   Future<bool> addCustomer(ApiService apiService, Customer customer) async {
-    _customers.insert(0, customer);
+    final idx = _customers.indexWhere((c) => c.id == customer.id || (c.phone.isNotEmpty && c.phone == customer.phone));
+    if (idx != -1) {
+      _customers[idx] = customer;
+    } else {
+      _customers.insert(0, customer);
+    }
     notifyListeners();
 
     final success = await apiService.addCustomer(customer);

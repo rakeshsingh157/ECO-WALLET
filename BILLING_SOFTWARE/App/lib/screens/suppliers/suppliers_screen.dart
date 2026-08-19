@@ -46,6 +46,8 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
     final phoneCtrl = TextEditingController();
     final gstinCtrl = TextEditingController();
 
+    bool isSaving = false;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -53,87 +55,97 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          left: 20,
-          right: 20,
-          top: 20,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  ctx.tr('add_supplier').toUpperCase(),
-                  style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-                ),
-                IconButton(
-                  icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-
-            TextField(
-              controller: nameCtrl,
-              style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-              decoration: InputDecoration(labelText: ctx.tr('contact_name'), prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta)),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: companyCtrl,
-              style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-              decoration: InputDecoration(labelText: ctx.tr('company_name'), prefixIcon: Icon(Icons.business_rounded, color: AppColors.warmNavy)),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: phoneCtrl,
-              keyboardType: TextInputType.phone,
-              style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-              decoration: InputDecoration(labelText: ctx.tr('supplier_phone'), prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta)),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: gstinCtrl,
-              style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
-              decoration: InputDecoration(labelText: ctx.tr('gstin'), prefixIcon: Icon(Icons.badge_rounded, color: AppColors.forestMint)),
-            ),
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () async {
-                  if (nameCtrl.text.trim().isNotEmpty && companyCtrl.text.trim().isNotEmpty) {
-                    final auth = context.read<AuthProvider>();
-                    final newSupplier = Supplier(
-                      id: 'sup_${DateTime.now().millisecondsSinceEpoch}',
-                      name: nameCtrl.text.trim(),
-                      companyName: companyCtrl.text.trim(),
-                      phone: phoneCtrl.text.trim(),
-                      gstin: gstinCtrl.text.trim(),
-                    );
-                    await context.read<SupplierProvider>().addSupplier(auth.apiService, newSupplier);
-                    if (ctx.mounted) {
-                      Navigator.pop(ctx);
-                    }
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.terracotta,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: Text(ctx.tr('save_supplier').toUpperCase()),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+            left: 20,
+            right: 20,
+            top: 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    ctx.tr('add_supplier').toUpperCase(),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
+                    onPressed: isSaving ? null : () => Navigator.pop(ctx),
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 14),
+
+              TextField(
+                controller: nameCtrl,
+                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                decoration: InputDecoration(labelText: ctx.tr('contact_name'), prefixIcon: Icon(Icons.person_rounded, color: AppColors.terracotta)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: companyCtrl,
+                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: ctx.tr('company_name'), prefixIcon: Icon(Icons.business_rounded, color: AppColors.warmNavy)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: phoneCtrl,
+                keyboardType: TextInputType.phone,
+                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: ctx.tr('supplier_phone'), prefixIcon: Icon(Icons.phone_rounded, color: AppColors.terracotta)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: gstinCtrl,
+                style: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: ctx.tr('gstin'), prefixIcon: Icon(Icons.badge_rounded, color: AppColors.forestMint)),
+              ),
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: isSaving ? null : () async {
+                    if (isSaving) return;
+                    if (nameCtrl.text.trim().isNotEmpty && companyCtrl.text.trim().isNotEmpty) {
+                      setModalState(() => isSaving = true);
+                      final auth = context.read<AuthProvider>();
+                      final newSupplier = Supplier(
+                        id: 'sup_${DateTime.now().millisecondsSinceEpoch}',
+                        name: nameCtrl.text.trim(),
+                        companyName: companyCtrl.text.trim(),
+                        phone: phoneCtrl.text.trim(),
+                        gstin: gstinCtrl.text.trim(),
+                      );
+                      await context.read<SupplierProvider>().addSupplier(auth.apiService, newSupplier);
+                      if (ctx.mounted) {
+                        Navigator.pop(ctx);
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.terracotta,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : Text(ctx.tr('save_supplier').toUpperCase()),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

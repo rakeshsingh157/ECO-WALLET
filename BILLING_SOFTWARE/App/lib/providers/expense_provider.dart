@@ -36,7 +36,12 @@ class ExpenseProvider with ChangeNotifier {
   }
 
   Future<bool> addExpense(ApiService apiService, Expense expense) async {
-    _expenses.insert(0, expense);
+    final idx = _expenses.indexWhere((e) => e.id == expense.id);
+    if (idx != -1) {
+      _expenses[idx] = expense;
+    } else {
+      _expenses.insert(0, expense);
+    }
     notifyListeners();
 
     final success = await apiService.addExpense(expense);

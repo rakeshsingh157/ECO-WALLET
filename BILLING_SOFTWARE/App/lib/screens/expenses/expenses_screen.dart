@@ -63,6 +63,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
       paymentMode = 'Cash';
     }
 
+    bool isSaving = false;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -96,7 +98,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   ),
                   IconButton(
                     icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
-                    onPressed: () => Navigator.pop(ctx),
+                    onPressed: isSaving ? null : () => Navigator.pop(ctx),
                   ),
                 ],
               ),
@@ -169,7 +171,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () async {
+                  onPressed: isSaving ? null : () async {
+                    if (isSaving) return;
                     final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
                     final title = titleCtrl.text.trim();
                     if (title.isEmpty) {
@@ -181,6 +184,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       return;
                     }
 
+                    setModalState(() => isSaving = true);
                     final auth = context.read<AuthProvider>();
                     final expenseProvider = context.read<ExpenseProvider>();
 
@@ -230,7 +234,13 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text(isEdit ? ctx.tr('update_expense').toUpperCase() : ctx.tr('save_expense').toUpperCase()),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : Text(isEdit ? ctx.tr('update_expense').toUpperCase() : ctx.tr('save_expense').toUpperCase()),
                 ),
               ),
             ],

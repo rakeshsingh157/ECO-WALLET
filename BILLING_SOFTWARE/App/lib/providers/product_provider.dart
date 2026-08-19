@@ -91,7 +91,12 @@ class ProductProvider extends ChangeNotifier {
   }
 
   Future<bool> createProduct(String baseUrl, String apiKey, Product product) async {
-    _products.insert(0, product);
+    final existingIdx = _products.indexWhere((p) => p.id == product.id || (p.name.trim().toLowerCase() == product.name.trim().toLowerCase() && p.category == product.category && p.unit == product.unit));
+    if (existingIdx != -1) {
+      _products[existingIdx] = product;
+    } else {
+      _products.insert(0, product);
+    }
     notifyListeners();
 
     try {
@@ -134,7 +139,12 @@ class ProductProvider extends ChangeNotifier {
   }
 
   void addProduct(Product product) {
-    _products.add(product);
+    final idx = _products.indexWhere((p) => p.id == product.id);
+    if (idx != -1) {
+      _products[idx] = product;
+    } else {
+      _products.insert(0, product);
+    }
     notifyListeners();
   }
 }

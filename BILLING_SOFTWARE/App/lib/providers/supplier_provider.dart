@@ -42,7 +42,12 @@ class SupplierProvider with ChangeNotifier {
   }
 
   Future<bool> addSupplier(ApiService apiService, Supplier supplier) async {
-    _suppliers.insert(0, supplier);
+    final idx = _suppliers.indexWhere((s) => s.id == supplier.id || (s.phone.isNotEmpty && s.phone == supplier.phone));
+    if (idx != -1) {
+      _suppliers[idx] = supplier;
+    } else {
+      _suppliers.insert(0, supplier);
+    }
     notifyListeners();
 
     final success = await apiService.addSupplier(supplier);
