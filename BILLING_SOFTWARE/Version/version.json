@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "versionCode": 1,
+  "isRequired": false,
+  "downloadUrl": "https://github.com/rakeshsingh157/BILLING-version/releases/download/v1.0.0/app-release.apk",
+  "features": [
+    "Automatic Store Data Synchronization on startup",
+    "Enhanced Staff Management & PIN Access Security",
+    "UI Overhaul with modern cards & floating badges",
+    "Full Multilingual support in 6 Indian languages"
+  ]
+}

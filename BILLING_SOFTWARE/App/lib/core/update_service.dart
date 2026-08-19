@@ -16,6 +16,7 @@ class UpdateService {
     'https://raw.githubusercontent.com/rakeshsingh157/BILLING-version/main/version.json',
     'https://raw.githubusercontent.com/rakeshsingh157/BILLING-version/master/version.json',
     'https://raw.githubusercontent.com/rakeshsingh157/BILLING-version/main/Version/version.json',
+    'https://raw.githubusercontent.com/rakeshsingh157/BILLING-version/master/Version/version.json',
   ];
 
   static Future<void> checkForUpdates(BuildContext context, {bool isManual = false}) async {
