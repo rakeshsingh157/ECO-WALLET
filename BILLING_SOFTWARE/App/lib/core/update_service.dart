@@ -139,19 +139,16 @@ class UpdateService {
   }) {
     showModalBottomSheet(
       context: context,
-      isDismissible: !isRequired,
-      enableDrag: !isRequired,
+      isDismissible: false,
+      enableDrag: false,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => PopScope(
-        canPop: !isRequired,
-        child: _UpdateSheetWidget(
-          currentVersion: currentVersion,
-          newVersion: newVersion,
-          features: features,
-          isRequired: isRequired,
-          downloadUrl: downloadUrl,
-        ),
+      builder: (ctx) => _UpdateSheetWidget(
+        currentVersion: currentVersion,
+        newVersion: newVersion,
+        features: features,
+        isRequired: isRequired,
+        downloadUrl: downloadUrl,
       ),
     );
   }
@@ -181,6 +178,37 @@ class _UpdateSheetWidgetState extends State<_UpdateSheetWidget> {
   double _progress = 0.0;
   String _statusMessage = '';
   String _mbProgress = '';
+  CancelToken? _cancelToken;
+  String? _currentSavePath;
+
+  @override
+  void dispose() {
+    _cancelToken?.cancel();
+    super.dispose();
+  }
+
+  void _cancelDownload() async {
+    if (_cancelToken != null && !_cancelToken!.isCancelled) {
+      _cancelToken!.cancel('Download cancelled by user');
+    }
+
+    if (_currentSavePath != null) {
+      try {
+        final file = File(_currentSavePath!);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (_) {}
+    }
+
+    setState(() {
+      _isDownloading = false;
+      _progress = 0.0;
+      _statusMessage = 'Download cancelled.';
+      _mbProgress = '';
+      _cancelToken = null;
+    });
+  }
 
   Future<void> _startDownload() async {
     if (widget.downloadUrl.isEmpty || !widget.downloadUrl.startsWith('http')) {
@@ -190,7 +218,7 @@ class _UpdateSheetWidgetState extends State<_UpdateSheetWidget> {
 
     setState(() {
       _isDownloading = true;
-      _statusMessage = 'Requesting storage permission...';
+      _statusMessage = 'Requesting storage permissions...';
       _progress = 0;
     });
 
@@ -199,17 +227,19 @@ class _UpdateSheetWidgetState extends State<_UpdateSheetWidget> {
       if (status.isDenied) {
         setState(() {
           _isDownloading = false;
-          _statusMessage = 'Please enable install permissions from Settings to update.';
+          _statusMessage = 'Please enable install permissions in Settings to continue.';
         });
         return;
       }
     }
 
-    setState(() => _statusMessage = 'Downloading update package...');
+    setState(() => _statusMessage = 'Connecting to download server...');
+    _cancelToken = CancelToken();
 
     try {
       final appDocDir = await getTemporaryDirectory();
       final savePath = '${appDocDir.path}/dukaan-dost-v${widget.newVersion}.apk';
+      _currentSavePath = savePath;
 
       final file = File(savePath);
       if (await file.exists()) {
@@ -220,8 +250,9 @@ class _UpdateSheetWidgetState extends State<_UpdateSheetWidget> {
       await dio.download(
         widget.downloadUrl,
         savePath,
+        cancelToken: _cancelToken,
         onReceiveProgress: (rcv, total) {
-          if (total != -1) {
+          if (total != -1 && mounted) {
             setState(() {
               _progress = rcv / total;
               final downloadedMb = (rcv / (1024 * 1024)).toStringAsFixed(1);
@@ -233,12 +264,15 @@ class _UpdateSheetWidgetState extends State<_UpdateSheetWidget> {
         },
       );
 
-      setState(() => _statusMessage = 'Download complete. Launching package installer...');
+      if (!mounted) return;
+      setState(() => _statusMessage = 'Download complete. Launching installer...');
 
       final result = await OpenFilex.open(savePath);
+      if (!mounted) return;
+
       if (result.type != ResultType.done) {
         setState(() {
-          _statusMessage = 'Tap Install Now to complete package installation.';
+          _statusMessage = 'Tap Install Update to complete package setup.';
           _isDownloading = false;
         });
       } else {
@@ -247,9 +281,13 @@ class _UpdateSheetWidgetState extends State<_UpdateSheetWidget> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
+      if (e is DioException && CancelToken.isCancel(e)) {
+        return;
+      }
       setState(() {
         _isDownloading = false;
-        _statusMessage = 'Download failed. Please check connection and retry.';
+        _statusMessage = 'Download interrupted. Please check connection and retry.';
       });
     }
   }
@@ -258,271 +296,288 @@ class _UpdateSheetWidgetState extends State<_UpdateSheetWidget> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark || AppColors.isDark;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        border: Border(
-          top: BorderSide(color: AppColors.borderSubtle, width: 1.5),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.6 : 0.15),
-            blurRadius: 36,
-            offset: const Offset(0, -10),
+    return PopScope(
+      canPop: !widget.isRequired && !_isDownloading,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          border: Border(
+            top: BorderSide(color: AppColors.borderSubtle, width: 1.5),
           ),
-        ],
-      ),
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.borderStrong,
-                  borderRadius: BorderRadius.circular(2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.6 : 0.15),
+              blurRadius: 36,
+              offset: const Offset(0, -10),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.borderStrong,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            Row(
-              children: [
+              Row(
+                children: [
+                  Container(
+                    width: 54,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      color: AppColors.terracotta.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.3)),
+                    ),
+                    child: Center(
+                      child: Icon(Icons.rocket_launch_rounded, color: AppColors.terracotta, size: 28),
+                    ),
+                  ),
+
+                  const SizedBox(width: 16),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'UPDATE AVAILABLE',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.2,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.forestMint.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: AppColors.forestMint.withValues(alpha: 0.4)),
+                              ),
+                              child: Text(
+                                'v${widget.newVersion}',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.forestMint,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Current version: v${widget.currentVersion}',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              if (widget.features.isNotEmpty) ...[
+                Text(
+                  "WHAT'S NEW IN THIS VERSION",
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 10),
                 Container(
-                  width: 54,
-                  height: 54,
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.terracotta.withValues(alpha: 0.14),
+                    color: AppColors.canvas,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.borderSubtle),
+                  ),
+                  child: Column(
+                    children: widget.features.map((feature) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(top: 2),
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: AppColors.forestMint.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.check_rounded, size: 12, color: AppColors.forestMint),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                feature,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              if (_isDownloading || _progress > 0) ...[
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.canvas,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.3)),
                   ),
-                  child: Center(
-                    child: Icon(Icons.rocket_launch_rounded, color: AppColors.terracotta, size: 28),
-                  ),
-                ),
-
-                const SizedBox(width: 16),
-
-                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'NEW UPDATE AVAILABLE',
+                            _statusMessage,
                             style: GoogleFonts.plusJakartaSans(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.2,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
                               color: AppColors.textPrimary,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.forestMint.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: AppColors.forestMint.withValues(alpha: 0.4)),
-                            ),
-                            child: Text(
-                              'v${widget.newVersion}',
+                          if (_mbProgress.isNotEmpty)
+                            Text(
+                              _mbProgress,
                               style: GoogleFonts.plusJakartaSans(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.forestMint,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.terracotta,
                               ),
                             ),
-                          ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Current version: v${widget.currentVersion}',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
+                      const SizedBox(height: 10),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: _progress > 0 ? _progress : null,
+                          minHeight: 10,
+                          backgroundColor: isDark ? const Color(0xFF242E3D) : const Color(0xFFE8E4DC),
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.terracotta),
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 20),
               ],
-            ),
 
-            const SizedBox(height: 20),
-
-            if (widget.features.isNotEmpty) ...[
-              Text(
-                "WHAT'S NEW IN THIS VERSION",
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
-                  color: AppColors.textMuted,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.canvas,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderSubtle),
-                ),
-                child: Column(
-                  children: widget.features.map((feature) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.only(top: 2),
-                            padding: const EdgeInsets.all(3),
-                            decoration: BoxDecoration(
-                              color: AppColors.forestMint.withValues(alpha: 0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(Icons.check_rounded, size: 12, color: AppColors.forestMint),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              feature,
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
-                                height: 1.35,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-
-            if (_isDownloading || _progress > 0) ...[
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.canvas,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              if (_isDownloading)
+                OutlinedButton.icon(
+                  onPressed: _cancelDownload,
+                  icon: Icon(Icons.close_rounded, size: 18, color: AppColors.error),
+                  label: Text(
+                    'CANCEL DOWNLOAD',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0,
+                      color: AppColors.error,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: BorderSide(color: AppColors.error.withValues(alpha: 0.6), width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                )
+              else
+                Row(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _statusMessage,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                    if (!widget.isRequired) ...[
+                      Expanded(
+                        flex: 1,
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            side: BorderSide(color: AppColors.borderStrong),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                          child: Text(
+                            'LATER',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.0,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ),
-                        if (_mbProgress.isNotEmpty)
-                          Text(
-                            _mbProgress,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.terracotta,
-                            ),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton.icon(
+                        onPressed: _startDownload,
+                        icon: const Icon(Icons.download_for_offline_rounded, size: 20),
+                        label: Text(
+                          _progress == 1.0 ? 'INSTALL UPDATE' : 'UPDATE NOW',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.0,
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: _progress > 0 ? _progress : null,
-                        minHeight: 10,
-                        backgroundColor: isDark ? const Color(0xFF242E3D) : const Color(0xFFE8E4DC),
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.terracotta),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.terracotta,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shadowColor: AppColors.terracotta.withValues(alpha: 0.4),
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 20),
             ],
-
-            Row(
-              children: [
-                if (!widget.isRequired && !_isDownloading) ...[
-                  Expanded(
-                    flex: 1,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: BorderSide(color: AppColors.borderStrong),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      child: Text(
-                        'LATER',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.0,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                ],
-
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton.icon(
-                    onPressed: _isDownloading ? null : _startDownload,
-                    icon: _isDownloading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
-                          )
-                        : const Icon(Icons.download_for_offline_rounded, size: 20),
-                    label: Text(
-                      _progress == 1.0 ? 'INSTALL UPDATE' : 'UPDATE NOW',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.terracotta,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      shadowColor: AppColors.terracotta.withValues(alpha: 0.4),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
