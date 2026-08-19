@@ -74,7 +74,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Scanned Code: $scannedCode'),
+          content: Text('${context.tr('scanned_code')}: $scannedCode'),
           backgroundColor: AppColors.success,
         ),
       );
@@ -115,7 +115,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${_nameCtrl.text.trim()} added to inventory!'),
+            content: Text('${_nameCtrl.text.trim()} ${context.tr('added_successfully')}'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -123,7 +123,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(productProvider.errorMessage ?? 'Failed to create product'),
+            content: Text(productProvider.errorMessage ?? context.tr('failed_to_save')),
             backgroundColor: AppColors.error,
           ),
         );

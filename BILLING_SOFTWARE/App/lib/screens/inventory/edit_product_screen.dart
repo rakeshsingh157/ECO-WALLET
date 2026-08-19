@@ -77,7 +77,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Scanned Code: $scannedCode'),
+          content: Text('${context.tr('scanned_code')}: $scannedCode'),
           backgroundColor: AppColors.success,
         ),
       );
@@ -117,7 +117,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${_nameCtrl.text.trim()} updated successfully!'),
+            content: Text('${_nameCtrl.text.trim()} ${context.tr('updated_successfully')}'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -125,7 +125,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(productProvider.errorMessage ?? 'Failed to update product'),
+            content: Text(productProvider.errorMessage ?? context.tr('failed_to_save')),
             backgroundColor: AppColors.error,
           ),
         );
@@ -142,7 +142,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'DELETE PRODUCT',
+          context.tr('delete_product').toUpperCase(),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 16,
             fontWeight: FontWeight.w800,
@@ -151,13 +151,13 @@ class _EditProductScreenState extends State<EditProductScreen> {
           ),
         ),
         content: Text(
-          'Are you sure you want to delete "${widget.product.name}" from inventory? This action cannot be undone.',
+          '${context.tr('confirm_delete_product')}: "${widget.product.name}"?',
           style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('CANCEL', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+            child: Text(context.tr('cancel').toUpperCase(), style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -166,7 +166,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: Text('DELETE', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
+            child: Text(context.tr('delete').toUpperCase(), style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -190,7 +190,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Product deleted successfully!'),
+            content: Text('${widget.product.name} - ${context.tr('delete')}'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -198,7 +198,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(productProvider.errorMessage ?? 'Failed to delete product'),
+            content: Text(productProvider.errorMessage ?? context.tr('failed_to_delete_product')),
             backgroundColor: AppColors.error,
           ),
         );

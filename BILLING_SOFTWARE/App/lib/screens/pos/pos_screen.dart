@@ -411,13 +411,13 @@ class _PosScreenState extends State<PosScreen> {
           IconButton(
             icon: Icon(Icons.qr_code_scanner_rounded, color: AppColors.terracotta),
             onPressed: _openBarcodeScanner,
-            tooltip: 'Scan Barcode / QR',
+            tooltip: context.tr('scan_barcode'),
           ),
           if (billProvider.currentItems.isNotEmpty)
             IconButton(
               icon: Icon(Icons.delete_sweep_rounded, color: AppColors.error),
               onPressed: () => billProvider.clearCart(),
-              tooltip: 'Clear Cart',
+              tooltip: context.tr('clear_cart'),
             ),
         ],
       ),

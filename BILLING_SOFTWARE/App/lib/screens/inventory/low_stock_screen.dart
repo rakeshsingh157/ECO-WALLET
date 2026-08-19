@@ -75,13 +75,14 @@ class _LowStockScreenState extends State<LowStockScreen> {
               if (toAdd <= 0) return;
               final messenger = ScaffoldMessenger.of(context);
               final nav = Navigator.of(ctx);
+              final restockLabel = context.tr('restocked');
               final newStock = product.stock + toAdd;
               final updated = product.copyWith(stock: newStock);
               await productProvider.updateProduct(auth.baseUrl, auth.apiKey, updated);
               nav.pop();
               messenger.showSnackBar(
                 SnackBar(
-                  content: Text('${product.name} restocked! New stock: ${updated.formattedStock}'),
+                  content: Text('${product.name} - $restockLabel: ${updated.formattedStock}'),
                   backgroundColor: AppColors.success,
                 ),
               );
@@ -100,11 +101,11 @@ class _LowStockScreenState extends State<LowStockScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
         title: Text(
-          context.tr('delete'),
+          context.tr('delete_product'),
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.textPrimary),
         ),
         content: Text(
-          '${context.tr('confirm')}: "${product.name}"?',
+          '${context.tr('confirm_delete_product')}: "${product.name}"?',
           style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
         ),
         actions: [
@@ -287,7 +288,7 @@ class _LowStockScreenState extends State<LowStockScreen> {
                             ),
                             IconButton(
                               icon: Icon(Icons.edit_outlined, color: AppColors.textSecondary, size: 20),
-                              tooltip: 'Edit Product Details',
+                              tooltip: context.tr('edit_product'),
                               onPressed: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(builder: (_) => EditProductScreen(product: product)),
@@ -295,7 +296,7 @@ class _LowStockScreenState extends State<LowStockScreen> {
                             ),
                             IconButton(
                               icon: Icon(Icons.delete_outline_rounded, color: AppColors.error.withAlpha(180), size: 20),
-                              tooltip: 'Delete Product',
+                              tooltip: context.tr('delete_product'),
                               onPressed: () => _confirmDelete(product),
                             ),
                             const SizedBox(width: 4),

@@ -127,7 +127,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Extracted UPI ID: $pa'),
+              content: Text('${context.tr('extracted_upi_id')}: $pa'),
               backgroundColor: AppColors.success,
             ),
           );
@@ -141,7 +141,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Set UPI ID: ${qrContent.trim()}'),
+            content: Text('${context.tr('set_upi_id')}: ${qrContent.trim()}'),
             backgroundColor: AppColors.success,
           ),
         );

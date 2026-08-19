@@ -159,7 +159,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
     if (_selectedBill!.status == BillStatus.returned || _selectedBill!.netAmount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Bill #${_selectedBill!.billId} is already fully refunded.'),
+          content: Text('${context.tr('bill')} #${_selectedBill!.billId} ${context.tr('already_refunded')}'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -170,7 +170,7 @@ class _ReturnOrderScreenState extends State<ReturnOrderScreen> {
     if (refundAmount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please select at least 1 item or quantity to return'),
+          content: Text(context.tr('select_item_to_return')),
           backgroundColor: AppColors.error,
         ),
       );

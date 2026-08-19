@@ -220,8 +220,8 @@ class _SupplierDetailsScreenState extends State<SupplierDetailsScreen> {
                               final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
                               if (amt <= 0) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Please enter a valid payment amount'),
+                                  SnackBar(
+                                    content: Text(context.tr('enter_valid_amount')),
                                     backgroundColor: Colors.red,
                                   ),
                                 );
@@ -240,7 +240,7 @@ class _SupplierDetailsScreenState extends State<SupplierDetailsScreen> {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('Paid ₹${amt.toStringAsFixed(0)} to ${_supplier.companyName}'),
+                                    content: Text('${context.tr('paid')} ₹${amt.toStringAsFixed(0)} ${context.tr('to')} ${_supplier.companyName}'),
                                     backgroundColor: AppColors.success,
                                   ),
                                 );

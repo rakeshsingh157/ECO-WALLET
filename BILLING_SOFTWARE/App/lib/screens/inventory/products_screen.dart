@@ -326,22 +326,22 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                       builder: (ctx) => AlertDialog(
                                         backgroundColor: AppColors.surface,
                                         title: Text(
-                                          'Delete Product',
+                                          context.tr('delete_product'),
                                           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                                         ),
                                         content: Text(
-                                          'Are you sure you want to delete "${product.name}" from inventory?',
+                                          '${context.tr('confirm_delete_product')}: "${product.name}"?',
                                           style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
                                         ),
                                         actions: [
                                           TextButton(
                                             onPressed: () => Navigator.pop(ctx, false),
-                                            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+                                            child: Text(context.tr('cancel'), style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, fontWeight: FontWeight.w700)),
                                           ),
                                           ElevatedButton(
                                             onPressed: () => Navigator.pop(ctx, true),
                                             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
-                                            child: const Text('Delete'),
+                                            child: Text(context.tr('delete')),
                                           ),
                                         ],
                                       ),
@@ -353,7 +353,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
-                                            content: Text('${product.name} deleted from inventory'),
+                                            content: Text('${product.name} - ${context.tr('delete')}'),
                                             backgroundColor: AppColors.error,
                                           ),
                                         );

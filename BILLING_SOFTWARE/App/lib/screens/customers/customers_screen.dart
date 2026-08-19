@@ -260,8 +260,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
                               final phone = phoneCtrl.text.trim();
                               if (name.isEmpty || phone.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Customer name and phone number are required'),
+                                  SnackBar(
+                                    content: Text(context.tr('customer_name_phone_required')),
                                     backgroundColor: Colors.red,
                                   ),
                                 );

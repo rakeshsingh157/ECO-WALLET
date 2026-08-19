@@ -64,7 +64,7 @@ class _SignupScreenState extends State<SignupScreen> {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Store registered successfully! Welcome to Dukaan Dost.'),
+            content: Text(context.tr('register_success')),
             backgroundColor: AppColors.success,
           ),
         );

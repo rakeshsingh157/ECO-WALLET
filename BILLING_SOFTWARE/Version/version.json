@@ -1,14 +1,14 @@
 {
-  "version": "1.0.8",
-  "versionCode": 9,
+  "version": "1.0.9",
+  "versionCode": 10,
   "isRequired": false,
   "downloadUrl": "https://github.com/rakeshsingh157/BILLING-version/raw/main/app-release.apk",
   "features": [
     "Dukaan Dost - Smart Retail POS & Khata Terminal",
-    "AI Voice Add to Cart with Fractional Weights (e.g. 250g chini, 500ml doodh, 1.5kg aata)",
-    "Colloquial Hindi weight parsing (adha kilo, ek pav, dedh kilo, dhai kilo)",
-    "Redesigned Voice Cart UI with waveform visualizer and quantity adjustment steppers",
-    "Quick sample voice order suggestion chips for rapid cashier input",
+    "Complete localization of all delete confirmation dialogs across 6 languages",
+    "Localized notification snackbars for products, customers, suppliers, expenses, and settings",
+    "Localized action tooltips and placeholders (clear cart, scan barcode)",
+    "Synchronized translations dictionary across English, Hindi, Marathi, Gujarati, Tamil, Telugu",
     "Multi-tap debounce protection preventing duplicate database records"
   ]
 }

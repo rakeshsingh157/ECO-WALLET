@@ -36,7 +36,7 @@ class CartScreen extends StatelessWidget {
                 billProvider.clearCart();
                 Navigator.pop(context);
               },
-              tooltip: 'Clear Cart',
+              tooltip: context.tr('clear_cart'),
             ),
         ],
       ),
@@ -57,7 +57,7 @@ class CartScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Add products from the catalog to start billing',
+                    context.tr('empty_cart_subtitle'),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 13,
                       color: AppColors.textSecondary,

@@ -376,8 +376,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                               final title = titleCtrl.text.trim();
                               if (title.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Please enter an expense title'),
+                                  SnackBar(
+                                    content: Text(context.tr('enter_expense_title')),
                                     backgroundColor: Colors.red,
                                   ),
                                 );
@@ -385,8 +385,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                               }
                               if (amt <= 0) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Please enter a valid expense amount'),
+                                  SnackBar(
+                                    content: Text(context.tr('enter_valid_amount')),
                                     backgroundColor: Colors.red,
                                   ),
                                 );

@@ -154,10 +154,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
       if (auth.upiId.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Please upload or set up your Store UPI QR first in Settings.'),
+            content: Text(context.tr('setup_upi_qr_first')),
             backgroundColor: AppColors.chaiGold,
             action: SnackBarAction(
-              label: 'CONFIGURE',
+              label: context.tr('settings').toUpperCase(),
               textColor: Colors.black,
               onPressed: () {
                 Navigator.push(

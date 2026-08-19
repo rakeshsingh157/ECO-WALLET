@@ -263,8 +263,8 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
 
                               if (name.isEmpty || company.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Contact name and company name are required'),
+                                  SnackBar(
+                                    content: Text(context.tr('contact_company_required')),
                                     backgroundColor: Colors.red,
                                   ),
                                 );
