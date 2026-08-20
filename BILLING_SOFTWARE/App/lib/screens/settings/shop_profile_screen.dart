@@ -347,7 +347,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),
                     child: Text(
-                      'Store / Business Name *',
+                      context.tr('shop_business_name'),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -369,7 +369,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),
                     child: Text(
-                      'Proprietor / Owner Name *',
+                      context.tr('owner_name'),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -391,7 +391,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),
                     child: Text(
-                      'Registered Mobile Number *',
+                      context.tr('registered_mobile_number'),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -414,7 +414,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),
                     child: Text(
-                      'GSTIN (Optional)',
+                      context.tr('gstin_optional'),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -437,7 +437,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),
                     child: Text(
-                      'Store Address (Printed on Invoices)',
+                      context.tr('store_address_invoices'),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -477,10 +477,14 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
                             padding: const EdgeInsets.all(6),
@@ -503,6 +507,7 @@ class _ShopProfileScreenState extends State<ShopProfileScreen> {
                         ],
                       ),
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           ElevatedButton.icon(
                             onPressed: _pickQrFromGallery,

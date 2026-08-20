@@ -139,37 +139,43 @@ class _MainShellState extends State<MainShell> {
   }) {
     final isSelected = _currentIndex == index;
 
-    return InkWell(
-      onTap: () => setState(() => _currentIndex = index),
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Badge(
-              isLabelVisible: badgeCount > 0,
-              label: Text(
-                '$badgeCount',
-                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => _currentIndex = index),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Badge(
+                isLabelVisible: badgeCount > 0,
+                label: Text(
+                  '$badgeCount',
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                backgroundColor: AppColors.terracotta,
+                child: Icon(
+                  isSelected ? activeIcon : icon,
+                  size: 22,
+                  color: isSelected ? AppColors.terracotta : AppColors.textSecondary,
+                ),
               ),
-              backgroundColor: AppColors.terracotta,
-              child: Icon(
-                isSelected ? activeIcon : icon,
-                size: 22,
-                color: isSelected ? AppColors.terracotta : AppColors.textSecondary,
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected ? AppColors.terracotta : AppColors.textSecondary,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? AppColors.terracotta : AppColors.textSecondary,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

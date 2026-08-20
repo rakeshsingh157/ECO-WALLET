@@ -263,7 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Text(
-                          _selectedLoginType == 0 ? '${context.tr('owner_mobile_label')} *' : '${context.tr('staff_mobile_label')} *',
+                          _selectedLoginType == 0 ? context.tr('owner_mobile_label') : context.tr('staff_mobile_label'),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -291,7 +291,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Text(
-                          _selectedLoginType == 0 ? '${context.tr('security_pin_label')} *' : '${context.tr('staff_pin_label')} *',
+                          _selectedLoginType == 0 ? context.tr('security_pin_label') : context.tr('staff_pin_label'),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,

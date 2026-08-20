@@ -166,7 +166,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Text(
-                          '${context.tr('shop_business_name')} *',
+                          context.tr('shop_business_name'),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -189,7 +189,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Text(
-                          '${context.tr('proprietor')} *',
+                          context.tr('owner_name'),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -212,7 +212,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Text(
-                          '${context.tr('mobile_number_label')} *',
+                          context.tr('registered_mobile_number'),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -242,7 +242,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                 Padding(
                                   padding: const EdgeInsets.only(bottom: 6),
                                   child: Text(
-                                    '${context.tr('pin_label')} *',
+                                    context.tr('security_pin_label'),
                                     style: GoogleFonts.plusJakartaSans(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
@@ -284,7 +284,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                 Padding(
                                   padding: const EdgeInsets.only(bottom: 6),
                                   child: Text(
-                                    '${context.tr('confirm_pin_label')} *',
+                                    '${context.tr('confirm_pin')} *',
                                     style: GoogleFonts.plusJakartaSans(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
