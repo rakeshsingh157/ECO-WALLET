@@ -153,6 +153,7 @@ class VoiceAiService {
   Future<VoiceAiResult> processVoiceOrder({
     required String baseUrl,
     required String apiKey,
+    String? merchantId,
     String? audioBase64,
     required String text,
     required String language,
@@ -179,12 +180,17 @@ class VoiceAiService {
         payload['text'] = text;
       }
 
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+      };
+      if (merchantId != null && merchantId.isNotEmpty) {
+        headers['x-merchant-id'] = merchantId;
+      }
+
       final response = await http.post(
         uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-        },
+        headers: headers,
         body: jsonEncode(payload),
       ).timeout(const Duration(seconds: 30));
 

@@ -138,6 +138,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
     final result = await _voiceService.processVoiceOrder(
       baseUrl: auth.baseUrl,
       apiKey: auth.apiKey,
+      merchantId: auth.merchantId,
       audioBase64: audioBase64,
       text: liveText,
       language: currentLocale,
@@ -177,6 +178,7 @@ class _VoiceBillingModalState extends State<VoiceBillingModal> with TickerProvid
     final result = await _voiceService.processVoiceOrder(
       baseUrl: auth.baseUrl,
       apiKey: auth.apiKey,
+      merchantId: auth.merchantId,
       audioBase64: null,
       text: text,
       language: currentLocale,
