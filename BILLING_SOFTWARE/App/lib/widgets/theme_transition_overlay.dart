@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../core/localization.dart';
 import '../providers/theme_provider.dart';
 
 class ThemeTransitionOverlay extends StatefulWidget {
@@ -208,7 +209,10 @@ class _ThemeTransitionOverlayState extends State<ThemeTransitionOverlay>
                             ),
                             const SizedBox(height: 24),
                             Text(
-                              isDark ? 'SWITCHING TO DARK MODE' : 'SWITCHING TO LIGHT MODE',
+                              isDark
+                                  ? context.tr('switching_to_dark_mode').toUpperCase()
+                                  : context.tr('switching_to_light_mode').toUpperCase(),
+                              textAlign: TextAlign.center,
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
@@ -219,7 +223,10 @@ class _ThemeTransitionOverlayState extends State<ThemeTransitionOverlay>
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              isDark ? 'Optimizing for low-light comfort' : 'Optimizing for daytime clarity',
+                              isDark
+                                  ? context.tr('optimizing_for_low_light')
+                                  : context.tr('optimizing_for_daytime'),
+                              textAlign: TextAlign.center,
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,

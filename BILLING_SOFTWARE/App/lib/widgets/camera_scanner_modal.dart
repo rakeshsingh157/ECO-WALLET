@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../core/localization.dart';
 import '../core/theme.dart';
 
 class CameraScannerModal extends StatefulWidget {
@@ -271,7 +272,7 @@ class _CameraScannerModalState extends State<CameraScannerModal> with SingleTick
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Please enable Camera permission in device settings to scan.',
+                                  context.tr('enable_camera_permission'),
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 13,
@@ -284,7 +285,7 @@ class _CameraScannerModalState extends State<CameraScannerModal> with SingleTick
                                     _controller.start();
                                   },
                                   icon: const Icon(Icons.refresh_rounded, size: 18),
-                                  label: const Text('RETRY CAMERA'),
+                                  label: Text(context.tr('retry_camera')),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.terracotta,
                                     foregroundColor: Colors.white,
