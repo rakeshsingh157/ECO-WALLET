@@ -5,7 +5,7 @@ import '../../core/localization.dart';
 import '../../widgets/mascot_badge.dart';
 import '../../widgets/language_picker_button.dart';
 import '../auth/login_screen.dart';
-import 'shop_setup_screen.dart';
+import '../auth/signup_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -174,7 +174,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         } else {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const ShopSetupScreen()),
+                            MaterialPageRoute(builder: (_) => const SignupScreen()),
                           );
                         }
                       },

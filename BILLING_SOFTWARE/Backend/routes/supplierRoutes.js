@@ -6,14 +6,19 @@ const SupplierPurchase = require("../models/SupplierPurchase");
 router.get("/", async (req, res) => {
   try {
     const { search, limit, page } = req.query;
-    const query = {};
+    const merchantId = req.merchant_id || "mch_default";
+    const query = { merchant_id: merchantId };
 
     if (search && search.trim().length > 0) {
       const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      query.$or = [
-        { name: { $regex: escaped, $options: "i" } },
-        { company_name: { $regex: escaped, $options: "i" } },
-        { phone: { $regex: escaped, $options: "i" } },
+      query.$and = [
+        {
+          $or: [
+            { name: { $regex: escaped, $options: "i" } },
+            { company_name: { $regex: escaped, $options: "i" } },
+            { phone: { $regex: escaped, $options: "i" } },
+          ],
+        },
       ];
     }
 
@@ -61,7 +66,9 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const supplier = await Supplier.findOne({
+      merchant_id: merchantId,
       $or: [
         { supplier_id: req.params.id },
         ...(req.params.id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: req.params.id }] : []),
@@ -97,6 +104,7 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || req.body.merchant_id || "mch_default";
     const { name, company_name, companyName, phone, gstin, address, supplier_id } = req.body;
 
     const resolvedCompany = company_name || companyName;
@@ -106,9 +114,10 @@ router.post("/", async (req, res) => {
 
     const supplierId = supplier_id || `sup_${Date.now()}`;
     const supplier = await Supplier.findOneAndUpdate(
-      { supplier_id: supplierId },
+      { merchant_id: merchantId, supplier_id: supplierId },
       {
         $set: {
+          merchant_id: merchantId,
           supplier_id: supplierId,
           name: name.trim(),
           company_name: resolvedCompany.trim(),
@@ -143,7 +152,8 @@ router.post("/", async (req, res) => {
 
 router.post("/:id/pay", async (req, res) => {
   try {
-    const { amount, note } = req.body;
+    const merchantId = req.merchant_id || "mch_default";
+    const { amount } = req.body;
     const payAmount = Number(amount);
 
     if (!payAmount || payAmount <= 0) {
@@ -151,6 +161,7 @@ router.post("/:id/pay", async (req, res) => {
     }
 
     const supplier = await Supplier.findOne({
+      merchant_id: merchantId,
       $or: [
         { supplier_id: req.params.id },
         ...(req.params.id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: req.params.id }] : []),
@@ -175,9 +186,11 @@ router.post("/:id/pay", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
 router.get("/:id/purchases", async (req, res) => {
   try {
-    const purchases = await SupplierPurchase.find({ supplier_id: req.params.id })
+    const merchantId = req.merchant_id || "mch_default";
+    const purchases = await SupplierPurchase.find({ merchant_id: merchantId, supplier_id: req.params.id })
       .sort({ date: -1 })
       .limit(50)
       .lean();

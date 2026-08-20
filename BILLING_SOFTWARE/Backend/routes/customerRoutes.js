@@ -7,7 +7,8 @@ const Bill = require("../models/Bill");
 router.get("/", async (req, res) => {
   try {
     const { search, limit, page, dueOnly } = req.query;
-    const query = {};
+    const merchantId = req.merchant_id || "mch_default";
+    const query = { merchant_id: merchantId };
 
     if (dueOnly === "true") {
       query.due_amount = { $gt: 0 };
@@ -15,9 +16,13 @@ router.get("/", async (req, res) => {
 
     if (search && search.trim().length > 0) {
       const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      query.$or = [
-        { name: { $regex: escaped, $options: "i" } },
-        { phone: { $regex: escaped, $options: "i" } },
+      query.$and = [
+        {
+          $or: [
+            { name: { $regex: escaped, $options: "i" } },
+            { phone: { $regex: escaped, $options: "i" } },
+          ],
+        },
       ];
     }
 
@@ -62,7 +67,9 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const customer = await Customer.findOne({
+      merchant_id: merchantId,
       $or: [
         { customer_id: req.params.id },
         { phone: req.params.id },
@@ -95,6 +102,7 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || req.body.merchant_id || "mch_default";
     const { name, phone, address, aadhaar_number, initial_due, customer_id } = req.body;
 
     if (!name || name.trim().length === 0) {
@@ -108,9 +116,10 @@ router.post("/", async (req, res) => {
     const customerId = customer_id || `cust_${Date.now()}`;
 
     const customer = await Customer.findOneAndUpdate(
-      { phone: cleanPhone },
+      { merchant_id: merchantId, phone: cleanPhone },
       {
         $setOnInsert: {
+          merchant_id: merchantId,
           customer_id: customerId,
           total_spent: 0,
           total_orders: 0,
@@ -145,6 +154,7 @@ router.post("/", async (req, res) => {
 
 router.post("/:id/credit", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const { amount, bill_id, note, payment_mode } = req.body;
     const creditAmount = Number(amount);
 
@@ -153,6 +163,7 @@ router.post("/:id/credit", async (req, res) => {
     }
 
     const customer = await Customer.findOne({
+      merchant_id: merchantId,
       $or: [
         { customer_id: req.params.id },
         { phone: req.params.id },
@@ -171,6 +182,7 @@ router.post("/:id/credit", async (req, res) => {
     await customer.save();
 
     const ledger = await KhataLedger.create({
+      merchant_id: merchantId,
       customer_id: customer.customer_id,
       type: "credit",
       amount: creditAmount,
@@ -197,6 +209,7 @@ router.post("/:id/credit", async (req, res) => {
 
 router.post("/:id/payment", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const { amount, note, payment_mode } = req.body;
     const paymentAmount = Number(amount);
 
@@ -205,6 +218,7 @@ router.post("/:id/payment", async (req, res) => {
     }
 
     const customer = await Customer.findOne({
+      merchant_id: merchantId,
       $or: [
         { customer_id: req.params.id },
         { phone: req.params.id },
@@ -251,6 +265,7 @@ router.post("/:id/payment", async (req, res) => {
 
     let remainingToCover = paymentAmount;
     const pendingBills = await Bill.find({
+      merchant_id: merchantId,
       status: "pending",
       ...(customerMatchConditions.length > 0 ? { $or: customerMatchConditions } : {}),
     }).sort({ createdAt: 1 });
@@ -268,6 +283,7 @@ router.post("/:id/payment", async (req, res) => {
     if (newDue === 0 && customerMatchConditions.length > 0) {
       await Bill.updateMany(
         {
+          merchant_id: merchantId,
           status: "pending",
           $or: customerMatchConditions,
         },
@@ -281,6 +297,7 @@ router.post("/:id/payment", async (req, res) => {
     }
 
     const ledger = await KhataLedger.create({
+      merchant_id: merchantId,
       customer_id: customer.customer_id,
       type: "payment",
       amount: paymentAmount,
@@ -306,7 +323,9 @@ router.post("/:id/payment", async (req, res) => {
 
 router.get("/:id/ledger", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const customer = await Customer.findOne({
+      merchant_id: merchantId,
       $or: [
         { customer_id: req.params.id },
         { phone: req.params.id },
@@ -317,6 +336,7 @@ router.get("/:id/ledger", async (req, res) => {
     const phone = customer ? customer.phone : req.params.id;
 
     const ledger = await KhataLedger.find({
+      merchant_id: merchantId,
       $or: [{ customer_id: custId }, { customer_id: phone }, { customer_id: req.params.id }],
     })
       .sort({ date: -1, createdAt: -1 })
@@ -331,7 +351,9 @@ router.get("/:id/ledger", async (req, res) => {
 
 router.get("/:id/transactions", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const customer = await Customer.findOne({
+      merchant_id: merchantId,
       $or: [
         { customer_id: req.params.id },
         { phone: req.params.id },
@@ -344,12 +366,14 @@ router.get("/:id/transactions", async (req, res) => {
 
     const [ledgerEntries, bills] = await Promise.all([
       KhataLedger.find({
+        merchant_id: merchantId,
         $or: [{ customer_id: custId }, { customer_id: phone }, { customer_id: req.params.id }],
       })
         .sort({ date: -1, createdAt: -1 })
         .limit(100)
         .lean(),
       Bill.find({
+        merchant_id: merchantId,
         $or: [
           { khata_customer_id: custId },
           { khata_customer_id: req.params.id },

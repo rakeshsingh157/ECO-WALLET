@@ -303,7 +303,8 @@ router.post("/voice-to-cart", async (req, res) => {
       });
     }
 
-    const products = await Product.find({}).lean();
+    const merchantId = req.merchant_id || "mch_default";
+    const products = await Product.find({ merchant_id: merchantId }).lean();
 
     if (!products || products.length === 0) {
       return res.json({

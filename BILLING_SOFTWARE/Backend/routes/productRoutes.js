@@ -5,7 +5,8 @@ const Product = require("../models/Product");
 router.get("/", async (req, res) => {
   try {
     const { category, search, barcode, limit, page } = req.query;
-    const query = {};
+    const merchantId = req.merchant_id || "mch_default";
+    const query = { merchant_id: merchantId };
 
     if (category && category !== "All") {
       query.category = category;
@@ -17,10 +18,14 @@ router.get("/", async (req, res) => {
 
     if (search && search.trim().length > 0) {
       const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      query.$or = [
-        { name: { $regex: escaped, $options: "i" } },
-        { barcode: { $regex: escaped, $options: "i" } },
-        { category: { $regex: escaped, $options: "i" } },
+      query.$and = [
+        {
+          $or: [
+            { name: { $regex: escaped, $options: "i" } },
+            { barcode: { $regex: escaped, $options: "i" } },
+            { category: { $regex: escaped, $options: "i" } },
+          ],
+        },
       ];
     }
 
@@ -60,7 +65,9 @@ router.get("/", async (req, res) => {
 
 router.get("/barcode/:code", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const product = await Product.findOne({
+      merchant_id: merchantId,
       $or: [{ barcode: req.params.code }, { product_id: req.params.code }],
     }).lean();
 
@@ -76,7 +83,9 @@ router.get("/barcode/:code", async (req, res) => {
 
 router.get("/low-stock", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const products = await Product.find({
+      merchant_id: merchantId,
       $expr: { $lte: ["$stock", { $ifNull: ["$min_stock_alert", 5] }] }
     })
       .sort({ stock: 1 })
@@ -95,7 +104,9 @@ router.get("/low-stock", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const query = {
+      merchant_id: merchantId,
       $or: [
         { product_id: req.params.id },
         { barcode: req.params.id },
@@ -114,6 +125,7 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || req.body.merchant_id || "mch_default";
     const { name, price, category, unit, stock, min_stock_alert, icon, barcode, product_id } = req.body;
 
     if (!name || name.trim().length === 0) {
@@ -125,6 +137,7 @@ router.post("/", async (req, res) => {
 
     const productId = product_id || `prod_${Date.now()}`;
     const productData = {
+      merchant_id: merchantId,
       product_id: productId,
       name: name.trim(),
       price: Number(price),
@@ -137,7 +150,7 @@ router.post("/", async (req, res) => {
     };
 
     const product = await Product.findOneAndUpdate(
-      { product_id: productId },
+      { merchant_id: merchantId, product_id: productId },
       { $set: productData },
       { upsert: true, new: true }
     );
@@ -150,8 +163,10 @@ router.post("/", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const { name, price, category, unit, stock, min_stock_alert, icon, barcode } = req.body;
     const query = {
+      merchant_id: merchantId,
       $or: [
         { product_id: req.params.id },
         ...(req.params.id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: req.params.id }] : []),
@@ -180,7 +195,9 @@ router.put("/:id", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const query = {
+      merchant_id: merchantId,
       $or: [
         { product_id: req.params.id },
         ...(req.params.id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: req.params.id }] : []),

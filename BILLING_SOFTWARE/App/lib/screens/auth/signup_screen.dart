@@ -4,8 +4,15 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/localization.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/product_provider.dart';
+import '../../providers/bill_provider.dart';
+import '../../providers/customer_provider.dart';
+import '../../providers/expense_provider.dart';
+import '../../providers/supplier_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../../widgets/language_picker_button.dart';
 import '../main_shell.dart';
+import 'login_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -62,6 +69,22 @@ class _SignupScreenState extends State<SignupScreen> {
 
     if (mounted) {
       if (success) {
+        if (auth.baseUrl.isNotEmpty) {
+          context.read<ProductProvider>().clear();
+          context.read<BillProvider>().clear();
+          context.read<CustomerProvider>().clear();
+          context.read<ExpenseProvider>().clear();
+          context.read<SupplierProvider>().clear();
+          context.read<NotificationProvider>().clear();
+
+          context.read<ProductProvider>().fetchProducts(auth.baseUrl, auth.apiKey);
+          context.read<BillProvider>().fetchBills(auth.apiService);
+          context.read<CustomerProvider>().fetchCustomers(auth.apiService);
+          context.read<ExpenseProvider>().fetchExpenses(auth.apiService);
+          context.read<SupplierProvider>().fetchSuppliers(auth.apiService);
+          context.read<NotificationProvider>().fetchNotifications(auth.apiService);
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(context.tr('register_success')),
@@ -314,6 +337,32 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${context.tr('already_have_account')} ',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        );
+                      },
+                      child: Text(
+                        context.tr('sign_in'),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.terracotta,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
               ],

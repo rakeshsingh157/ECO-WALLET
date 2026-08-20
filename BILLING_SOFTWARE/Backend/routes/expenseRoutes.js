@@ -26,7 +26,8 @@ function getISTDateRange(period) {
 router.get("/", async (req, res) => {
   try {
     const { category, period, limit, page } = req.query;
-    const query = {};
+    const merchantId = req.merchant_id || "mch_default";
+    const query = { merchant_id: merchantId };
 
     if (category && category !== "All") {
       query.category = category;
@@ -87,6 +88,7 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || req.body.merchant_id || "mch_default";
     const { title, amount, category, payment_mode, paymentMode, notes, expense_id } = req.body;
 
     if (!title || title.trim().length === 0) {
@@ -98,6 +100,7 @@ router.post("/", async (req, res) => {
 
     const expenseId = expense_id || `exp_${Date.now()}`;
     const newExpense = new Expense({
+      merchant_id: merchantId,
       expense_id: expenseId,
       title: title.trim(),
       amount: Number(amount),
@@ -130,8 +133,10 @@ router.post("/", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const { title, amount, category, payment_mode, paymentMode, notes } = req.body;
     const query = {
+      merchant_id: merchantId,
       $or: [
         { expense_id: req.params.id },
         ...(req.params.id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: req.params.id }] : []),
@@ -172,7 +177,9 @@ router.put("/:id", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const query = {
+      merchant_id: merchantId,
       $or: [
         { expense_id: req.params.id },
         ...(req.params.id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: req.params.id }] : []),

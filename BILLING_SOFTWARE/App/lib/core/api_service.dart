@@ -9,12 +9,14 @@ import '../models/notification_item.dart';
 class ApiService {
   final String baseUrl;
   final String apiKey;
+  final String merchantId;
 
   static const Duration requestTimeout = Duration(seconds: 15);
 
   ApiService({
     required this.baseUrl,
     required this.apiKey,
+    this.merchantId = '',
   });
 
   String get _cleanBase => baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
@@ -22,6 +24,7 @@ class ApiService {
   Map<String, String> get _headers => {
         "Content-Type": "application/json",
         "X-API-Key": apiKey,
+        if (merchantId.isNotEmpty) "X-Merchant-Id": merchantId,
       };
 
   Future<bool> checkHealth() async {

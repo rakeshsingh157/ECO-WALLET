@@ -107,4 +107,11 @@ class CustomerProvider with ChangeNotifier {
     }
     return success;
   }
+
+  void clear() {
+    _customers.clear();
+    _searchQuery = '';
+    _isLoading = false;
+    notifyListeners();
+  }
 }

@@ -29,7 +29,8 @@ function getISTDateRange(period) {
 router.get("/", async (req, res) => {
   try {
     const { period, mode, status, search, page = 1, limit = 100 } = req.query;
-    const query = {};
+    const merchantId = req.merchant_id || "mch_default";
+    const query = { merchant_id: merchantId };
 
     if (mode && mode !== "all") {
       query.payment_mode = mode;
@@ -49,10 +50,14 @@ router.get("/", async (req, res) => {
 
     if (search && search.trim().length > 0) {
       const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      query.$or = [
-        { bill_id: { $regex: escaped, $options: "i" } },
-        { customer_name: { $regex: escaped, $options: "i" } },
-        { customer_phone: { $regex: escaped, $options: "i" } },
+      query.$and = [
+        {
+          $or: [
+            { bill_id: { $regex: escaped, $options: "i" } },
+            { customer_name: { $regex: escaped, $options: "i" } },
+            { customer_phone: { $regex: escaped, $options: "i" } },
+          ],
+        },
       ];
     }
 
@@ -60,7 +65,7 @@ router.get("/", async (req, res) => {
     const limitNum = Math.min(500, Math.max(1, parseInt(limit) || 100));
     const skip = (pageNum - 1) * limitNum;
 
-    const clearedCustomers = await Customer.find({ due_amount: { $lte: 0 } }).lean();
+    const clearedCustomers = await Customer.find({ merchant_id: merchantId, due_amount: { $lte: 0 } }).lean();
     if (clearedCustomers.length > 0) {
       const matchQueries = [];
       for (const cust of clearedCustomers) {
@@ -73,7 +78,7 @@ router.get("/", async (req, res) => {
       }
       if (matchQueries.length > 0) {
         await Bill.updateMany(
-          { status: "pending", $or: matchQueries },
+          { merchant_id: merchantId, status: "pending", $or: matchQueries },
           { $set: { status: "completed", payment_mode: "cash" } }
         );
       }
@@ -89,7 +94,7 @@ router.get("/", async (req, res) => {
         .lean(),
       Bill.countDocuments(query),
       Bill.aggregate([
-        { $match: { createdAt: { $gte: startOfToday }, status: { $in: ["completed", "partially_returned"] } } },
+        { $match: { merchant_id: merchantId, createdAt: { $gte: startOfToday }, status: { $in: ["completed", "partially_returned"] } } },
         {
           $group: {
             _id: null,
@@ -99,7 +104,7 @@ router.get("/", async (req, res) => {
         },
       ]),
       Bill.aggregate([
-        { $match: { status: { $in: ["completed", "partially_returned"] } } },
+        { $match: { merchant_id: merchantId, status: { $in: ["completed", "partially_returned"] } } },
         {
           $group: {
             _id: null,
@@ -138,6 +143,7 @@ router.get("/", async (req, res) => {
 router.post("/return", async (req, res) => {
   try {
     const { bill_id, return_type, returned_items, reason, refund_mode } = req.body;
+    const merchantId = req.merchant_id || "mch_default";
 
     if (!bill_id) {
       return res.status(400).json({ success: false, message: "bill_id is required" });
@@ -145,6 +151,7 @@ router.post("/return", async (req, res) => {
 
     const cleanBillId = bill_id.trim();
     const bill = await Bill.findOne({
+      merchant_id: merchantId,
       $or: [
         { bill_id: cleanBillId },
         { bill_id: `BILL_${cleanBillId}` },
@@ -213,7 +220,7 @@ router.post("/return", async (req, res) => {
           if (item.product_id) {
             stockRestorations.push({
               updateOne: {
-                filter: { $or: [{ product_id: item.product_id }, { id: item.product_id }] },
+                filter: { merchant_id: merchantId, $or: [{ product_id: item.product_id }, { id: item.product_id }] },
                 update: { $inc: { stock: qtyToReturn } },
               },
             });
@@ -236,7 +243,7 @@ router.post("/return", async (req, res) => {
           if (item.product_id) {
             stockRestorations.push({
               updateOne: {
-                filter: { $or: [{ product_id: item.product_id }, { id: item.product_id }] },
+                filter: { merchant_id: merchantId, $or: [{ product_id: item.product_id }, { id: item.product_id }] },
                 update: { $inc: { stock: remainingQty } },
               },
             });
@@ -282,7 +289,7 @@ router.post("/return", async (req, res) => {
     if (bill.customer_phone && bill.customer_phone.trim().length >= 10) {
       try {
         await Customer.findOneAndUpdate(
-          { phone: bill.customer_phone.trim() },
+          { merchant_id: merchantId, phone: bill.customer_phone.trim() },
           {
             $inc: {
               total_spent: -refundAmount,
@@ -313,6 +320,7 @@ router.post("/return", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || req.body.merchant_id || "mch_default";
     const {
       items,
       total_amount,
@@ -326,7 +334,6 @@ router.post("/", async (req, res) => {
       shop_phone,
       shop_address,
       shop_gstin,
-      merchant_id,
     } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -336,7 +343,7 @@ router.post("/", async (req, res) => {
     const billId = bill_id || `BILL_${Date.now()}`;
     const billData = {
       bill_id: billId,
-      merchant_id: merchant_id || "mch_default",
+      merchant_id: merchantId,
       shop_name: shop_name || "Dukaan Dost Retail Store",
       owner_name: owner_name || "Store Merchant",
       shop_phone: shop_phone || null,
@@ -358,7 +365,7 @@ router.post("/", async (req, res) => {
     };
 
     const savedBill = await Bill.findOneAndUpdate(
-      { bill_id: billId },
+      { merchant_id: merchantId, bill_id: billId },
       { $set: billData },
       { upsert: true, new: true }
     );
@@ -367,14 +374,14 @@ router.post("/", async (req, res) => {
       .filter((i) => i.product_id)
       .map((item) => ({
         updateOne: {
-          filter: { product_id: item.product_id },
+          filter: { merchant_id: merchantId, product_id: item.product_id },
           update: { $inc: { stock: -item.quantity } },
         },
       }));
 
     if (bulkOps.length > 0) {
       await Product.bulkWrite(bulkOps);
-      await Product.updateMany({ stock: { $lt: 0 } }, { $set: { stock: 0 } });
+      await Product.updateMany({ merchant_id: merchantId, stock: { $lt: 0 } }, { $set: { stock: 0 } });
     }
 
     const custFilter = [];
@@ -382,7 +389,7 @@ router.post("/", async (req, res) => {
     if (customer_phone && customer_phone.trim().length >= 8) custFilter.push({ phone: customer_phone.trim() });
 
     if (custFilter.length > 0) {
-      let cust = await Customer.findOne({ $or: custFilter });
+      let cust = await Customer.findOne({ merchant_id: merchantId, $or: custFilter });
       if (cust) {
         cust.total_spent = (cust.total_spent || 0) + (Number(total_amount) || 0);
         cust.total_orders = (cust.total_orders || 0) + 1;
@@ -394,6 +401,7 @@ router.post("/", async (req, res) => {
 
         if (payment_mode === "pending" || payment_mode === "khata") {
           await KhataLedger.create({
+            merchant_id: merchantId,
             customer_id: cust.customer_id,
             type: "credit",
             amount: Number(total_amount) || 0,
@@ -406,6 +414,7 @@ router.post("/", async (req, res) => {
         }
       } else if (customer_phone && customer_phone.trim().length >= 8) {
         cust = await Customer.create({
+          merchant_id: merchantId,
           customer_id: khata_customer_id || `cust_${Date.now()}`,
           name: customer_name || "Customer",
           phone: customer_phone.trim(),
@@ -417,6 +426,7 @@ router.post("/", async (req, res) => {
 
         if (payment_mode === "pending" || payment_mode === "khata") {
           await KhataLedger.create({
+            merchant_id: merchantId,
             customer_id: cust.customer_id,
             type: "credit",
             amount: Number(total_amount) || 0,
@@ -445,7 +455,9 @@ router.post("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const bill = await Bill.findOne({
+      merchant_id: merchantId,
       $or: [
         { bill_id: req.params.id },
         ...(req.params.id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: req.params.id }] : []),

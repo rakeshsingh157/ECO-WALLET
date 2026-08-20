@@ -5,6 +5,12 @@ import '../../core/theme.dart';
 import '../../core/localization.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/product_provider.dart';
+import '../../providers/bill_provider.dart';
+import '../../providers/customer_provider.dart';
+import '../../providers/expense_provider.dart';
+import '../../providers/supplier_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../auth/login_screen.dart';
 import '../add_member_screen.dart';
 import '../suppliers/suppliers_screen.dart';
@@ -258,12 +264,48 @@ class SettingsScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  context.read<AuthProvider>().logout();
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      backgroundColor: AppColors.surface,
+                      title: Text(
+                        context.tr('logout'),
+                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                      ),
+                      content: Text(
+                        context.tr('confirm_logout'),
+                        style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(context.tr('cancel')),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
+                          child: Text(context.tr('logout')),
+                        ),
+                      ],
+                    ),
                   );
+
+                  if (confirm == true && context.mounted) {
+                    context.read<ProductProvider>().clear();
+                    context.read<BillProvider>().clear();
+                    context.read<CustomerProvider>().clear();
+                    context.read<ExpenseProvider>().clear();
+                    context.read<SupplierProvider>().clear();
+                    context.read<NotificationProvider>().clear();
+                    await context.read<AuthProvider>().logout();
+                    if (context.mounted) {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        (route) => false,
+                      );
+                    }
+                  }
                 },
                 icon: const Icon(Icons.logout_rounded, size: 18),
                 label: Text(context.tr('logout')),

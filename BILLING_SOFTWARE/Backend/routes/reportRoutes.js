@@ -15,26 +15,28 @@ function getStartOfTodayIST() {
 
 router.get("/summary", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const startOfToday = getStartOfTodayIST();
 
     const [todaySalesAgg, totalSalesAgg, todayExpensesAgg, totalExpensesAgg, billCount, productCount] = await Promise.all([
       Bill.aggregate([
-        { $match: { createdAt: { $gte: startOfToday }, status: "completed" } },
+        { $match: { merchant_id: merchantId, createdAt: { $gte: startOfToday }, status: "completed" } },
         { $group: { _id: null, total: { $sum: "$total_amount" }, count: { $sum: 1 } } },
       ]),
       Bill.aggregate([
-        { $match: { status: "completed" } },
+        { $match: { merchant_id: merchantId, status: "completed" } },
         { $group: { _id: null, total: { $sum: "$total_amount" }, count: { $sum: 1 } } },
       ]),
       Expense.aggregate([
-        { $match: { date: { $gte: startOfToday } } },
+        { $match: { merchant_id: merchantId, date: { $gte: startOfToday } } },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]),
       Expense.aggregate([
+        { $match: { merchant_id: merchantId } },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]),
-      Bill.countDocuments({ status: "completed" }),
-      Product.countDocuments(),
+      Bill.countDocuments({ merchant_id: merchantId, status: "completed" }),
+      Product.countDocuments({ merchant_id: merchantId }),
     ]);
 
     const todaySales = todaySalesAgg.length > 0 ? todaySalesAgg[0].total : 0;
@@ -64,8 +66,9 @@ router.get("/summary", async (req, res) => {
 
 router.get("/top-products", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const topProducts = await Bill.aggregate([
-      { $match: { status: "completed" } },
+      { $match: { merchant_id: merchantId, status: "completed" } },
       { $unwind: "$items" },
       {
         $group: {

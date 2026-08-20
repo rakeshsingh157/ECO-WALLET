@@ -12,9 +12,12 @@ dotenv.config();
 
 const app = express();
 
+const { resolveMerchant } = require("./middleware/authMiddleware");
+
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+app.use(resolveMerchant);
 
 const activePayments = new Map();
 

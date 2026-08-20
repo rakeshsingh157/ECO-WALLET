@@ -64,4 +64,11 @@ class SupplierProvider with ChangeNotifier {
     final success = await apiService.recordSupplierPayment(supplierId, amount);
     return success;
   }
+
+  void clear() {
+    _suppliers.clear();
+    _searchQuery = '';
+    _isLoading = false;
+    notifyListeners();
+  }
 }

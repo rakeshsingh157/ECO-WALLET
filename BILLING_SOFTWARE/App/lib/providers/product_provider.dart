@@ -170,4 +170,13 @@ class ProductProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void clear() {
+    _products.clear();
+    _searchQuery = '';
+    _selectedCategory = 'All';
+    _isLoading = false;
+    _errorMessage = null;
+    notifyListeners();
+  }
 }

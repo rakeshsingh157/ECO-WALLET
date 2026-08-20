@@ -5,6 +5,12 @@ import '../../core/theme.dart';
 import '../../core/app_notifier.dart';
 import '../../core/localization.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/product_provider.dart';
+import '../../providers/bill_provider.dart';
+import '../../providers/customer_provider.dart';
+import '../../providers/expense_provider.dart';
+import '../../providers/supplier_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../../widgets/mascot_badge.dart';
 import '../../widgets/language_picker_button.dart';
 import '../main_shell.dart';
@@ -62,6 +68,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (mounted) {
       if (success) {
+        if (auth.baseUrl.isNotEmpty) {
+          context.read<ProductProvider>().clear();
+          context.read<BillProvider>().clear();
+          context.read<CustomerProvider>().clear();
+          context.read<ExpenseProvider>().clear();
+          context.read<SupplierProvider>().clear();
+          context.read<NotificationProvider>().clear();
+
+          context.read<ProductProvider>().fetchProducts(auth.baseUrl, auth.apiKey);
+          context.read<BillProvider>().fetchBills(auth.apiService);
+          context.read<CustomerProvider>().fetchCustomers(auth.apiService);
+          context.read<ExpenseProvider>().fetchExpenses(auth.apiService);
+          context.read<SupplierProvider>().fetchSuppliers(auth.apiService);
+          context.read<NotificationProvider>().fetchNotifications(auth.apiService);
+        }
+
         final welcomeMsg = _selectedLoginType == 1 && auth.staffName.isNotEmpty
             ? 'Logged in as ${auth.staffName} (${auth.staffRole})'
             : 'Welcome back to ${auth.shopName}!';

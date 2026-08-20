@@ -29,8 +29,6 @@ async function syncToEcoWalletDB(userData, merchantData) {
           { upsert: true, new: true, maxTimeMS: 5000 }
         ),
       ]);
-
-      console.log(`[INFO] Synchronized merchant record: ${merchantData.merchant_id}`);
     }
   } catch (err) {
     console.error("[ERROR] Merchant sync error:", err.message);
@@ -54,14 +52,14 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({ success: false, message: "A 4-digit Security PIN is required" });
     }
 
-    const phone = mobile_number.trim();
-    const mchId = `mch_${phone}`;
+    const cleanPhone = mobile_number.trim().replace(/\D/g, "").slice(-10);
+    const mchId = `mch_${cleanPhone}`;
     const bName = shop_name.trim();
     const oName = owner_name.trim();
     const pin = security_pin.trim();
 
-    const existingUser = await User.findOne({ $or: [{ phone }, { user_id: mchId }] });
-    const existingMerchant = await Merchant.findOne({ $or: [{ mobile_number: phone }, { merchant_id: mchId }] });
+    const existingUser = await User.findOne({ $or: [{ phone: cleanPhone }, { user_id: mchId }] });
+    const existingMerchant = await Merchant.findOne({ $or: [{ mobile_number: cleanPhone }, { merchant_id: mchId }] });
 
     if (existingUser || existingMerchant) {
       return res.status(409).json({
@@ -73,8 +71,8 @@ router.post("/signup", async (req, res) => {
     const userData = {
       user_id: mchId,
       name: oName,
-      email: `${phone}@dukaandost.io`,
-      phone: phone,
+      email: `${cleanPhone}@dukaandost.io`,
+      phone: cleanPhone,
       password: pin,
       pin: pin,
       balance: 1000,
@@ -82,22 +80,20 @@ router.post("/signup", async (req, res) => {
     };
     const user = await User.create(userData);
 
-    const autoApiKey = `key_mch_${phone}_auto`;
-    const autoWebhookSecret = `whsec_auto_${phone}`;
+    const autoApiKey = `key_mch_${cleanPhone}_auto`;
+    const autoWebhookSecret = `whsec_auto_${cleanPhone}`;
     const merchantData = {
       merchant_id: mchId,
       user_id: user.user_id,
       business_name: bName,
       owner_name: oName,
-      mobile_number: phone,
+      mobile_number: cleanPhone,
       webhook_url: "http://localhost:5001/api/webhook",
       webhook_secret: autoWebhookSecret,
       api_key_hash: autoApiKey,
       is_active: true,
     };
     const merchant = await Merchant.create(merchantData);
-
-    console.log(`[INFO] Registered new merchant: ${mchId}`);
 
     await syncToEcoWalletDB(userData, merchantData);
 
@@ -115,7 +111,6 @@ router.post("/signup", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("[ERROR] Merchant registration failed:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -131,12 +126,12 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ success: false, message: "A 4-digit Security PIN is required" });
     }
 
-    const phone = mobile_number.trim();
+    const cleanPhone = mobile_number.trim().replace(/\D/g, "").slice(-10);
     const pin = security_pin.trim();
-    const mchId = `mch_${phone}`;
+    const mchId = `mch_${cleanPhone}`;
 
-    let user = await User.findOne({ $or: [{ phone }, { user_id: mchId }] });
-    let merchant = await Merchant.findOne({ $or: [{ mobile_number: phone }, { merchant_id: mchId }] });
+    let user = await User.findOne({ $or: [{ phone: cleanPhone }, { user_id: mchId }] });
+    let merchant = await Merchant.findOne({ $or: [{ mobile_number: cleanPhone }, { merchant_id: mchId }] });
 
     if (!user && !merchant) {
       return res.status(404).json({
@@ -145,7 +140,7 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    if (user && user.pin) {
+    if (user && (user.pin || user.password)) {
       const isMatch = await user.matchPin(pin);
       if (!isMatch) {
         return res.status(401).json({
@@ -159,8 +154,8 @@ router.post("/login", async (req, res) => {
       user = await User.create({
         user_id: merchant.user_id || mchId,
         name: merchant.owner_name || "Shopkeeper",
-        email: `${phone}@dukaandost.io`,
-        phone: phone,
+        email: `${cleanPhone}@dukaandost.io`,
+        phone: cleanPhone,
         password: pin,
         pin: pin,
         balance: 1000,
@@ -174,15 +169,15 @@ router.post("/login", async (req, res) => {
 
     const shopName = merchant ? merchant.business_name : "My Dukaan";
     const ownerName = merchant ? merchant.owner_name : (user ? user.name : "Shopkeeper");
-    const autoApiKey = merchant ? (merchant.api_key_hash || `key_mch_${phone}_auto`) : `key_mch_${phone}_auto`;
-    const autoWebhookSecret = merchant ? (merchant.webhook_secret || `whsec_auto_${phone}`) : `whsec_auto_${phone}`;
+    const autoApiKey = merchant ? (merchant.api_key_hash || `key_mch_${cleanPhone}_auto`) : `key_mch_${cleanPhone}_auto`;
+    const autoWebhookSecret = merchant ? (merchant.webhook_secret || `whsec_auto_${cleanPhone}`) : `whsec_auto_${cleanPhone}`;
 
     await syncToEcoWalletDB(
       {
         user_id: user.user_id,
         name: ownerName,
-        email: `${phone}@dukaandost.io`,
-        phone: phone,
+        email: `${cleanPhone}@dukaandost.io`,
+        phone: cleanPhone,
         password: pin,
         pin: pin,
         balance: 1000,
@@ -193,15 +188,13 @@ router.post("/login", async (req, res) => {
         user_id: user.user_id,
         business_name: shopName,
         owner_name: ownerName,
-        mobile_number: phone,
+        mobile_number: cleanPhone,
         webhook_url: "http://localhost:5001/api/webhook",
         webhook_secret: autoWebhookSecret,
         api_key_hash: autoApiKey,
         is_active: true,
       }
     );
-
-    console.log(`[INFO] Merchant authenticated: ${mchId}`);
 
     res.json({
       success: true,
@@ -211,101 +204,12 @@ router.post("/login", async (req, res) => {
         user_id: user ? user.user_id : mchId,
         business_name: shopName,
         owner_name: ownerName,
-        mobile_number: phone,
+        mobile_number: cleanPhone,
+        gstin: merchant ? (merchant.gstin || "") : "",
+        address: merchant ? (merchant.address || "") : "",
+        upi_id: merchant ? (merchant.upi_id || "") : "",
         api_key: autoApiKey,
         webhook_secret: autoWebhookSecret,
-      },
-    });
-  } catch (error) {
-    console.error("[ERROR] Authentication failure:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-router.post("/onboard", async (req, res) => {
-  try {
-    const { mobile_number, shop_name, owner_name, security_pin, api_key, merchant_id } = req.body;
-    const phone = mobile_number || "9876543210";
-    const mchId = merchant_id || `mch_${phone}`;
-    const bName = shop_name || "Store";
-    const oName = owner_name || "Shopkeeper";
-
-    let user = await User.findOne({ $or: [{ phone }, { user_id: mchId }] });
-    if (!user) {
-      user = await User.create({
-        user_id: mchId,
-        name: oName,
-        email: `${phone}@dukaandost.io`,
-        phone: phone,
-        password: security_pin || "1234",
-        pin: security_pin || "1234",
-        balance: 1000,
-        role: "user",
-      });
-    } else {
-      user.name = oName;
-      if (security_pin) {
-        user.password = security_pin;
-        user.pin = security_pin;
-      }
-      await user.save();
-    }
-
-    let merchant = await Merchant.findOne({ merchant_id: mchId });
-    if (!merchant) {
-      merchant = await Merchant.create({
-        merchant_id: mchId,
-        user_id: user.user_id,
-        business_name: bName,
-        owner_name: oName,
-        mobile_number: phone,
-        webhook_url: "http://localhost:5001/api/webhook",
-        webhook_secret: `whsec_${phone}`,
-        api_key_hash: api_key || `key_${phone}`,
-        is_active: true,
-      });
-    } else {
-      merchant.business_name = bName;
-      merchant.owner_name = oName;
-      merchant.mobile_number = phone;
-      await merchant.save();
-    }
-
-    await syncToEcoWalletDB(
-      {
-        user_id: user.user_id,
-        name: oName,
-        email: `${phone}@dukaandost.io`,
-        phone: phone,
-        password: security_pin || "1234",
-        pin: security_pin || "1234",
-        balance: 1000,
-        role: "user",
-      },
-      {
-        merchant_id: merchant.merchant_id,
-        user_id: user.user_id,
-        business_name: bName,
-        owner_name: oName,
-        mobile_number: phone,
-        webhook_url: "http://localhost:5001/api/webhook",
-        webhook_secret: `whsec_${phone}`,
-        api_key_hash: api_key || `key_${phone}`,
-        is_active: true,
-      }
-    );
-
-    res.json({
-      success: true,
-      message: "Merchant account configured successfully",
-      merchant: {
-        merchant_id: merchant.merchant_id,
-        user_id: merchant.user_id,
-        business_name: merchant.business_name,
-        owner_name: merchant.owner_name,
-        mobile_number: merchant.mobile_number,
-        gstin: merchant.gstin || "",
-        address: merchant.address || "",
       },
     });
   } catch (error) {
@@ -315,37 +219,48 @@ router.post("/onboard", async (req, res) => {
 
 router.get("/profile", async (req, res) => {
   try {
-    const rawMerchantId = req.headers["x-merchant-id"] || req.headers["x-api-key"] || req.query.merchant_id || "mch_store";
-    const cleanDigits = String(rawMerchantId).replace(/\D/g, "");
+    const rawMerchantId = req.merchant_id || req.headers["x-merchant-id"] || req.headers["x-api-key"] || req.query.merchant_id;
+    if (!rawMerchantId || rawMerchantId === "mch_default") {
+      return res.json({
+        success: true,
+        merchant: {
+          merchant_id: "mch_default",
+          business_name: "My Store",
+          owner_name: "Shopkeeper",
+          mobile_number: "",
+          gstin: "",
+          address: "",
+          upi_id: "",
+        },
+      });
+    }
 
+    const cleanDigits = String(rawMerchantId).replace(/\D/g, "");
     let merchant = await Merchant.findOne({
       $or: [
         { merchant_id: rawMerchantId },
         { user_id: rawMerchantId },
-        ...(cleanDigits.length >= 10 ? [{ mobile_number: cleanDigits }, { merchant_id: `mch_${cleanDigits}` }] : [])
-      ]
-    });
+        { api_key_hash: rawMerchantId },
+        ...(cleanDigits.length >= 10 ? [{ mobile_number: cleanDigits.slice(-10) }, { merchant_id: `mch_${cleanDigits.slice(-10)}` }] : []),
+      ],
+    }).lean();
 
     if (!merchant && cleanDigits.length >= 10) {
-      merchant = await Merchant.findOne({ mobile_number: cleanDigits });
-    }
-
-    if (!merchant) {
-      merchant = await Merchant.findOne().sort({ createdAt: -1 });
+      merchant = await Merchant.findOne({ mobile_number: cleanDigits.slice(-10) }).lean();
     }
 
     if (!merchant) {
       return res.json({
         success: true,
         merchant: {
-          merchant_id: "mch_default",
+          merchant_id: rawMerchantId,
           business_name: "",
           owner_name: "",
-          mobile_number: "",
+          mobile_number: cleanDigits.length >= 10 ? cleanDigits.slice(-10) : "",
           gstin: "",
           address: "",
           upi_id: "",
-        }
+        },
       });
     }
 
@@ -360,7 +275,7 @@ router.get("/profile", async (req, res) => {
         gstin: merchant.gstin || "",
         address: merchant.address || "",
         upi_id: merchant.upi_id || "",
-      }
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -372,18 +287,14 @@ router.post("/update-profile", async (req, res) => {
     const { shop_name, owner_name, mobile_number, gstin, address, upi_id, merchant_id } = req.body;
     const phone = mobile_number ? mobile_number.trim() : "";
     const cleanDigits = phone.replace(/\D/g, "");
-    const mchId = merchant_id || (cleanDigits.length >= 10 ? `mch_${cleanDigits}` : "mch_default");
+    const mchId = req.merchant_id || merchant_id || (cleanDigits.length >= 10 ? `mch_${cleanDigits.slice(-10)}` : "mch_default");
 
     let merchant = await Merchant.findOne({
       $or: [
         { merchant_id: mchId },
-        ...(cleanDigits.length >= 10 ? [{ mobile_number: cleanDigits }, { merchant_id: `mch_${cleanDigits}` }] : [])
-      ]
+        ...(cleanDigits.length >= 10 ? [{ mobile_number: cleanDigits.slice(-10) }, { merchant_id: `mch_${cleanDigits.slice(-10)}` }] : []),
+      ],
     });
-
-    if (!merchant) {
-      merchant = await Merchant.findOne().sort({ createdAt: -1 });
-    }
 
     if (!merchant) {
       merchant = new Merchant({
@@ -391,15 +302,18 @@ router.post("/update-profile", async (req, res) => {
         user_id: mchId,
         business_name: shop_name || "Store",
         owner_name: owner_name || "Shopkeeper",
-        mobile_number: phone,
+        mobile_number: cleanDigits.length >= 10 ? cleanDigits.slice(-10) : phone,
         gstin: gstin || "",
         address: address || "",
         upi_id: upi_id || "",
+        api_key_hash: `key_${mchId}_auto`,
+        webhook_secret: `whsec_${mchId}`,
+        is_active: true,
       });
     } else {
       if (shop_name) merchant.business_name = shop_name.trim();
       if (owner_name) merchant.owner_name = owner_name.trim();
-      if (phone) merchant.mobile_number = phone;
+      if (phone) merchant.mobile_number = cleanDigits.length >= 10 ? cleanDigits.slice(-10) : phone;
       if (gstin !== undefined) merchant.gstin = gstin.trim();
       if (address !== undefined) merchant.address = address.trim();
       if (upi_id !== undefined) merchant.upi_id = upi_id.trim();
@@ -410,7 +324,7 @@ router.post("/update-profile", async (req, res) => {
     let user = await User.findOne({ $or: [{ user_id: merchant.user_id }, { phone: merchant.mobile_number }] });
     if (user) {
       if (owner_name) user.name = owner_name.trim();
-      if (phone) user.phone = phone;
+      if (phone) user.phone = cleanDigits.length >= 10 ? cleanDigits.slice(-10) : phone;
       await user.save();
     }
 
@@ -444,7 +358,7 @@ router.post("/update-profile", async (req, res) => {
         gstin: merchant.gstin || "",
         address: merchant.address || "",
         upi_id: merchant.upi_id || "",
-      }
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

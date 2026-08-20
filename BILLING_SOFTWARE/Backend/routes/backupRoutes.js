@@ -12,19 +12,21 @@ const NotificationItem = require("../models/NotificationItem");
 
 router.get("/export", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const [products, bills, customers, khata, suppliers, expenses, staff, notifications] = await Promise.all([
-      Product.find().lean(),
-      Bill.find().lean(),
-      Customer.find().lean(),
-      KhataCustomer.find().lean(),
-      Supplier.find().lean(),
-      Expense.find().lean(),
-      StaffMember.find().lean(),
-      NotificationItem.find().lean(),
+      Product.find({ merchant_id: merchantId }).lean(),
+      Bill.find({ merchant_id: merchantId }).lean(),
+      Customer.find({ merchant_id: merchantId }).lean(),
+      KhataCustomer.find({ merchant_id: merchantId }).lean(),
+      Supplier.find({ merchant_id: merchantId }).lean(),
+      Expense.find({ merchant_id: merchantId }).lean(),
+      StaffMember.find({ merchant_id: merchantId }).lean(),
+      NotificationItem.find({ merchant_id: merchantId }).lean(),
     ]);
 
     const backupPayload = {
       export_version: "1.0",
+      merchant_id: merchantId,
       exported_at: new Date().toISOString(),
       counts: {
         products: products.length,
@@ -59,13 +61,14 @@ router.get("/export", async (req, res) => {
 
 router.get("/export-csv", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const type = req.query.type || "bills";
 
     if (type === "products") {
-      const products = await Product.find().lean();
+      const products = await Product.find({ merchant_id: merchantId }).lean();
       let csv = "Product ID,Name,Price,Category,Unit,Stock,Barcode\n";
       for (const p of products) {
-        csv += `"${p.product_id || p._id}","${(p.name || '').replace(/"/g, '""')}",${p.price || 0},"${p.category || 'General'}","${p.unit || 'pcs'}",${p.stock || 0},"${p.barcode || ''}"\n`;
+        csv += `"${p.product_id || p._id}","${(p.name || "").replace(/"/g, '""')}",${p.price || 0},"${p.category || "General"}","${p.unit || "pcs"}",${p.stock || 0},"${p.barcode || ""}"\n`;
       }
       res.setHeader("Content-Type", "text/csv");
       res.setHeader("Content-Disposition", "attachment; filename=products.csv");
@@ -73,10 +76,10 @@ router.get("/export-csv", async (req, res) => {
     }
 
     if (type === "expenses") {
-      const expenses = await Expense.find().lean();
+      const expenses = await Expense.find({ merchant_id: merchantId }).lean();
       let csv = "Expense ID,Title,Amount,Category,Payment Mode,Date,Notes\n";
       for (const e of expenses) {
-        csv += `"${e.expense_id || e._id}","${(e.title || '').replace(/"/g, '""')}",${e.amount || 0},"${e.category || 'General'}","${e.payment_mode || 'Cash'}","${e.date ? new Date(e.date).toISOString() : ''}","${(e.notes || '').replace(/"/g, '""')}"\n`;
+        csv += `"${e.expense_id || e._id}","${(e.title || "").replace(/"/g, '""')}",${e.amount || 0},"${e.category || "General"}","${e.payment_mode || "Cash"}","${e.date ? new Date(e.date).toISOString() : ""}","${(e.notes || "").replace(/"/g, '""')}"\n`;
       }
       res.setHeader("Content-Type", "text/csv");
       res.setHeader("Content-Disposition", "attachment; filename=expenses.csv");
@@ -84,10 +87,10 @@ router.get("/export-csv", async (req, res) => {
     }
 
     if (type === "customers") {
-      const customers = await Customer.find().lean();
+      const customers = await Customer.find({ merchant_id: merchantId }).lean();
       let csv = "Customer ID,Name,Phone,Address,Due Amount,Total Spent,Orders Count\n";
       for (const c of customers) {
-        csv += `"${c.customer_id || c._id}","${(c.name || '').replace(/"/g, '""')}","${c.phone || ''}","${(c.address || '').replace(/"/g, '""')}",${c.due_amount || 0},${c.total_spent || 0},${c.total_orders || 0}\n`;
+        csv += `"${c.customer_id || c._id}","${(c.name || "").replace(/"/g, '""')}","${c.phone || ""}","${(c.address || "").replace(/"/g, '""')}",${c.due_amount || 0},${c.total_spent || 0},${c.total_orders || 0}\n`;
       }
       res.setHeader("Content-Type", "text/csv");
       res.setHeader("Content-Disposition", "attachment; filename=customers.csv");
@@ -95,20 +98,20 @@ router.get("/export-csv", async (req, res) => {
     }
 
     if (type === "suppliers") {
-      const suppliers = await Supplier.find().lean();
+      const suppliers = await Supplier.find({ merchant_id: merchantId }).lean();
       let csv = "Supplier ID,Contact Name,Company Name,Phone,GSTIN,Pending Due,Orders Supplied\n";
       for (const s of suppliers) {
-        csv += `"${s.supplier_id || s._id}","${(s.name || '').replace(/"/g, '""')}","${(s.company_name || '').replace(/"/g, '""')}","${s.phone || ''}","${s.gstin || ''}",${s.pending_payment || 0},${s.orders_supplied || 0}\n`;
+        csv += `"${s.supplier_id || s._id}","${(s.name || "").replace(/"/g, '""')}","${(s.company_name || "").replace(/"/g, '""')}","${s.phone || ""}","${s.gstin || ""}",${s.pending_payment || 0},${s.orders_supplied || 0}\n`;
       }
       res.setHeader("Content-Type", "text/csv");
       res.setHeader("Content-Disposition", "attachment; filename=suppliers.csv");
       return res.send(csv);
     }
 
-    const bills = await Bill.find().lean();
+    const bills = await Bill.find({ merchant_id: merchantId }).lean();
     let csv = "Bill ID,Customer Name,Total Amount,Payment Mode,Status,Date,Item Count\n";
     for (const b of bills) {
-      csv += `"${b.bill_id || b._id}","${(b.customer_name || 'Counter Customer').replace(/"/g, '""')}",${b.total_amount || 0},"${b.payment_mode || 'Cash'}","${b.status || 'completed'}","${b.createdAt ? new Date(b.createdAt).toISOString() : ''}",${(b.items && b.items.length) || 0}\n`;
+      csv += `"${b.bill_id || b._id}","${(b.customer_name || "Counter Customer").replace(/"/g, '""')}",${b.total_amount || 0},"${b.payment_mode || "Cash"}","${b.status || "completed"}","${b.createdAt ? new Date(b.createdAt).toISOString() : ""}",${(b.items && b.items.length) || 0}\n`;
     }
     res.setHeader("Content-Type", "text/csv");
     res.setHeader("Content-Disposition", "attachment; filename=sales_invoices.csv");
@@ -120,12 +123,13 @@ router.get("/export-csv", async (req, res) => {
 
 router.post("/restore", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const { backup } = req.body;
     if (!backup || !backup.data) {
       return res.status(400).json({ success: false, message: "Valid backup payload required" });
     }
 
-    const { products, customers, suppliers, expenses, staff } = backup.data;
+    const { products, customers, suppliers, expenses } = backup.data;
 
     let restoredProducts = 0;
     if (Array.isArray(products) && products.length > 0) {
@@ -133,9 +137,10 @@ router.post("/restore", async (req, res) => {
         if (p.name && p.price !== undefined) {
           const id = p.product_id || p.id || `prod_${Date.now()}_${Math.random().toString(36).substring(7)}`;
           await Product.findOneAndUpdate(
-            { $or: [{ product_id: id }, { name: p.name }] },
+            { merchant_id: merchantId, $or: [{ product_id: id }, { name: p.name }] },
             {
               $set: {
+                merchant_id: merchantId,
                 product_id: id,
                 name: p.name,
                 price: Number(p.price),
@@ -143,7 +148,7 @@ router.post("/restore", async (req, res) => {
                 unit: p.unit || "pcs",
                 stock: Number(p.stock) || 0,
                 barcode: p.barcode || null,
-              }
+              },
             },
             { upsert: true }
           );
@@ -158,9 +163,10 @@ router.post("/restore", async (req, res) => {
         if (c.name && c.phone) {
           const id = c.customer_id || c.id || `cust_${Date.now()}_${Math.random().toString(36).substring(7)}`;
           await Customer.findOneAndUpdate(
-            { $or: [{ customer_id: id }, { phone: c.phone }] },
+            { merchant_id: merchantId, $or: [{ customer_id: id }, { phone: c.phone }] },
             {
               $set: {
+                merchant_id: merchantId,
                 customer_id: id,
                 name: c.name,
                 phone: c.phone,
@@ -168,7 +174,7 @@ router.post("/restore", async (req, res) => {
                 due_amount: Number(c.due_amount || c.dueAmount) || 0,
                 total_spent: Number(c.total_spent || c.totalSpent) || 0,
                 total_orders: Number(c.total_orders || c.totalOrders) || 0,
-              }
+              },
             },
             { upsert: true }
           );
@@ -183,9 +189,10 @@ router.post("/restore", async (req, res) => {
         if (e.title && e.amount) {
           const id = e.expense_id || e.id || `exp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
           await Expense.findOneAndUpdate(
-            { expense_id: id },
+            { merchant_id: merchantId, expense_id: id },
             {
               $set: {
+                merchant_id: merchantId,
                 expense_id: id,
                 title: e.title,
                 amount: Number(e.amount),
@@ -193,7 +200,7 @@ router.post("/restore", async (req, res) => {
                 payment_mode: e.payment_mode || e.paymentMode || "Cash",
                 notes: e.notes || "",
                 date: e.date ? new Date(e.date) : new Date(),
-              }
+              },
             },
             { upsert: true }
           );
@@ -218,15 +225,17 @@ router.post("/restore", async (req, res) => {
 
 router.post("/cloud-sync", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const [productCount, billCount, customerCount, expenseCount, supplierCount] = await Promise.all([
-      Product.countDocuments(),
-      Bill.countDocuments(),
-      Customer.countDocuments(),
-      Expense.countDocuments(),
-      Supplier.countDocuments(),
+      Product.countDocuments({ merchant_id: merchantId }),
+      Bill.countDocuments({ merchant_id: merchantId }),
+      Customer.countDocuments({ merchant_id: merchantId }),
+      Expense.countDocuments({ merchant_id: merchantId }),
+      Supplier.countDocuments({ merchant_id: merchantId }),
     ]);
 
     await NotificationItem.create({
+      merchant_id: merchantId,
       notification_id: `notif_sync_${Date.now()}`,
       title: "Cloud Backup Completed",
       message: `Full synchronization verified: ${productCount} products, ${billCount} sales, ${customerCount} customers secure in cloud.`,

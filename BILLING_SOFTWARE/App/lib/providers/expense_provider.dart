@@ -66,4 +66,10 @@ class ExpenseProvider with ChangeNotifier {
     final success = await apiService.deleteExpense(id);
     return success;
   }
+
+  void clear() {
+    _expenses.clear();
+    _isLoading = false;
+    notifyListeners();
+  }
 }

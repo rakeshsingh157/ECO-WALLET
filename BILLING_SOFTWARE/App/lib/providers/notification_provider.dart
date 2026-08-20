@@ -49,4 +49,10 @@ class NotificationProvider with ChangeNotifier {
     _notifications.insert(0, item);
     notifyListeners();
   }
+
+  void clear() {
+    _notifications.clear();
+    _isLoading = false;
+    notifyListeners();
+  }
 }

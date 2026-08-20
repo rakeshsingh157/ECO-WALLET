@@ -425,6 +425,16 @@ class BillProvider extends ChangeNotifier {
     return newBill;
   }
 
+  void clear() {
+    _currentItems.clear();
+    _completedBills.clear();
+    _todaySales = 0.0;
+    _todayBillCount = 0;
+    _isLoadingBills = false;
+    stopPolling();
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     stopPolling();

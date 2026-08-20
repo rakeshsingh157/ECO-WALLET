@@ -43,7 +43,11 @@ class AuthProvider extends ChangeNotifier {
   String? get authError => _authError;
   Future<void> ensureInitialized() => _initCompleter.future;
 
-  ApiService get apiService => ApiService(baseUrl: _baseUrl, apiKey: _apiKey);
+  ApiService get apiService => ApiService(
+        baseUrl: _baseUrl,
+        apiKey: _apiKey,
+        merchantId: _merchantId,
+      );
 
   AuthProvider() {
     loadSavedCredentials();

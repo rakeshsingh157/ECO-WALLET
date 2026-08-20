@@ -5,7 +5,8 @@ const KhataLedger = require("../models/KhataLedger");
 
 router.get("/", async (req, res) => {
   try {
-    const customers = await Customer.find().sort({ due_amount: -1, updatedAt: -1 }).lean();
+    const merchantId = req.merchant_id || "mch_default";
+    const customers = await Customer.find({ merchant_id: merchantId }).sort({ due_amount: -1, updatedAt: -1 }).lean();
     const totalDue = customers.reduce((sum, c) => sum + (Number(c.due_amount) || 0), 0);
     const sanitized = customers.map((c) => ({
       ...c,
@@ -19,6 +20,7 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || req.body.merchant_id || "mch_default";
     const { name, phone, address, aadhaar_number, due_amount, customer_id } = req.body;
 
     if (!name || name.trim().length === 0) {
@@ -32,9 +34,10 @@ router.post("/", async (req, res) => {
     const cleanPhone = phone.trim();
 
     const customer = await Customer.findOneAndUpdate(
-      { phone: cleanPhone },
+      { merchant_id: merchantId, phone: cleanPhone },
       {
         $setOnInsert: {
+          merchant_id: merchantId,
           customer_id: customerId,
           total_spent: 0,
           total_orders: 0,
@@ -58,6 +61,7 @@ router.post("/", async (req, res) => {
 
 router.post("/:id/transaction", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const { type, amount, note, bill_id } = req.body;
     const numAmount = Number(amount);
 
@@ -66,6 +70,7 @@ router.post("/:id/transaction", async (req, res) => {
     }
 
     const query = {
+      merchant_id: merchantId,
       $or: [
         { customer_id: req.params.id },
         { phone: req.params.id },
@@ -97,6 +102,7 @@ router.post("/:id/transaction", async (req, res) => {
     }
 
     await KhataLedger.create({
+      merchant_id: merchantId,
       customer_id: customer.customer_id,
       type: type === "payment" ? "payment" : "credit",
       amount: numAmount,
@@ -117,7 +123,9 @@ router.post("/:id/transaction", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const query = {
+      merchant_id: merchantId,
       $or: [
         { customer_id: req.params.id },
         { phone: req.params.id },

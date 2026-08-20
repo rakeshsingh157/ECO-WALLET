@@ -6,8 +6,8 @@ const User = require("../models/User");
 
 router.get("/", async (req, res) => {
   try {
-    const merchantId = req.headers["x-merchant-id"] || req.query.merchant_id;
-    const query = merchantId ? { merchant_id: merchantId } : {};
+    const merchantId = req.merchant_id || req.headers["x-merchant-id"] || req.query.merchant_id || "mch_default";
+    const query = { merchant_id: merchantId };
     const staff = await StaffMember.find(query).sort({ createdAt: -1 });
     res.json({ success: true, count: staff.length, data: staff });
   } catch (error) {
@@ -29,7 +29,7 @@ router.post("/", async (req, res) => {
     const cleanPhone = phone.trim();
     const cleanPin = pin && pin.trim().length === 4 ? pin.trim() : "1234";
     const memberId = member_id || `m_${Date.now()}`;
-    const mchId = merchant_id || req.headers["x-merchant-id"] || "mch_default";
+    const mchId = req.merchant_id || merchant_id || req.headers["x-merchant-id"] || "mch_default";
 
     const existingMember = await StaffMember.findOne({ phone: cleanPhone, merchant_id: mchId });
     if (existingMember) {
@@ -52,10 +52,8 @@ router.post("/", async (req, res) => {
     });
 
     await newMember.save();
-    console.log(`[INFO] Staff member added: ${newMember.name} (${cleanPhone}) for merchant: ${mchId}`);
     res.status(201).json({ success: true, data: newMember });
   } catch (error) {
-    console.error("[ERROR] Failed to add staff member:", error.message);
     res.status(400).json({ success: false, error: error.message });
   }
 });
@@ -93,7 +91,6 @@ router.post("/login", async (req, res) => {
       $or: [
         { merchant_id: staffMember.merchant_id },
         { mobile_number: staffMember.merchant_id.replace(/^mch_/, "") },
-        { is_active: true },
       ],
     }).sort({ createdAt: -1 });
 
@@ -102,8 +99,6 @@ router.post("/login", async (req, res) => {
     const ownerName = merchant ? merchant.owner_name : "Store Owner";
     const apiKey = merchant ? (merchant.api_key_hash || `key_mch_${ownerPhone}_auto`) : `key_mch_${ownerPhone}_auto`;
     const merchantId = merchant ? merchant.merchant_id : (staffMember.merchant_id || `mch_${ownerPhone}`);
-
-    console.log(`[INFO] Staff login success: ${staffMember.name} (${staffMember.role}) -> Shop: ${shopName}`);
 
     res.json({
       success: true,
@@ -124,14 +119,15 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("[ERROR] Staff login failed:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
 router.delete("/:id", async (req, res) => {
   try {
+    const merchantId = req.merchant_id || "mch_default";
     const query = {
+      merchant_id: merchantId,
       $or: [{ member_id: req.params.id }, { _id: req.params.id.match(/^[0-9a-fA-F]{24}$/) ? req.params.id : null }],
     };
     const deleted = await StaffMember.findOneAndDelete(query);
@@ -147,11 +143,12 @@ router.delete("/:id", async (req, res) => {
 router.post("/verify-pin", async (req, res) => {
   try {
     const { member_id, pin } = req.body;
+    const merchantId = req.merchant_id || "mch_default";
     if (!member_id || !pin) {
       return res.status(400).json({ success: false, message: "Member ID and PIN are required" });
     }
 
-    const member = await StaffMember.findOne({ member_id });
+    const member = await StaffMember.findOne({ merchant_id: merchantId, member_id });
     if (!member) {
       return res.status(404).json({ success: false, message: "Staff member not found" });
     }
